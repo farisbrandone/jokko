@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
+import { IdentityModule } from '../identity/identity.module';
+import { ShopModule } from '../shop/shop.module';
 import { CatalogController } from './presentation/catalog.controller';
 import { CreateProductUseCase } from './application/use-cases/create-product.usecase';
 import { ListProductsUseCase } from './application/use-cases/list-products.usecase';
@@ -10,7 +12,11 @@ import { OutboxMessageEntity } from '../../persistence/entities/outbox-message.e
 import { OutboxRelay } from './infrastructure/outbox/outbox.relay';
 
 @Module({
-  imports: [MikroOrmModule.forFeature([ProductEntity, OutboxMessageEntity])],
+  imports: [
+    MikroOrmModule.forFeature([ProductEntity, OutboxMessageEntity]),
+    IdentityModule,
+    ShopModule,
+  ],
   controllers: [CatalogController],
   providers: [
     CreateProductUseCase,

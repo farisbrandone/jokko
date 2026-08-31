@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
@@ -9,6 +9,9 @@ import { buildMikroOrmConfig } from './config/mikro-orm.config';
 import { LoggerModule } from './shared/logger/logger.module';
 import { TenantModule } from './shared/tenant/tenant.module';
 import { HealthModule } from './shared/health/health.module';
+import { IdentityModule } from './modules/identity/identity.module';
+import { ShopModule } from './modules/shop/shop.module';
+import { TenantMiddleware } from './modules/shop/tenant/tenant.middleware';
 import { CatalogModule } from './modules/catalog/catalog.module';
 
 @Module({
@@ -32,7 +35,16 @@ import { CatalogModule } from './modules/catalog/catalog.module';
     LoggerModule,
     TenantModule,
     HealthModule,
+    IdentityModule,
+    ShopModule,
     CatalogModule,
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // Monté à la racine (motif purement joker) pour que `req.url` reste complet
+    // et que la résolution par chemin `/shops/:id` fonctionne. La résolution est
+    // sans effet sur les routes qui n'ont pas de boutille à résoudre.
+    consumer.apply(TenantMiddleware).forRoutes('{*path}');
+  }
+}

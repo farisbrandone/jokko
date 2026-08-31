@@ -1,4 +1,4 @@
-import { Controller, Get, VERSION_NEUTRAL } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ApiExcludeController } from '@nestjs/swagger';
 import {
   HealthCheck,
@@ -7,7 +7,7 @@ import {
 } from '@nestjs/terminus';
 
 @ApiExcludeController()
-@Controller({ version: VERSION_NEUTRAL })
+@Controller()
 export class HealthController {
   constructor(
     private readonly health: HealthCheckService,

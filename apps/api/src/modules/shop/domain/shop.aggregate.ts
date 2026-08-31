@@ -1,0 +1,118 @@
+import { AggregateRoot, Guard, Result, UniqueId } from '@jokko/domain-kernel';
+import type { Vertical } from '@jokko/contracts';
+import { Slug } from '../../catalog/domain/value-objects/slug';
+import { ShopCreated } from './shop.events';
+
+export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
+export type ShopStatus = 'active' | 'suspended';
+
+export interface ShopSnapshot {
+  id: string;
+  slug: string;
+  name: string;
+  verticals: Vertical[];
+  whatsapp: string | null;
+  themePreset: ThemePreset;
+  locale: string;
+  currency: string;
+  customDomain: string | null;
+  status: ShopStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CreateShopProps {
+  name: string;
+  slug?: string;
+  verticals: Vertical[];
+  whatsapp?: string;
+  themePreset?: ThemePreset;
+  ownerUserId: string;
+}
+
+export class Shop extends AggregateRoot {
+  private constructor(
+    id: UniqueId,
+    private _slug: Slug,
+    private _name: string,
+    private _verticals: Vertical[],
+    private _whatsapp: string | null,
+    private _themePreset: ThemePreset,
+    private _locale: string,
+    private _currency: string,
+    private _customDomain: string | null,
+    private _status: ShopStatus,
+    private readonly _createdAt: Date,
+    private _updatedAt: Date,
+  ) {
+    super(id);
+  }
+
+  static create(props: CreateShopProps): Result<Shop> {
+    const checks = Result.combine([
+      Guard.againstEmpty(props.name, 'name'),
+      Guard.againstEmpty(props.ownerUserId, 'ownerUserId'),
+    ]);
+    if (checks.isErr) return Result.err(String(checks.getError()));
+    if (props.verticals.length === 0) return Result.err('Au moins une verticale est requise');
+
+    const slug = Slug.fromString(props.slug?.trim() || props.name);
+    if (slug.isErr) return Result.err(slug.getError());
+
+    const now = new Date();
+    const shop = new Shop(
+      UniqueId.create(),
+      slug.unwrap(),
+      props.name.trim(),
+      [...props.verticals],
+      props.whatsapp?.trim() ?? null,
+      props.themePreset ?? 'grid',
+      'fr',
+      'XOF',
+      null,
+      'active',
+      now,
+      now,
+    );
+    shop.addDomainEvent(new ShopCreated(shop.id.value, shop._slug.value, props.ownerUserId));
+    return Result.ok(shop);
+  }
+
+  static restore(snap: ShopSnapshot): Shop {
+    return new Shop(
+      UniqueId.create(snap.id),
+      Slug.fromString(snap.slug).unwrap(),
+      snap.name,
+      [...snap.verticals],
+      snap.whatsapp,
+      snap.themePreset,
+      snap.locale,
+      snap.currency,
+      snap.customDomain,
+      snap.status,
+      new Date(snap.createdAt),
+      new Date(snap.updatedAt),
+    );
+  }
+
+  get slug(): string {
+    return this._slug.value;
+  }
+
+  toSnapshot(): ShopSnapshot {
+    return {
+      id: this.id.value,
+      slug: this._slug.value,
+      name: this._name,
+      verticals: [...this._verticals],
+      whatsapp: this._whatsapp,
+      themePreset: this._themePreset,
+      locale: this._locale,
+      currency: this._currency,
+      customDomain: this._customDomain,
+      status: this._status,
+      createdAt: this._createdAt.toISOString(),
+      updatedAt: this._updatedAt.toISOString(),
+    };
+  }
+}

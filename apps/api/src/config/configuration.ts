@@ -20,6 +20,12 @@ export interface AppConfig {
     rootDomain: string;
     headerSecret: string;
   };
+  auth: {
+    jwtSecret: string;
+    accessTtlMin: number;
+    refreshTtlDays: number;
+    cookieDomain?: string;
+  };
 }
 
 export const buildConfig = (env: Env): AppConfig => ({
@@ -37,5 +43,11 @@ export const buildConfig = (env: Env): AppConfig => ({
   tenant: {
     rootDomain: env.SHOP_ROOT_DOMAIN,
     headerSecret: env.TENANT_HEADER_SECRET,
+  },
+  auth: {
+    jwtSecret: env.AUTH_JWT_SECRET,
+    accessTtlMin: env.AUTH_ACCESS_TTL_MIN,
+    refreshTtlDays: env.AUTH_REFRESH_TTL_DAYS,
+    cookieDomain: env.AUTH_COOKIE_DOMAIN,
   },
 });

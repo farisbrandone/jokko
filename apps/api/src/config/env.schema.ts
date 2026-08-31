@@ -22,7 +22,12 @@ export const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),
-  TENANT_HEADER_SECRET: z.string().default('change_me_dev_only'),
+  TENANT_HEADER_SECRET: z.string().min(16).default('dev_tenant_header_secret_0123456789'),
+
+  AUTH_JWT_SECRET: z.string().min(16).default('dev_auth_jwt_secret_change_me_0123456789'),
+  AUTH_ACCESS_TTL_MIN: z.coerce.number().int().positive().default(30),
+  AUTH_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
+  AUTH_COOKIE_DOMAIN: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

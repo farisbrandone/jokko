@@ -22,6 +22,8 @@
     "tsConfigPath": "./tsconfig.json"
   },
   "dependencies": {
+    "@casl/ability": "^6.7.3",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/static": "^10.1.2",
     "@jokko/contracts": "workspace:*",
     "@jokko/domain-kernel": "workspace:*",
@@ -36,6 +38,9 @@
     "@nestjs/schedule": "^5.0.1",
     "@nestjs/swagger": "^11.0.3",
     "@nestjs/terminus": "^11.0.0",
+    "bcryptjs": "^3.0.2",
+    "fastify": "^5.2.1",
+    "jose": "^5.9.6",
     "nestjs-pino": "^4.3.0",
     "pino-http": "^10.4.0",
     "reflect-metadata": "^0.2.2",

@@ -1,12 +1,13 @@
 import 'reflect-metadata';
 import { NestFactory } from '@nestjs/core';
-import { Logger as NestLogger, VersioningType } from '@nestjs/common';
+import { Logger as NestLogger } from '@nestjs/common';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import fastifyCookie from '@fastify/cookie';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import type { AppConfig } from './config/configuration';
@@ -19,12 +20,12 @@ async function bootstrap() {
   );
 
   app.useLogger(app.get(Logger));
+  await app.register(fastifyCookie);
 
   const config = app.get(ConfigService<AppConfig, true>);
   const api = config.get('api', { infer: true });
 
   app.setGlobalPrefix(api.globalPrefix, { exclude: ['healthz', 'readyz'] });
-  app.enableVersioning({ type: VersioningType.URI, defaultVersion: '1' });
   app.enableCors({ origin: api.corsOrigins, credentials: true });
   // La validation des entrées passe par ZodValidationPipe (schémas @jokko/contracts),
   // pas par le ValidationPipe de Nest (qui exige class-validator).

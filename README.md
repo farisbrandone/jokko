@@ -49,14 +49,28 @@ pnpm dev:api                          # API sur http://localhost:3333/api  (docs
   même transaction que l'agrégat ; `OutboxRelay` (toutes les 2 s) les publie et
   les marque traités.
 
-Vérifs rapides :
+### Parcours type
 
 ```bash
-curl -s localhost:3333/healthz
-curl -s -X POST localhost:3333/api/v1/shops/00000000-0000-0000-0000-000000000001/products \
-  -H 'content-type: application/json' \
-  -d '{"name":"Casque Bluetooth","category":"electronique","price":{"amount":15000,"currency":"XOF"}}'
-curl -s localhost:3333/api/v1/shops/00000000-0000-0000-0000-000000000001/products
+API=http://localhost:3333/api
+curl -s $API/healthz $API/readyz
+
+# 1. créer un compte (renvoie { user, tokens })
+TOKEN=$(curl -s -X POST $API/auth/register -H 'content-type: application/json' \
+  -d '{"email":"awa@ex.com","password":"motdepasse1","name":"Awa"}' \
+  | node -pe 'JSON.parse(require("fs").readFileSync(0)).tokens.accessToken')
+
+# 2. créer sa boutique (on en devient owner) → { shop, tenantHeader signé }
+curl -s -X POST $API/shops -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"name":"Chez Awa Électro","verticals":["electronique"],"whatsapp":"+221771234567"}'
+
+# 3. ajouter un produit (réservé aux membres autorisés — CASL)
+curl -s -X POST $API/shops/<shopId>/products -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
+  -d '{"name":"Frigo Samsung","category":"electronique","price":{"amount":250000}}'
+
+# 4. côté acheteur (public) — la boutique est résolue par sous-domaine,
+#    domaine perso, en-tête signé x-jokko-tenant, ou repli /shops/:id
+curl -s $API/shops/<shopId>/products
 ```
 
 ## Structure
@@ -101,9 +115,17 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Transactional Outbox + `OutboxRelay`
 - [x] `/readyz` sonde la base
 
+**Incrément 2 — tenant & auth**
+
+- [x] Contexte `shop` : création de boutique en un clic, `GET /shops/:slug` public
+- [x] Résolution du tenant : en-tête signé HMAC → sous-domaine → domaine perso → repli `/shops/:id`
+- [x] Contexte `identity` : register / login / refresh (rotation) / logout / me — JWT (jose) + cookies, bcrypt
+- [x] Appartenances `owner|admin|staff|viewer` + guard **CASL** (`@CheckPolicies`) sur les écritures catalogue
+- [x] `AuthGuard` + `TenantGuard` + `PoliciesGuard`
+
 **Suite**
 
-- [ ] Auth (SuperTokens) + résolution du tenant par sous-domaine / domaine perso / en-tête signé
+- [ ] Adaptateur SuperTokens derrière le port de session ; OAuth Google/Facebook ; OTP acheteurs
 - [ ] Recherche Meilisearch (indexation par événement) + upload signé MinIO/imgproxy
 - [ ] CI GitHub Actions + Terraform/Ansible (VPS)
 - [ ] Apps `storefront` / `dashboard` / `admin` (Next.js) + `packages/ui`
