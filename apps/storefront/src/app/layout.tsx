@@ -4,6 +4,7 @@ import './globals.css';
 import { currentShop } from '@/lib/shop';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
+import { PageViewTracker } from '@/components/track-event';
 
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -27,6 +28,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={shop?.locale ?? 'fr'} className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-dvh flex flex-col">
+        {shop ? <PageViewTracker /> : null}
         <SiteHeader shop={shop} />
         <main className="flex-1 w-full mx-auto max-w-6xl px-4 py-6">{children}</main>
         <SiteFooter shop={shop} />

@@ -211,11 +211,20 @@ presentation/    contrôleurs NestJS + validation Zod
   erreurs avalées (notification « au mieux »)
 - [x] `MembershipRepository.listMembers(shopId)` (membres + e-mails)
 
+**Incrément 9 — analytique**
+
+- [x] Contexte `analytics` : table `analytics_events` (RLS par boutique), ingestion par lots
+  (`POST /shops/:id/events`, public) + synthèse SQL (`GET /shops/:id/analytics/summary?days=7|30`)
+- [x] Vitrine : SDK `track()` (session locale) → BFF `/api/ev` ; `page_view`, `product_view`,
+  `search`, `contact_click` (canal : whatsapp / sms / call / message / share)
+- [x] Dashboard : page **Statistiques** (`/s/:id/analytics`) — KPI, visites/jour, contacts par
+  canal, top produits, recherches fréquentes, bascule 7 j / 30 j
+
 **Suite**
 
-- [ ] Notifications WhatsApp / push ; préférences & anti-spam (debounce)
+- [ ] Notifications WhatsApp / push ; préférences & anti-spam
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
-- [ ] `dashboard` : analytique, TanStack Query, Storybook pour `packages/ui`
+- [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `apps/admin` (console plateforme)
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 - [ ] Tests d'intégration (Testcontainers) dans la CI

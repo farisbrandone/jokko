@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { smsLink, telLink, whatsappLink } from '@jokko/ui';
+import { track } from '@/lib/track';
 
 interface Props {
   shopName: string;
@@ -27,6 +28,7 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
   const message = `Bonjour ${shopName}, je suis intéressé(e) par « ${productName} » : ${productUrl}`;
 
   const share = async () => {
+    track('contact_click', { channel: 'share', productId });
     if (navigator.share) {
       try {
         await navigator.share({ title: productName, url: productUrl });
@@ -49,6 +51,7 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message ?? 'Envoi impossible');
+      track('contact_click', { channel: 'message', productId });
       setState({ kind: 'sent', id: data.conversationId, token: data.buyerToken });
     } catch (err) {
       setState({ kind: 'error', msg: (err as Error).message });
@@ -59,7 +62,13 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
         {whatsapp ? (
-          <a href={whatsappLink(whatsapp, message)} target="_blank" rel="noreferrer" className={btnPrimary}>
+          <a
+            href={whatsappLink(whatsapp, message)}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => track('contact_click', { channel: 'whatsapp', productId })}
+            className={btnPrimary}
+          >
             Commander sur WhatsApp
           </a>
         ) : null}
@@ -67,12 +76,20 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
           Envoyer un message
         </button>
         {whatsapp ? (
-          <a href={smsLink(whatsapp, message)} className={btn}>
+          <a
+            href={smsLink(whatsapp, message)}
+            onClick={() => track('contact_click', { channel: 'sms', productId })}
+            className={btn}
+          >
             SMS
           </a>
         ) : null}
         {whatsapp ? (
-          <a href={telLink(whatsapp)} className={btn}>
+          <a
+            href={telLink(whatsapp)}
+            onClick={() => track('contact_click', { channel: 'call', productId })}
+            className={btn}
+          >
             Appeler
           </a>
         ) : null}

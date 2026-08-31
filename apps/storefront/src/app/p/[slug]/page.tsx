@@ -5,6 +5,7 @@ import { formatMoney } from '@jokko/ui';
 import { currentShop } from '@/lib/shop';
 import { getProduct, type ProductView } from '@/lib/api';
 import { ContactBar } from '@/components/contact-bar';
+import { TrackOnMount } from '@/components/track-event';
 import { ShopUnavailable } from '@/components/shop-unavailable';
 
 export const revalidate = 60;
@@ -80,6 +81,7 @@ export default async function ProductPage({ params }: Params) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <TrackOnMount name="product_view" props={{ slug: product.slug, name: product.name }} />
 
       <div className="flex flex-col gap-3">
         <div className="relative aspect-square rounded-[var(--radius-card)] overflow-hidden bg-[var(--color-surface-2)]">

@@ -36,6 +36,12 @@ export default async function ShopPage({ params }: Params) {
         </div>
         <div className="flex gap-2">
           <Link
+            href={`/s/${shopId}/analytics`}
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
+          >
+            Statistiques
+          </Link>
+          <Link
             href={`/s/${shopId}/inbox`}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
           >
