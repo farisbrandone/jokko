@@ -8,6 +8,7 @@ import type {
   MembershipRepository,
   SessionRecord,
   SessionRepository,
+  ShopMemberContact,
   UserRepository,
 } from '../../domain/ports';
 import { ShopEntity } from '../../../shop/infrastructure/persistence/shop.entity';
@@ -86,6 +87,20 @@ export class MikroOrmMembershipRepository implements MembershipRepository {
       slug: slugById.get(r.shopId) ?? '',
       role: r.role,
     }));
+  }
+
+  async listMembers(shopId: string): Promise<ShopMemberContact[]> {
+    const em = this.em.fork();
+    const rows = await em.find(ShopMembershipEntity, { shopId });
+    if (rows.length === 0) return [];
+    const users = await em.find(UserEntity, { id: { $in: rows.map((r) => r.userId) } });
+    const byId = new Map(users.map((u) => [u.id, u]));
+    return rows
+      .map((r) => {
+        const u = byId.get(r.userId);
+        return u ? { userId: r.userId, email: u.email, name: u.name, role: r.role } : null;
+      })
+      .filter((x): x is ShopMemberContact => x !== null);
   }
 
   async find(userId: string, shopId: string): Promise<MembershipRecord | null> {

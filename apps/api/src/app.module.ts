@@ -17,6 +17,7 @@ import { CatalogModule } from './modules/catalog/catalog.module';
 import { SearchModule } from './modules/search/search.module';
 import { MediaModule } from './modules/media/media.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { MessagingModule } from './modules/messaging/messaging.module';
     SearchModule,
     MediaModule,
     MessagingModule,
+    NotificationsModule,
   ],
 })
 export class AppModule implements NestModule {

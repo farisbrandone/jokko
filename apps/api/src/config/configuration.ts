@@ -39,6 +39,11 @@ export interface AppConfig {
     publicBaseUrl: string;
     imgproxyUrl: string;
   };
+  notifications: {
+    smtpUrl: string;
+    from: string;
+    dashboardUrl: string;
+  };
 }
 
 export const buildConfig = (env: Env): AppConfig => ({
@@ -75,5 +80,10 @@ export const buildConfig = (env: Env): AppConfig => ({
     bucket: env.S3_BUCKET,
     publicBaseUrl: env.S3_PUBLIC_URL ?? `${env.S3_ENDPOINT}/${env.S3_BUCKET}`,
     imgproxyUrl: env.IMGPROXY_URL,
+  },
+  notifications: {
+    smtpUrl: env.SMTP_URL,
+    from: env.SMTP_FROM,
+    dashboardUrl: env.DASHBOARD_BASE_URL,
   },
 });

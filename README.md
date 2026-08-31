@@ -203,9 +203,17 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Vitrine : `ContactBar` → formulaire « Envoyer un message » ; page `/m/:id?token=` (fil acheteur)
 - [x] Dashboard : `/s/:id/inbox` (liste filtrable open/closed) + fil + réponse + clôture
 
+**Incrément 8 — notifications e-mail**
+
+- [x] Contexte `notifications` : `Mailer` (nodemailer / SMTP — dev : Mailpit, prod : SES/Postmark…)
+- [x] `NewMessageListener` : `@OnEvent('messaging.message.sent')` → e-mail à tous les membres de la
+  boutique quand un **acheteur** écrit (aperçu du message + lien direct vers le fil du dashboard) ;
+  erreurs avalées (notification « au mieux »)
+- [x] `MembershipRepository.listMembers(shopId)` (membres + e-mails)
+
 **Suite**
 
-- [ ] Notifications sur nouveau message (e-mail / WhatsApp / push) via l'Outbox
+- [ ] Notifications WhatsApp / push ; préférences & anti-spam (debounce)
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
 - [ ] `dashboard` : analytique, TanStack Query, Storybook pour `packages/ui`
 - [ ] `apps/admin` (console plateforme)

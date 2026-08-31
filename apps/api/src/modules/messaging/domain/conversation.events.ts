@@ -10,10 +10,23 @@ export class ConversationStarted extends BaseDomainEvent {
 
 export class MessageSent extends BaseDomainEvent {
   readonly name = 'messaging.message.sent';
-  constructor(shopId: string, conversationId: string, sender: MessageSender) {
-    super(conversationId, shopId, { conversationId, sender }, [
-      `shop:${shopId}:inbox`,
-      `conversation:${conversationId}`,
-    ]);
+  constructor(
+    shopId: string,
+    conversationId: string,
+    sender: MessageSender,
+    context: { preview: string; buyerName: string; productName: string | null },
+  ) {
+    super(
+      conversationId,
+      shopId,
+      {
+        conversationId,
+        sender,
+        preview: context.preview.slice(0, 280),
+        buyerName: context.buyerName,
+        productName: context.productName,
+      },
+      [`shop:${shopId}:inbox`, `conversation:${conversationId}`],
+    );
   }
 }

@@ -20,9 +20,17 @@ export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
 }
 
+export interface ShopMemberContact {
+  userId: string;
+  email: string;
+  name: string;
+  role: ShopRole;
+}
+
 export interface MembershipRepository {
   grant(userId: string, shopId: string, role: ShopRole): Promise<void>;
   listByUser(userId: string): Promise<MembershipRecord[]>;
+  listMembers(shopId: string): Promise<ShopMemberContact[]>;
   find(userId: string, shopId: string): Promise<MembershipRecord | null>;
 }
 

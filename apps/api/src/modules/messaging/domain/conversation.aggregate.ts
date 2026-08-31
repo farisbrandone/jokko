@@ -85,7 +85,13 @@ export class Conversation extends AggregateRoot {
       [{ id: randomUUID(), sender: 'buyer', body: props.firstMessage.trim(), createdAt: now }],
     );
     conv.addDomainEvent(new ConversationStarted(conv.shopId, conv.id.value, conv.buyerName));
-    conv.addDomainEvent(new MessageSent(conv.shopId, conv.id.value, 'buyer'));
+    conv.addDomainEvent(
+      new MessageSent(conv.shopId, conv.id.value, 'buyer', {
+        preview: props.firstMessage.trim(),
+        buyerName: conv.buyerName,
+        productName: conv.productName,
+      }),
+    );
     return Result.ok({ conversation: conv, buyerToken: token });
   }
 
@@ -113,7 +119,13 @@ export class Conversation extends AggregateRoot {
     this._messages.push({ id: randomUUID(), sender, body: trimmed, createdAt: now });
     this._lastMessageAt = now;
     if (sender === 'buyer' && this._status === 'closed') this._status = 'open';
-    this.addDomainEvent(new MessageSent(this.shopId, this.id.value, sender));
+    this.addDomainEvent(
+      new MessageSent(this.shopId, this.id.value, sender, {
+        preview: trimmed,
+        buyerName: this.buyerName,
+        productName: this.productName,
+      }),
+    );
     return Result.ok(undefined);
   }
 

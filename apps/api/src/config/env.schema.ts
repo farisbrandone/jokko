@@ -29,6 +29,10 @@ export const envSchema = z.object({
   S3_PUBLIC_URL: z.string().url().optional(),
   IMGPROXY_URL: z.string().url().default('http://localhost:58080'),
 
+  SMTP_URL: z.string().default('smtp://localhost:51025'),
+  SMTP_FROM: z.string().default('Jokko <no-reply@jokko.shop>'),
+  DASHBOARD_BASE_URL: z.string().url().default('http://localhost:3001'),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),
