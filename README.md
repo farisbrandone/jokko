@@ -68,9 +68,13 @@ curl -s -X POST $API/shops -H "authorization: Bearer $TOKEN" -H 'content-type: a
 curl -s -X POST $API/shops/<shopId>/products -H "authorization: Bearer $TOKEN" -H 'content-type: application/json' \
   -d '{"name":"Frigo Samsung","category":"electronique","price":{"amount":250000}}'
 
-# 4. côté acheteur (public) — la boutique est résolue par sous-domaine,
-#    domaine perso, en-tête signé x-jokko-tenant, ou repli /shops/:id
-curl -s $API/shops/<shopId>/products
+# 4. publier le produit puis (après ~2 s d'indexation) le chercher
+curl -s -X POST $API/shops/<shopId>/products/<productId>/publish -H "authorization: Bearer $TOKEN"
+curl -s "$API/shops/<shopId>/search?q=frigo&sort=price_asc"
+
+# 5. téléverser une image : URL PUT pré-signée puis PUT direct vers l'object store
+curl -s -X POST $API/shops/<shopId>/media/upload-url -H "authorization: Bearer $TOKEN" \
+  -H 'content-type: application/json' -d '{"contentType":"image/webp"}'
 ```
 
 ## Structure
@@ -123,10 +127,20 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Appartenances `owner|admin|staff|viewer` + guard **CASL** (`@CheckPolicies`) sur les écritures catalogue
 - [x] `AuthGuard` + `TenantGuard` + `PoliciesGuard`
 
+**Incrément 3 — recherche & médias**
+
+- [x] Bus d'événements in-process : `OutboxRelay` rejoue les événements vers `EventEmitter2`
+- [x] Contexte `search` : index Meilisearch `products` alimenté par les événements catalogue
+  (l'instantané produit voyage dans l'événement) ; `GET /shops/:id/search` public, à facettes,
+  **strictement borné à la boutique** + `status = published` imposés serveur
+- [x] `POST /shops/:id/products/:id/publish` (rôle `update Product`)
+- [x] Contexte `media` : `POST /shops/:id/media/upload-url` → URL PUT pré-signée (S3/MinIO) +
+  `publicUrl` + helper d'URL imgproxy
+- [x] CLI `pnpm --filter @jokko/api search:reindex` (backfill de l'index)
+
 **Suite**
 
 - [ ] Adaptateur SuperTokens derrière le port de session ; OAuth Google/Facebook ; OTP acheteurs
-- [ ] Recherche Meilisearch (indexation par événement) + upload signé MinIO/imgproxy
 - [ ] CI GitHub Actions + Terraform/Ansible (VPS)
 - [ ] Apps `storefront` / `dashboard` / `admin` (Next.js) + `packages/ui`
 ```

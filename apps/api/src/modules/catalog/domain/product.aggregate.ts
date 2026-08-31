@@ -82,9 +82,7 @@ export class Product extends AggregateRoot {
       now,
       now,
     );
-    product.addDomainEvent(
-      new ProductCreated(product.shopId, product.id.value, product._slug.value),
-    );
+    product.addDomainEvent(new ProductCreated(product.shopId, product.toSnapshot()));
     return Result.ok(product);
   }
 
@@ -120,7 +118,7 @@ export class Product extends AggregateRoot {
     }
     this._status = 'published';
     this.touch();
-    this.addDomainEvent(new ProductPublished(this.shopId, this.id.value, this._slug.value));
+    this.addDomainEvent(new ProductPublished(this.shopId, this.toSnapshot()));
     return Result.ok(undefined);
   }
 

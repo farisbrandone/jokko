@@ -17,7 +17,17 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   DATABASE_ADMIN_URL: z.string().url().optional(),
   REDIS_URL: z.string().url().optional(),
-  MEILI_URL: z.string().url().optional(),
+
+  MEILI_URL: z.string().url().default('http://localhost:57700'),
+  MEILI_MASTER_KEY: z.string().default('jokko_dev_meili_master_key'),
+
+  S3_ENDPOINT: z.string().url().default('http://localhost:59000'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_ACCESS_KEY: z.string().default('jokko'),
+  S3_SECRET_KEY: z.string().default('jokko_dev_secret'),
+  S3_BUCKET: z.string().default('jokko-media'),
+  S3_PUBLIC_URL: z.string().url().optional(),
+  IMGPROXY_URL: z.string().url().default('http://localhost:58080'),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 

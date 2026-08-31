@@ -1,6 +1,7 @@
 import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { buildConfig, type AppConfig } from './config/configuration';
@@ -13,6 +14,8 @@ import { IdentityModule } from './modules/identity/identity.module';
 import { ShopModule } from './modules/shop/shop.module';
 import { TenantMiddleware } from './modules/shop/tenant/tenant.middleware';
 import { CatalogModule } from './modules/catalog/catalog.module';
+import { SearchModule } from './modules/search/search.module';
+import { MediaModule } from './modules/media/media.module';
 
 @Module({
   imports: [
@@ -32,12 +35,15 @@ import { CatalogModule } from './modules/catalog/catalog.module';
         }),
     }),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot({ global: true }),
     LoggerModule,
     TenantModule,
     HealthModule,
     IdentityModule,
     ShopModule,
     CatalogModule,
+    SearchModule,
+    MediaModule,
   ],
 })
 export class AppModule implements NestModule {

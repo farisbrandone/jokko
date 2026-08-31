@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UnprocessableEntityException,
@@ -22,6 +24,7 @@ import { PoliciesGuard } from '../../identity/guards/policies.guard';
 import { CheckPolicies } from '../../identity/authz/check-policies.decorator';
 import { CreateProductUseCase } from '../application/use-cases/create-product.usecase';
 import { ListProductsUseCase } from '../application/use-cases/list-products.usecase';
+import { PublishProductUseCase } from '../application/use-cases/publish-product.usecase';
 
 /**
  * Catalogue borné à la boutique courante (résolue par TenantMiddleware :
@@ -35,6 +38,7 @@ export class CatalogController {
     private readonly tenant: TenantContext,
     private readonly createProduct: CreateProductUseCase,
     private readonly listProducts: ListProductsUseCase,
+    private readonly publishProduct: PublishProductUseCase,
   ) {}
 
   @Post()
@@ -44,6 +48,15 @@ export class CatalogController {
     @Body(new ZodValidationPipe(CreateProductSchema)) body: CreateProductInput,
   ) {
     const result = await this.createProduct.execute(this.tenant.getShopId(), body);
+    if (result.isErr) throw new UnprocessableEntityException(result.getError());
+    return result.unwrap();
+  }
+
+  @Post(':productId/publish')
+  @UseGuards(TenantGuard, AuthGuard, PoliciesGuard)
+  @CheckPolicies((ability) => ability.can('update', 'Product'))
+  async publish(@Param('productId', ParseUUIDPipe) productId: string) {
+    const result = await this.publishProduct.execute(this.tenant.getShopId(), productId);
     if (result.isErr) throw new UnprocessableEntityException(result.getError());
     return result.unwrap();
   }

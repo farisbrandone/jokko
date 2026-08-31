@@ -28,6 +28,6 @@ route) est maintenu comme document visuel :
 - **0 — Fondations** ✅ : monorepo, `domain-kernel`, `contracts`, API qui démarre, contexte `catalog`, infra Docker locale.
 - **1 — Persistance** ✅ : MikroORM + PostgreSQL + migrations + RLS (rôle applicatif restreint) ; Outbox transactionnel + relais ; repo `catalog` réel ; isolation vérifiée API + base.
 - **2 — Tenant & Auth** ✅ : contexte `shop` (création en un clic) ; résolution du tenant (en-tête HMAC → sous-domaine → domaine perso → chemin) ; contexte `identity` (register/login/refresh rotatif/logout/me, JWT + cookies, bcrypt) ; appartenances + guard CASL sur les écritures. SuperTokens/OAuth/OTP = adaptateurs à venir derrière le port de session.
-- **3 — Recherche & Médias** : indexation Meilisearch par événement ; upload signé MinIO + imgproxy.
+- **3 — Recherche & Médias** ✅ : bus d'événements (Outbox → EventEmitter2) ; index Meilisearch `products` alimenté par événement, recherche à facettes bornée à la boutique ; publication produit ; upload S3/MinIO pré-signé + URLs imgproxy ; CLI de réindexation.
 - **4 — Frontend** : `packages/ui` (tokens + Storybook) ; `storefront` (RSC/ISR, PWA, facettes, deep links WhatsApp) ; `dashboard` (onboarding, CRUD catalogue).
 - **5 — CI/CD & VPS** : GitHub Actions ; Terraform (VPS + Cloudflare) ; Ansible (bootstrap hôte) ; Dokploy.

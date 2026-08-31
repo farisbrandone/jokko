@@ -26,6 +26,19 @@ export interface AppConfig {
     refreshTtlDays: number;
     cookieDomain?: string;
   };
+  search: {
+    url: string;
+    apiKey: string;
+  };
+  media: {
+    s3Endpoint: string;
+    region: string;
+    accessKey: string;
+    secretKey: string;
+    bucket: string;
+    publicBaseUrl: string;
+    imgproxyUrl: string;
+  };
 }
 
 export const buildConfig = (env: Env): AppConfig => ({
@@ -49,5 +62,18 @@ export const buildConfig = (env: Env): AppConfig => ({
     accessTtlMin: env.AUTH_ACCESS_TTL_MIN,
     refreshTtlDays: env.AUTH_REFRESH_TTL_DAYS,
     cookieDomain: env.AUTH_COOKIE_DOMAIN,
+  },
+  search: {
+    url: env.MEILI_URL,
+    apiKey: env.MEILI_MASTER_KEY,
+  },
+  media: {
+    s3Endpoint: env.S3_ENDPOINT,
+    region: env.S3_REGION,
+    accessKey: env.S3_ACCESS_KEY,
+    secretKey: env.S3_SECRET_KEY,
+    bucket: env.S3_BUCKET,
+    publicBaseUrl: env.S3_PUBLIC_URL ?? `${env.S3_ENDPOINT}/${env.S3_BUCKET}`,
+    imgproxyUrl: env.IMGPROXY_URL,
   },
 });

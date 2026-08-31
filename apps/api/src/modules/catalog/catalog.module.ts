@@ -5,6 +5,7 @@ import { ShopModule } from '../shop/shop.module';
 import { CatalogController } from './presentation/catalog.controller';
 import { CreateProductUseCase } from './application/use-cases/create-product.usecase';
 import { ListProductsUseCase } from './application/use-cases/list-products.usecase';
+import { PublishProductUseCase } from './application/use-cases/publish-product.usecase';
 import { PRODUCT_REPOSITORY } from './domain/ports/product.repository';
 import { ProductEntity } from './infrastructure/persistence/product.entity';
 import { MikroOrmProductRepository } from './infrastructure/persistence/mikro-orm-product.repository';
@@ -21,6 +22,7 @@ import { OutboxRelay } from './infrastructure/outbox/outbox.relay';
   providers: [
     CreateProductUseCase,
     ListProductsUseCase,
+    PublishProductUseCase,
     OutboxRelay,
     { provide: PRODUCT_REPOSITORY, useClass: MikroOrmProductRepository },
   ],
