@@ -5,3 +5,4 @@ export * from './membership';
 export * from './auth';
 export * from './search';
 export * from './media';
+export * from './messaging';

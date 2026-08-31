@@ -130,6 +130,7 @@ export default async function ProductPage({ params }: Params) {
         <ContactBar
           shopName={shop.name}
           whatsapp={shop.whatsapp}
+          productId={product.id}
           productName={product.name}
           productUrl={url}
         />

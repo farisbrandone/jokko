@@ -193,10 +193,21 @@ presentation/    contrôleurs NestJS + validation Zod
   (Docker, UFW, fail2ban, MAJ auto, utilisateur `deploy`)
 - [x] Runbook : [`infra/README.md`](infra/README.md)
 
+**Incrément 7 — messagerie acheteur ↔ vendeur**
+
+- [x] Contexte `messaging` : agrégat `Conversation` (+ messages), RLS par boutique, Outbox
+- [x] API acheteur (public, vitrine) : `POST /shops/:id/conversations` → `{ conversationId, buyerToken }` ;
+  suivi du fil et réponses par **jeton** (sans compte)
+- [x] API vendeur (membre) : `GET /shops/:id/inbox`, `GET/POST …/:id`, `POST …/:id/close`
+  (CASL `read` / `update` `Message`)
+- [x] Vitrine : `ContactBar` → formulaire « Envoyer un message » ; page `/m/:id?token=` (fil acheteur)
+- [x] Dashboard : `/s/:id/inbox` (liste filtrable open/closed) + fil + réponse + clôture
+
 **Suite**
 
+- [ ] Notifications sur nouveau message (e-mail / WhatsApp / push) via l'Outbox
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
-- [ ] `dashboard` : messagerie (inbox), analytique, TanStack Query, Storybook pour `packages/ui`
+- [ ] `dashboard` : analytique, TanStack Query, Storybook pour `packages/ui`
 - [ ] `apps/admin` (console plateforme)
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 - [ ] Tests d'intégration (Testcontainers) dans la CI

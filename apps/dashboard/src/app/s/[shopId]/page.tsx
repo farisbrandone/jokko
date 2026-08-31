@@ -34,12 +34,20 @@ export default async function ShopPage({ params }: Params) {
             {membership.slug}
           </h1>
         </div>
-        <Link
-          href={`/s/${shopId}/products/new`}
-          className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
-        >
-          Ajouter un produit
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href={`/s/${shopId}/inbox`}
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
+          >
+            Boîte de réception
+          </Link>
+          <Link
+            href={`/s/${shopId}/products/new`}
+            className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
+          >
+            Ajouter un produit
+          </Link>
+        </div>
       </div>
 
       {products.items.length === 0 ? (

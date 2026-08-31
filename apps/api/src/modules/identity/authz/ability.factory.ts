@@ -2,7 +2,7 @@ import { AbilityBuilder, createMongoAbility, type MongoAbility } from '@casl/abi
 import type { ShopRole } from '@jokko/contracts';
 
 export type Action = 'manage' | 'create' | 'read' | 'update' | 'delete';
-export type Subject = 'Shop' | 'Product' | 'Order' | 'Member' | 'all';
+export type Subject = 'Shop' | 'Product' | 'Order' | 'Message' | 'Member' | 'all';
 export type AppAbility = MongoAbility<[Action, Subject]>;
 
 /**
@@ -20,6 +20,7 @@ export function abilityForRole(role: ShopRole): AppAbility {
     case 'staff':
       can('manage', 'Product');
       can('manage', 'Order');
+      can('manage', 'Message');
       can('read', 'Shop');
       break;
     case 'viewer':
