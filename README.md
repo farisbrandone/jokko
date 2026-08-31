@@ -29,8 +29,25 @@ pnpm install
 cp .env.example .env          # ajuster si besoin
 pnpm infra:up                 # postgres, redis, meilisearch, minio, imgproxy, mailpit
 
-pnpm dev:api                  # API sur http://localhost:3333/api  (docs: /docs)
+pnpm --filter @jokko/api db:migrate   # applique les migrations SQL
+pnpm dev:api                          # API sur http://localhost:3333/api  (docs: /docs)
 ```
+
+### Base de données
+
+- **Deux rôles Postgres** : `jokko` (propriétaire, superuser — migrations et admin,
+  `DATABASE_ADMIN_URL`) et `jokko_app` (non-superuser, non-bypassrls — l'API,
+  `DATABASE_URL`). Le rôle applicatif restreint est ce qui rend la Row-Level
+  Security effective.
+- **Isolation multi-tenant** : chaque table locataire porte `shop_id` ; une
+  transaction pose `set_config('app.current_shop_id', …)` et la politique RLS
+  `catalog_products_tenant_isolation` filtre lecture **et** écriture. Le filtre
+  MikroORM `tenant` double la protection au niveau ORM.
+- **Migrations** : `apps/api/src/migrations/*.ts` (MikroORM Migrator), lancées par
+  `pnpm --filter @jokko/api db:migrate`.
+- **Outbox** : les événements métier sont écrits dans `outbox_messages` dans la
+  même transaction que l'agrégat ; `OutboxRelay` (toutes les 2 s) les publie et
+  les marque traités.
 
 Vérifs rapides :
 
@@ -66,15 +83,28 @@ infrastructure/  adaptateurs (persistance, index, API tierces)
 presentation/    contrôleurs NestJS + validation Zod
 ```
 
-## État — Incrément 0 (fondations)
+## État
+
+**Incrément 0 — fondations**
 
 - [x] Monorepo pnpm + Nx, TypeScript strict, ESLint/Prettier
 - [x] `domain-kernel` + `contracts`
 - [x] API NestJS/Fastify qui démarre : config validée par Zod, logs Pino, `/healthz` + `/readyz`, Swagger `/docs`
-- [x] Contexte `catalog` de bout en bout (repo **en mémoire** pour l'instant)
+- [x] Contexte `catalog` hexagonal de bout en bout
 - [x] Infra locale Docker (Postgres 16, Redis 7, Meilisearch, MinIO, imgproxy, Mailpit)
-- [ ] Persistance MikroORM + PostgreSQL + RLS multi-tenant _(incrément suivant)_
-- [ ] Auth (SuperTokens) + middleware de résolution du tenant
+
+**Incrément 1 — persistance**
+
+- [x] MikroORM + PostgreSQL, migrations SQL (Migrator)
+- [x] Repository `catalog` réel (RLS + filtre ORM), rôle applicatif restreint
+- [x] Isolation multi-tenant vérifiée au niveau **API et base** (lecture + écriture)
+- [x] Transactional Outbox + `OutboxRelay`
+- [x] `/readyz` sonde la base
+
+**Suite**
+
+- [ ] Auth (SuperTokens) + résolution du tenant par sous-domaine / domaine perso / en-tête signé
+- [ ] Recherche Meilisearch (indexation par événement) + upload signé MinIO/imgproxy
 - [ ] CI GitHub Actions + Terraform/Ansible (VPS)
 - [ ] Apps `storefront` / `dashboard` / `admin` (Next.js) + `packages/ui`
 ```

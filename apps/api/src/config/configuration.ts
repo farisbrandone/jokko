@@ -12,6 +12,9 @@ export interface AppConfig {
     globalPrefix: string;
     corsOrigins: string[];
   };
+  database: {
+    url: string;
+  };
   logLevel: Env['LOG_LEVEL'];
   tenant: {
     rootDomain: string;
@@ -26,6 +29,9 @@ export const buildConfig = (env: Env): AppConfig => ({
     host: env.API_HOST,
     globalPrefix: env.API_GLOBAL_PREFIX,
     corsOrigins: env.API_CORS_ORIGINS,
+  },
+  database: {
+    url: env.DATABASE_URL,
   },
   logLevel: env.LOG_LEVEL,
   tenant: {

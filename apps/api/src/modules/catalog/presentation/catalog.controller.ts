@@ -7,8 +7,10 @@ import {
   Post,
   Query,
   UnprocessableEntityException,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
+import { TenantInterceptor } from '../../../shared/tenant/tenant.interceptor';
 import {
   CreateProductSchema,
   PaginationQuerySchema,
@@ -25,6 +27,7 @@ import { ListProductsUseCase } from '../application/use-cases/list-products.usec
  * signé) le fournira automatiquement à l'incrément dédié au multi-tenant.
  */
 @ApiTags('catalog')
+@UseInterceptors(TenantInterceptor)
 @Controller('shops/:shopId/products')
 export class CatalogController {
   constructor(

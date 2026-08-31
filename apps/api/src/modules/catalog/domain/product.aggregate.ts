@@ -88,6 +88,31 @@ export class Product extends AggregateRoot {
     return Result.ok(product);
   }
 
+  /** Reconstruit un agrégat depuis un état persisté, sans émettre d'événement. */
+  static restore(snap: ProductSnapshot): Product {
+    const price = Money.create(snap.price.amount, snap.price.currency).unwrap();
+    const compareAt = snap.compareAtPrice
+      ? Money.create(snap.compareAtPrice.amount, snap.compareAtPrice.currency).unwrap()
+      : null;
+    const slug = Slug.fromString(snap.slug).unwrap();
+    return new Product(
+      UniqueId.create(snap.id),
+      snap.shopId,
+      slug,
+      snap.name,
+      snap.description,
+      snap.category,
+      price,
+      compareAt,
+      snap.stock,
+      [...snap.images],
+      { ...snap.attributes },
+      snap.status,
+      new Date(snap.createdAt),
+      new Date(snap.updatedAt),
+    );
+  }
+
   publish(): Result<void> {
     if (this._status === 'published') return Result.ok(undefined);
     if (this._images.length === 0) {

@@ -25,9 +25,9 @@ route) est maintenu comme document visuel :
 
 ## Incréments de mise en place
 
-- **0 — Fondations** _(en cours)_ : monorepo, `domain-kernel`, `contracts`, API qui démarre, contexte `catalog` en mémoire, infra Docker locale.
-- **1 — Persistance** : MikroORM + PostgreSQL + migrations + RLS ; Outbox transactionnel ; repo `catalog` réel.
-- **2 — Tenant & Auth** : SuperTokens ; middleware de résolution du tenant (sous-domaine / domaine perso / en-tête signé) ; CASL.
+- **0 — Fondations** ✅ : monorepo, `domain-kernel`, `contracts`, API qui démarre, contexte `catalog`, infra Docker locale.
+- **1 — Persistance** ✅ : MikroORM + PostgreSQL + migrations + RLS (rôle applicatif restreint) ; Outbox transactionnel + relais ; repo `catalog` réel ; isolation vérifiée API + base.
+- **2 — Tenant & Auth** : SuperTokens ; résolution du tenant (sous-domaine / domaine perso / en-tête signé) ; CASL.
 - **3 — Recherche & Médias** : indexation Meilisearch par événement ; upload signé MinIO + imgproxy.
 - **4 — Frontend** : `packages/ui` (tokens + Storybook) ; `storefront` (RSC/ISR, PWA, facettes, deep links WhatsApp) ; `dashboard` (onboarding, CRUD catalogue).
 - **5 — CI/CD & VPS** : GitHub Actions ; Terraform (VPS + Cloudflare) ; Ansible (bootstrap hôte) ; Dokploy.

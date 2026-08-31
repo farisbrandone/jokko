@@ -14,7 +14,8 @@ export const envSchema = z.object({
   API_GLOBAL_PREFIX: z.string().default('api'),
   API_CORS_ORIGINS: z.string().default('http://localhost:3000').transform(csv),
 
-  DATABASE_URL: z.string().url().optional(),
+  DATABASE_URL: z.string().url(),
+  DATABASE_ADMIN_URL: z.string().url().optional(),
   REDIS_URL: z.string().url().optional(),
   MEILI_URL: z.string().url().optional(),
 
