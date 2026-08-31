@@ -1,0 +1,118 @@
+---
+# Bootstrap d'un VPS Ubuntu 24.04 pour héberger Jokko.
+#   ansible-playbook -i inventory.ini playbook.yml
+- hosts: jokko
+  become: true
+  vars:
+    docker_compose_version: v2.35.1
+
+  tasks:
+    - name: Mise à jour de l'index apt
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Paquets de base
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - git
+          - ufw
+          - fail2ban
+          - unattended-upgrades
+        state: present
+
+    - name: Mises à jour de sécurité automatiques
+      copy:
+        dest: /etc/apt/apt.conf.d/20auto-upgrades
+        content: |
+          APT::Periodic::Update-Package-Lists "1";
+          APT::Periodic::Unattended-Upgrade "1";
+
+    # --- Docker (dépôt officiel) -----------------------------------------
+    - name: Clé GPG Docker
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        keyring: /etc/apt/keyrings/docker.gpg
+        state: present
+
+    - name: Dépôt Docker
+      apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        filename: docker
+
+    - name: Docker Engine + plugin Compose
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+    - name: Service Docker actif
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+
+    # --- Utilisateur de déploiement ------------------------------------
+    - name: Utilisateur de déploiement
+      user:
+        name: "{{ deploy_user }}"
+        groups: docker
+        shell: /bin/bash
+        create_home: true
+
+    - name: Répertoire applicatif
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: "{{ deploy_user }}"
+        group: "{{ deploy_user }}"
+
+    - name: Clonage / mise à jour du dépôt (fichiers infra/)
+      become_user: "{{ deploy_user }}"
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: "{{ repo_branch }}"
+        update: true
+
+    # --- Pare-feu -----------------------------------------------------
+    - name: UFW — politique par défaut
+      ufw:
+        direction: "{{ item.dir }}"
+        policy: "{{ item.policy }}"
+      loop:
+        - { dir: incoming, policy: deny }
+        - { dir: outgoing, policy: allow }
+
+    - name: UFW — ports autorisés
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: ['22', '80', '443']
+
+    - name: UFW — actif
+      ufw:
+        state: enabled
+
+    - name: fail2ban actif
+      systemd:
+        name: fail2ban
+        enabled: true
+        state: started
+
+  post_tasks:
+    - name: Rappel
+      debug:
+        msg: >
+          VPS prêt. Sur le serveur : `cd {{ app_dir }}/infra/docker`,
+          `cp .env.prod.example .env` (compléter), `docker login ghcr.io`,
+          puis `docker compose -f compose.prod.yaml --profile tools run --rm minio-setup`
+          et `docker compose -f compose.prod.yaml up -d`.

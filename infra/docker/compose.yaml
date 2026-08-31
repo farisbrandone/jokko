@@ -14,6 +14,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-jokko}
       POSTGRES_USER: ${POSTGRES_USER:-jokko}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jokko_dev_pwd}
+      JOKKO_APP_PASSWORD: ${JOKKO_APP_PASSWORD:-jokko_app_dev_pwd}
     ports:
       - '55432:5432'
     volumes:

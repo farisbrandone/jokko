@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/.next
+**/.nx
+**/coverage
+**/.turbo
+**/*.log
+**/*.tsbuildinfo
+**/.env
+**/.env.*
+!**/.env.example
+.git
+infra/docker/.data
+infra/**/*.tfstate*
+infra/**/.terraform

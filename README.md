@@ -179,11 +179,25 @@ presentation/    contrôleurs NestJS + validation Zod
   - `/s/:id` : table produits (statut, prix, stock) + publier / dépublier
   - éditeur produit (création + édition) avec **téléversement d'images via URL PUT pré-signée**
 
+**Incrément 6 — CI/CD &amp; déploiement VPS**
+
+- [x] `Dockerfile` multi-stage : `infra/docker/api.Dockerfile` (NestJS → `pnpm deploy`, ~240 Mo)
+  et `infra/docker/next.Dockerfile` (sortie `standalone`, param. `--build-arg APP=`)
+- [x] `infra/docker/compose.prod.yaml` : caddy, api, storefront, dashboard, postgres, redis,
+  meilisearch, minio, imgproxy (+ profils `tools` : `api-migrate`, `minio-setup`)
+- [x] `infra/caddy/Caddyfile` prod : TLS auto, `*.jokko.shop`, **on-demand TLS** pour les
+  domaines personnalisés — autorisé par `GET /api/internal/tls-authorize`
+- [x] GitHub Actions : `ci.yml` (typecheck + lint + tests + build), `release.yml`
+  (build + push GHCR des 3 images, puis `ssh → pull → migrate → up -d`)
+- [x] `infra/terraform/` (VPS Hetzner + DNS Cloudflare) et `infra/ansible/playbook.yml`
+  (Docker, UFW, fail2ban, MAJ auto, utilisateur `deploy`)
+- [x] Runbook : [`infra/README.md`](infra/README.md)
+
 **Suite**
 
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
 - [ ] `dashboard` : messagerie (inbox), analytique, TanStack Query, Storybook pour `packages/ui`
 - [ ] `apps/admin` (console plateforme)
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
-- [ ] CI GitHub Actions + Terraform/Ansible (VPS)
+- [ ] Tests d'intégration (Testcontainers) dans la CI
 ```

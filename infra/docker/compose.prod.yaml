@@ -1,0 +1,182 @@
+# Déploiement Jokko sur un VPS unique.
+#   cp .env.prod.example .env  (et compléter)  puis :
+#   docker compose -f compose.prod.yaml pull
+#   docker compose -f compose.prod.yaml run --rm api-migrate
+#   docker compose -f compose.prod.yaml up -d
+#
+# Cloudflare est devant pour *.jokko.shop (proxied). Les domaines personnalisés
+# des boutiques pointent en CNAME vers cname.jokko.shop → Caddy (on-demand TLS).
+
+name: jokko
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+      - '443:443/udp'
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      ACME_EMAIL: ${ACME_EMAIL}
+    depends_on:
+      - api
+      - storefront
+      - dashboard
+    networks: [edge, internal]
+
+  api:
+    image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-api:${IMAGE_TAG:-latest}
+    restart: always
+    env_file: [.env]
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      meilisearch: { condition: service_started }
+      minio: { condition: service_healthy }
+    networks: [internal]
+
+  # Migrations : conteneur éphémère lancé avant `up -d`.
+  api-migrate:
+    image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-api:${IMAGE_TAG:-latest}
+    command: ['node', 'dist/cli/migrate.js']
+    env_file: [.env]
+    environment:
+      NODE_ENV: production
+    depends_on:
+      postgres: { condition: service_healthy }
+    restart: 'no'
+    networks: [internal]
+    profiles: [tools]
+
+  storefront:
+    image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-storefront:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      JOKKO_API_URL: http://api:3333/api
+      NEXT_PUBLIC_SITE_URL: ${STOREFRONT_PUBLIC_URL}
+      SHOP_ROOT_DOMAIN: ${SHOP_ROOT_DOMAIN:-jokko.shop}
+    depends_on:
+      api: { condition: service_started }
+    networks: [internal]
+
+  dashboard:
+    image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-dashboard:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      JOKKO_API_URL: http://api:3333/api
+    depends_on:
+      api: { condition: service_started }
+    networks: [internal]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JOKKO_APP_PASSWORD: ${JOKKO_APP_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks: [internal]
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 3s
+      retries: 15
+    networks: [internal]
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: always
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY}
+      MEILI_ENV: production
+      MEILI_NO_ANALYTICS: 'true'
+    volumes:
+      - meili_data:/meili_data
+    networks: [internal]
+
+  minio:
+    image: minio/minio:latest
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY}
+      MINIO_API_CORS_ALLOW_ORIGIN: ${DASHBOARD_PUBLIC_URL}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 10s
+      timeout: 5s
+      retries: 15
+    networks: [internal]
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio: { condition: service_healthy }
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 ${S3_ACCESS_KEY} ${S3_SECRET_KEY};
+      mc mb -p local/${S3_BUCKET:-jokko-media};
+      mc anonymous set download local/${S3_BUCKET:-jokko-media};
+      "
+    restart: 'no'
+    networks: [internal]
+    profiles: [tools]
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    restart: always
+    environment:
+      IMGPROXY_ENABLE_WEBP_DETECTION: 'true'
+      IMGPROXY_ENABLE_AVIF_DETECTION: 'true'
+      IMGPROXY_USE_S3: 'true'
+      IMGPROXY_S3_ENDPOINT: http://minio:9000
+      IMGPROXY_S3_REGION: ${S3_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+      IMGPROXY_KEY: ${IMGPROXY_KEY}
+      IMGPROXY_SALT: ${IMGPROXY_SALT}
+    networks: [internal]
+
+networks:
+  edge:
+  internal:
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pg_data:
+  redis_data:
+  meili_data:
+  minio_data:

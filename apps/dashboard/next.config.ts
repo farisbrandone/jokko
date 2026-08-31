@@ -1,6 +1,12 @@
 import type { NextConfig } from 'next';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const monorepoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
+  outputFileTracingRoot: monorepoRoot,
   transpilePackages: ['@jokko/contracts', '@jokko/ui'],
   images: {
     remotePatterns: [
