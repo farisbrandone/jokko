@@ -12,7 +12,13 @@ export function buildMikroOrmConfig(opts: MikroOrmFactoryOptions) {
   // Globs absolus → indépendants du cwd (nest lancé depuis la racine du monorepo).
   const root = join(__dirname, '..');
 
+  // Déterministe : si ce fichier est du `.js`, on tourne sur le build compilé → globs `.js`.
+  // Évite l'heuristique `detectTsNode()` de MikroORM (qui se déclenche à tort sous Vitest
+  // via `process.env.VITEST` et sélectionne alors le glob `*.entity.ts`).
+  const preferTs = __filename.endsWith('.ts');
+
   return defineConfig({
+    preferTs,
     clientUrl: opts.clientUrl,
     entities: [`${root}/**/*.entity.js`],
     entitiesTs: [`${root}/**/*.entity.ts`],

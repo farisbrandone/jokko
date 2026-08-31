@@ -41,3 +41,28 @@ jobs:
         run: pnpm -r run build
         env:
           NEXT_TELEMETRY_DISABLED: '1'
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm run build:packages
+
+      # Testcontainers : Docker est préinstallé sur les runners ubuntu-latest.
+      # `pretest:int` compile l'API ; le harness démarre Postgres + Meilisearch.
+      - name: Integration tests (Testcontainers)
+        run: pnpm --filter @jokko/api run test:int
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: 'true'

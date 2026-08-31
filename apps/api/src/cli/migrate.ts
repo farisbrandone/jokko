@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { MikroORM } from '@mikro-orm/postgresql';
 
 function loadEnv(): void {
+  if (process.env.SKIP_DOTENV === '1') return;
   for (const candidate of ['.env', '../../.env']) {
     try {
       if (existsSync(candidate)) process.loadEnvFile(candidate);

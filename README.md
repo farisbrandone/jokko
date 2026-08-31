@@ -188,7 +188,8 @@ presentation/    contrôleurs NestJS + validation Zod
   meilisearch, minio, imgproxy (+ profils `tools` : `api-migrate`, `minio-setup`)
 - [x] `infra/caddy/Caddyfile` prod : TLS auto, `*.jokko.shop`, **on-demand TLS** pour les
   domaines personnalisés — autorisé par `GET /api/internal/tls-authorize`
-- [x] GitHub Actions : `ci.yml` (typecheck + lint + tests + build), `release.yml`
+- [x] GitHub Actions : `ci.yml` (job `check` : typecheck + lint + tests unitaires + build ;
+  job `integration` : Testcontainers), `release.yml`
   (build + push GHCR des 3 images, puis `ssh → pull → migrate → up -d`)
 - [x] `infra/terraform/` (VPS Hetzner + DNS Cloudflare) et `infra/ansible/playbook.yml`
   (Docker, UFW, fail2ban, MAJ auto, utilisateur `deploy`)
@@ -231,6 +232,19 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] `apps/admin` Next.js 15 (port 3002) : `/login` (réservé aux admins), `/` (KPI plateforme),
   `/shops` (liste, recherche, suspendre / réactiver) — image + service prod + route Caddi `console.jokko.shop`
 
+**Incrément 11 — tests d'intégration bout-en-bout**
+
+- [x] `apps/api/test/harness.ts` : Testcontainers (Postgres 16 + Meilisearch v1.12), rôle
+  applicatif `jokko_app` (`NOSUPERUSER NOBYPASSRLS`), migrations via la CLI compilée
+  (`dist/cli/migrate.js`), app Nest démarrée depuis `dist/` (métadonnées de décorateur émises
+  par `tsc`, pas de dépendance SWC)
+- [x] `apps/api/test/platform.int.spec.ts` : auth (rotation refresh), isolation multi-tenant
+  (RLS liste + recherche + écriture inter-boutiques refusée), catalogue → Outbox → Meilisearch,
+  messagerie acheteur ↔ vendeur, analytique
+- [x] `mikro-orm.config.ts` : `preferTs` déterministe (extension du fichier) — neutralise
+  `detectTsNode()` qui se déclenchait à tort sous Vitest
+- [x] `pnpm --filter @jokko/api test:int` (`pretest:int` = `build`) ; job CI `integration` dédié
+
 **Suite**
 
 - [ ] Notifications WhatsApp / push ; préférences & anti-spam
@@ -238,5 +252,4 @@ presentation/    contrôleurs NestJS + validation Zod
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : file de modération (produits / messages signalés), impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
-- [ ] Tests d'intégration (Testcontainers) dans la CI
 ```
