@@ -83,6 +83,14 @@ resource "cloudflare_record" "dashboard" {
   proxied = true
 }
 
+resource "cloudflare_record" "console" {
+  zone_id = var.cloudflare_zone_id
+  name    = "console"
+  type    = "A"
+  content = local.ipv4
+  proxied = true
+}
+
 # Cible des CNAME pour les domaines personnalisés des boutiques :
 # joignable en direct (DNS-only) pour laisser Caddy émettre le certificat.
 resource "cloudflare_record" "cname_target" {

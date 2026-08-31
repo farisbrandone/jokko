@@ -14,6 +14,7 @@ export interface AppConfig {
   };
   database: {
     url: string;
+    adminUrl: string;
   };
   logLevel: Env['LOG_LEVEL'];
   tenant: {
@@ -56,6 +57,7 @@ export const buildConfig = (env: Env): AppConfig => ({
   },
   database: {
     url: env.DATABASE_URL,
+    adminUrl: env.DATABASE_ADMIN_URL ?? env.DATABASE_URL,
   },
   logLevel: env.LOG_LEVEL,
   tenant: {

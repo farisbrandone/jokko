@@ -7,3 +7,4 @@ export * from './search';
 export * from './media';
 export * from './messaging';
 export * from './analytics';
+export * from './admin';

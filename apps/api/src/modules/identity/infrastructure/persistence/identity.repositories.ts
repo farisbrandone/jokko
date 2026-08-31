@@ -52,6 +52,7 @@ export class MikroOrmUserRepository implements UserRepository {
       email: e.email,
       name: e.name,
       passwordHash: e.passwordHash,
+      isPlatformAdmin: e.isPlatformAdmin,
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
     });

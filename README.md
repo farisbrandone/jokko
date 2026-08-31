@@ -84,6 +84,7 @@ apps/
   api/            NestJS (Fastify) — architecture hexagonale par contexte
   storefront/     Next.js 15 — vitrine publique par boutique (RSC/ISR)
   dashboard/      Next.js 15 — back-office vendeur (BFF, jetons côté serveur)
+  admin/          Next.js 15 — console plateforme opérateur
 packages/
   domain-kernel/  primitives DDD (Result, Entity, AggregateRoot, ValueObject, DomainEvent)
   contracts/      schémas Zod partagés backend / frontend
@@ -220,12 +221,22 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Dashboard : page **Statistiques** (`/s/:id/analytics`) — KPI, visites/jour, contacts par
   canal, top produits, recherches fréquentes, bascule 7 j / 30 j
 
+**Incrément 10 — console plateforme (`apps/admin`)**
+
+- [x] `users.is_platform_admin` + `PlatformAdminGuard` + CLI `pnpm --filter @jokko/api make-admin <email>`
+- [x] `SessionUser.isPlatformAdmin` exposé par `/auth/me`
+- [x] API `modules/admin` (pool `pg` dédié sur `DATABASE_ADMIN_URL`, lecture transverse hors RLS) :
+  `GET /admin/overview`, `GET /admin/shops?q=`, `POST /admin/shops/:id/status` (active / suspended)
+- [x] Boutique suspendue → `GET /shops/:slug` renvoie 404 (plus servie par la vitrine)
+- [x] `apps/admin` Next.js 15 (port 3002) : `/login` (réservé aux admins), `/` (KPI plateforme),
+  `/shops` (liste, recherche, suspendre / réactiver) — image + service prod + route Caddi `console.jokko.shop`
+
 **Suite**
 
 - [ ] Notifications WhatsApp / push ; préférences & anti-spam
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
-- [ ] `apps/admin` (console plateforme)
+- [ ] `admin` : file de modération (produits / messages signalés), impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 - [ ] Tests d'intégration (Testcontainers) dans la CI
 ```

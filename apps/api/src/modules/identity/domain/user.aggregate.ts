@@ -5,6 +5,7 @@ export interface UserSnapshot {
   email: string;
   name: string;
   passwordHash: string;
+  isPlatformAdmin: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -15,6 +16,7 @@ export class User extends AggregateRoot {
     private _email: string,
     private _name: string,
     private _passwordHash: string,
+    private readonly _isPlatformAdmin: boolean,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
   ) {
@@ -35,6 +37,7 @@ export class User extends AggregateRoot {
         props.email.trim().toLowerCase(),
         props.name.trim(),
         props.passwordHash,
+        false,
         now,
         now,
       ),
@@ -47,6 +50,7 @@ export class User extends AggregateRoot {
       snap.email,
       snap.name,
       snap.passwordHash,
+      snap.isPlatformAdmin,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
     );
@@ -61,6 +65,9 @@ export class User extends AggregateRoot {
   get passwordHash(): string {
     return this._passwordHash;
   }
+  get isPlatformAdmin(): boolean {
+    return this._isPlatformAdmin;
+  }
 
   toSnapshot(): UserSnapshot {
     return {
@@ -68,6 +75,7 @@ export class User extends AggregateRoot {
       email: this._email,
       name: this._name,
       passwordHash: this._passwordHash,
+      isPlatformAdmin: this._isPlatformAdmin,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),
     };

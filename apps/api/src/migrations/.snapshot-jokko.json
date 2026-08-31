@@ -1567,6 +1567,22 @@
           "comment": null,
           "enumItems": [],
           "mappedType": "datetime"
+        },
+        "is_platform_admin": {
+          "name": "is_platform_admin",
+          "type": "bool",
+          "unsigned": false,
+          "autoincrement": false,
+          "primary": false,
+          "nullable": false,
+          "unique": false,
+          "length": null,
+          "precision": null,
+          "scale": null,
+          "default": "false",
+          "comment": null,
+          "enumItems": [],
+          "mappedType": "boolean"
         }
       },
       "name": "users",

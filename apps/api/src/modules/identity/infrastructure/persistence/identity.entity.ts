@@ -16,6 +16,9 @@ export class UserEntity {
   @Property({ type: 'string', length: 255, fieldName: 'password_hash' })
   passwordHash!: string;
 
+  @Property({ type: 'boolean', fieldName: 'is_platform_admin' })
+  isPlatformAdmin = false;
+
   @Property({ type: 'datetime', fieldName: 'created_at' })
   createdAt: Date = new Date();
 

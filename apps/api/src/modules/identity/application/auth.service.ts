@@ -100,6 +100,7 @@ export class AuthService {
       id: user.id.value,
       email: user.email,
       name: user.name,
+      isPlatformAdmin: user.isPlatformAdmin,
       memberships: memberships.map((m) => ({ shopId: m.shopId, slug: m.slug, role: m.role })),
     };
   }

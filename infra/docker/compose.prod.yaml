@@ -27,6 +27,7 @@ services:
       - api
       - storefront
       - dashboard
+      - admin
     networks: [edge, internal]
 
   api:
@@ -71,6 +72,18 @@ services:
 
   dashboard:
     image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-dashboard:${IMAGE_TAG:-latest}
+    restart: always
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: '3000'
+      JOKKO_API_URL: http://api:3333/api
+    depends_on:
+      api: { condition: service_started }
+    networks: [internal]
+
+  admin:
+    image: ${REGISTRY:-ghcr.io/farisbrandone}/jokko-admin:${IMAGE_TAG:-latest}
     restart: always
     environment:
       NODE_ENV: production

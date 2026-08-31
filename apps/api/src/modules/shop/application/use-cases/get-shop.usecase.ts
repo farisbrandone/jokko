@@ -11,6 +11,9 @@ export class GetShopUseCase {
 
   async bySlug(slug: string): Promise<ShopSnapshot | null> {
     const shop = await this.shops.findBySlug(slug);
-    return shop ? shop.toSnapshot() : null;
+    if (!shop) return null;
+    const snap = shop.toSnapshot();
+    // Une boutique suspendue n'est plus servie publiquement.
+    return snap.status === 'active' ? snap : null;
   }
 }

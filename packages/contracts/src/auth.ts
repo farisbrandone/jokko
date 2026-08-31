@@ -19,6 +19,7 @@ export const SessionUserSchema = z.object({
   id: IdSchema,
   email: z.string().email(),
   name: z.string(),
+  isPlatformAdmin: z.boolean(),
   memberships: z.array(
     z.object({ shopId: IdSchema, slug: z.string(), role: ShopRoleSchema }),
   ),

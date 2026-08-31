@@ -23,6 +23,12 @@ dashboard.jokko.shop {
 	reverse_proxy dashboard:3000
 }
 
+# --- Console plateforme (opérateur) ---------------------------------------
+console.jokko.shop {
+	encode zstd gzip
+	reverse_proxy admin:3000
+}
+
 # --- Vitrines : sous-domaines de boutiques + apex -------------------------
 jokko.shop, www.jokko.shop, *.jokko.shop {
 	encode zstd gzip
