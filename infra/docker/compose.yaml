@@ -1,0 +1,106 @@
+# Infra locale de développement pour Jokko.
+#   pnpm infra:up   /   pnpm infra:down   /   pnpm infra:logs
+# Rien ici n'est destiné à la production (voir infra/docker/compose.prod.yaml plus tard).
+
+name: jokko-dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-jokko}
+      POSTGRES_USER: ${POSTGRES_USER:-jokko}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-jokko_dev_pwd}
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./.data/postgres:/var/lib/postgresql/data
+      - ./../postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-jokko} -d ${POSTGRES_DB:-jokko}']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - ./.data/redis:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.12
+    restart: unless-stopped
+    environment:
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-jokko_dev_meili_master_key}
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: 'true'
+    ports:
+      - '7700:7700'
+    volumes:
+      - ./.data/meili:/meili_data
+
+  minio:
+    image: minio/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-jokko}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-jokko_dev_secret}
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - ./.data/minio:/data
+    healthcheck:
+      test: ['CMD', 'mc', 'ready', 'local']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  minio-setup:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_started
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 ${S3_ACCESS_KEY:-jokko} ${S3_SECRET_KEY:-jokko_dev_secret}; do sleep 1; done;
+      mc mb -p local/${S3_BUCKET:-jokko-media};
+      mc anonymous set download local/${S3_BUCKET:-jokko-media};
+      echo 'bucket prêt';
+      "
+    restart: 'no'
+
+  imgproxy:
+    image: darthsim/imgproxy:latest
+    restart: unless-stopped
+    environment:
+      IMGPROXY_ENABLE_WEBP_DETECTION: 'true'
+      IMGPROXY_ENABLE_AVIF_DETECTION: 'true'
+      IMGPROXY_USE_S3: 'true'
+      IMGPROXY_S3_ENDPOINT: http://minio:9000
+      IMGPROXY_S3_REGION: ${S3_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:-jokko}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:-jokko_dev_secret}
+      IMGPROXY_DEVELOPMENT_ERRORS_MODE: 'true'
+    ports:
+      - '8080:8080'
+    depends_on:
+      - minio
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - '1025:1025' # SMTP
+      - '8025:8025' # UI web

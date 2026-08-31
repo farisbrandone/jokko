@@ -1,0 +1,22 @@
+# Reverse proxy de développement.
+# En prod : HTTPS auto + on-demand TLS pour les domaines personnalisés des boutiques.
+# En local on route par sous-domaine de lvh.me (résout toujours vers 127.0.0.1).
+
+{
+	auto_https off
+}
+
+# API
+http://api.lvh.me {
+	reverse_proxy 127.0.0.1:3333
+}
+
+# Vitrine (app storefront — à venir)
+http://lvh.me, http://*.lvh.me {
+	reverse_proxy 127.0.0.1:3000
+}
+
+# Dashboard vendeur (à venir)
+http://admin.lvh.me {
+	reverse_proxy 127.0.0.1:3001
+}
