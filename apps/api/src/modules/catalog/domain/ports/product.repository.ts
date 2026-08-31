@@ -12,6 +12,7 @@ export interface ProductPage {
 export interface ProductRepository {
   save(product: Product): Promise<void>;
   findById(shopId: string, productId: string): Promise<Product | null>;
+  findBySlug(shopId: string, slug: string): Promise<Product | null>;
   findByShop(
     shopId: string,
     pagination: { page: number; pageSize: number },

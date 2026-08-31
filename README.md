@@ -82,14 +82,25 @@ curl -s -X POST $API/shops/<shopId>/media/upload-url -H "authorization: Bearer $
 ```
 apps/
   api/            NestJS (Fastify) — architecture hexagonale par contexte
+  storefront/     Next.js 15 — vitrine publique par boutique (RSC/ISR)
 packages/
   domain-kernel/  primitives DDD (Result, Entity, AggregateRoot, ValueObject, DomainEvent)
   contracts/      schémas Zod partagés backend / frontend
+  ui/             tokens de design + helpers partagés
 infra/
   docker/         infra locale (compose)
   caddy/          reverse proxy (dev)
   postgres/       scripts d'init
 docs/             plan directeur
+```
+
+### Lancer la vitrine
+
+```bash
+cd apps/storefront && cp .env.example .env      # JOKKO_API_URL, SHOP_ROOT_DOMAIN, DEFAULT_SHOP_SLUG
+cd ../.. && pnpm dev:storefront                 # http://lvh.me:3000
+# une boutique de slug « ma-boutique » est servie sur http://ma-boutique.lvh.me:3000
+# ou, sans sous-domaine : http://localhost:3000/s/ma-boutique
 ```
 
 ### Anatomie d'un module (`apps/api/src/modules/<contexte>/`)
@@ -138,9 +149,23 @@ presentation/    contrôleurs NestJS + validation Zod
   `publicUrl` + helper d'URL imgproxy
 - [x] CLI `pnpm --filter @jokko/api search:reindex` (backfill de l'index)
 
+**Incrément 4 — vitrine (frontend)**
+
+- [x] `packages/ui` : tokens de design (light/dark, brand par boutique), helpers (`formatMoney`, `whatsappLink`…)
+- [x] `apps/storefront` — Next.js 15 (App Router, RSC + ISR) :
+  - middleware de résolution du tenant (sous-domaine `<slug>.<root>` → préfixe `/s/<slug>` → défaut dev),
+    boutique injectée en en-tête pour les Server Components
+  - accueil boutique + page catégorie (facettes) + **fiche produit** (`generateMetadata` OG/Twitter,
+    **JSON-LD `Product`/`Offer`**) + page recherche
+  - `SearchBox` (instant search débouncé) via BFF `/api/search` qui **injecte l'id de boutique côté serveur**
+  - `ContactBar` : liens directs WhatsApp / SMS / appel pré-remplis + partage natif
+- [x] `GET /shops/:id/products/:idOrSlug` public (fiche produit publiée) côté API
+
 **Suite**
 
-- [ ] Adaptateur SuperTokens derrière le port de session ; OAuth Google/Facebook ; OTP acheteurs
+- [ ] `storefront` : PWA (offline + Web Push), i18n (next-intl), thème par boutique éditable, image OG dynamique
+- [ ] `packages/ui` : Storybook + composants React partagés
+- [ ] `apps/dashboard` (onboarding, CRUD catalogue, inbox) et `apps/admin`
+- [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 - [ ] CI GitHub Actions + Terraform/Ansible (VPS)
-- [ ] Apps `storefront` / `dashboard` / `admin` (Next.js) + `packages/ui`
 ```

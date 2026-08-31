@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  NotFoundException,
   Param,
   ParseUUIDPipe,
   Post,
@@ -25,6 +26,7 @@ import { CheckPolicies } from '../../identity/authz/check-policies.decorator';
 import { CreateProductUseCase } from '../application/use-cases/create-product.usecase';
 import { ListProductsUseCase } from '../application/use-cases/list-products.usecase';
 import { PublishProductUseCase } from '../application/use-cases/publish-product.usecase';
+import { GetProductUseCase } from '../application/use-cases/get-product.usecase';
 
 /**
  * Catalogue borné à la boutique courante (résolue par TenantMiddleware :
@@ -39,6 +41,7 @@ export class CatalogController {
     private readonly createProduct: CreateProductUseCase,
     private readonly listProducts: ListProductsUseCase,
     private readonly publishProduct: PublishProductUseCase,
+    private readonly getProduct: GetProductUseCase,
   ) {}
 
   @Post()
@@ -67,5 +70,14 @@ export class CatalogController {
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ) {
     return this.listProducts.execute(this.tenant.getShopId(), query);
+  }
+
+  /** Fiche produit publique — par id ou slug, publiée uniquement. */
+  @Get(':idOrSlug')
+  @UseGuards(TenantGuard)
+  async detail(@Param('idOrSlug') idOrSlug: string) {
+    const product = await this.getProduct.publicByIdOrSlug(this.tenant.getShopId(), idOrSlug);
+    if (!product) throw new NotFoundException('Produit introuvable');
+    return product;
   }
 }

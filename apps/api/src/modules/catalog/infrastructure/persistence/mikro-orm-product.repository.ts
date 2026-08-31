@@ -59,6 +59,13 @@ export class MikroOrmProductRepository implements ProductRepository {
     });
   }
 
+  async findBySlug(_shopId: string, slug: string): Promise<Product | null> {
+    return this.withTenant(async (em) => {
+      const entity = await em.findOne(ProductEntity, { slug });
+      return entity ? ProductMapper.toDomain(entity) : null;
+    });
+  }
+
   async findByShop(
     _shopId: string,
     pagination: { page: number; pageSize: number },

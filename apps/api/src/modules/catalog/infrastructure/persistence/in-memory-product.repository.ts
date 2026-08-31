@@ -31,6 +31,13 @@ export class InMemoryProductRepository implements ProductRepository {
     return product && product.belongsTo(shopId) ? product : null;
   }
 
+  async findBySlug(shopId: string, slug: string): Promise<Product | null> {
+    for (const product of this.store.values()) {
+      if (product.belongsTo(shopId) && product.slug === slug) return product;
+    }
+    return null;
+  }
+
   async findByShop(
     shopId: string,
     pagination: { page: number; pageSize: number },
