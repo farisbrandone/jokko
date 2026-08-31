@@ -14,6 +14,7 @@ export default tseslint.config(
       '**/.data/**',
       'infra/**',
       'apps/storefront/**',
+      'apps/dashboard/**',
       'packages/ui/**',
     ],
   },

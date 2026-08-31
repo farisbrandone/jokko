@@ -12,12 +12,24 @@ export class PublishProductUseCase {
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
   ) {}
 
-  async execute(shopId: string, productId: string): Promise<Result<ProductSnapshot>> {
+  execute(shopId: string, productId: string): Promise<Result<ProductSnapshot>> {
+    return this.apply(shopId, productId, (p) => p.publish());
+  }
+
+  unpublish(shopId: string, productId: string): Promise<Result<ProductSnapshot>> {
+    return this.apply(shopId, productId, (p) => p.unpublish());
+  }
+
+  private async apply(
+    shopId: string,
+    productId: string,
+    action: (p: import('../../domain/product.aggregate').Product) => Result<void>,
+  ): Promise<Result<ProductSnapshot>> {
     const product = await this.products.findById(shopId, productId);
     if (!product) return Result.err('Produit introuvable');
 
-    const published = product.publish();
-    if (published.isErr) return Result.err(published.getError());
+    const res = action(product);
+    if (res.isErr) return Result.err(res.getError());
 
     await this.products.save(product);
     return Result.ok(product.toSnapshot());

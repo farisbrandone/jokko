@@ -15,7 +15,9 @@ export class CatalogIndexListener {
   constructor(private readonly index: ProductIndex) {}
 
   @OnEvent('catalog.product.created')
+  @OnEvent('catalog.product.updated')
   @OnEvent('catalog.product.published')
+  @OnEvent('catalog.product.unpublished')
   async onProductUpserted(envelope: OutboxEnvelope): Promise<void> {
     const product = envelope.payload.product as ProductSnapshot | undefined;
     if (!product) return;

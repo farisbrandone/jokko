@@ -83,6 +83,7 @@ curl -s -X POST $API/shops/<shopId>/media/upload-url -H "authorization: Bearer $
 apps/
   api/            NestJS (Fastify) — architecture hexagonale par contexte
   storefront/     Next.js 15 — vitrine publique par boutique (RSC/ISR)
+  dashboard/      Next.js 15 — back-office vendeur (BFF, jetons côté serveur)
 packages/
   domain-kernel/  primitives DDD (Result, Entity, AggregateRoot, ValueObject, DomainEvent)
   contracts/      schémas Zod partagés backend / frontend
@@ -101,6 +102,14 @@ cd apps/storefront && cp .env.example .env      # JOKKO_API_URL, SHOP_ROOT_DOMAI
 cd ../.. && pnpm dev:storefront                 # http://lvh.me:3000
 # une boutique de slug « ma-boutique » est servie sur http://ma-boutique.lvh.me:3000
 # ou, sans sous-domaine : http://localhost:3000/s/ma-boutique
+```
+
+### Lancer le back-office vendeur
+
+```bash
+cd apps/dashboard && cp .env.example .env && cd ../..
+pnpm --filter @jokko/dashboard run dev        # http://localhost:3001
+# /login → créer un compte → /onboarding (boutique en un clic) → /s/<id> (catalogue)
 ```
 
 ### Anatomie d'un module (`apps/api/src/modules/<contexte>/`)
@@ -153,19 +162,28 @@ presentation/    contrôleurs NestJS + validation Zod
 
 - [x] `packages/ui` : tokens de design (light/dark, brand par boutique), helpers (`formatMoney`, `whatsappLink`…)
 - [x] `apps/storefront` — Next.js 15 (App Router, RSC + ISR) :
-  - middleware de résolution du tenant (sous-domaine `<slug>.<root>` → préfixe `/s/<slug>` → défaut dev),
-    boutique injectée en en-tête pour les Server Components
-  - accueil boutique + page catégorie (facettes) + **fiche produit** (`generateMetadata` OG/Twitter,
-    **JSON-LD `Product`/`Offer`**) + page recherche
-  - `SearchBox` (instant search débouncé) via BFF `/api/search` qui **injecte l'id de boutique côté serveur**
-  - `ContactBar` : liens directs WhatsApp / SMS / appel pré-remplis + partage natif
+  - middleware de résolution du tenant (sous-domaine `<slug>.<root>` → préfixe `/s/<slug>` → défaut dev)
+  - accueil + catégorie (facettes) + **fiche produit** (OG/Twitter, **JSON-LD `Product`/`Offer`**) + recherche
+  - `SearchBox` (instant search) via BFF qui **injecte l'id de boutique côté serveur** ; `ContactBar` WhatsApp/SMS/appel
 - [x] `GET /shops/:id/products/:idOrSlug` public (fiche produit publiée) côté API
+
+**Incrément 5 — back-office vendeur**
+
+- [x] API : `PATCH /shops/:id/products/:id` (édition), `POST …/unpublish`, `GET …/:id/edit` (membre, tout statut) ;
+  événements `catalog.product.updated` / `…unpublished` → réindexation Meili
+- [x] `apps/dashboard` — Next.js 15, **jetons jamais exposés au navigateur** :
+  route handlers `/api/auth/*` (posent des cookies httpOnly côté dashboard) + proxy authentifié
+  `/api/proxy/*` (ajoute le Bearer, gère le refresh rotatif)
+  - `/login` (connexion + création de compte), middleware de garde de session
+  - `/onboarding` : boutique en un clic (nom, verticales, WhatsApp)
+  - `/s/:id` : table produits (statut, prix, stock) + publier / dépublier
+  - éditeur produit (création + édition) avec **téléversement d'images via URL PUT pré-signée**
 
 **Suite**
 
-- [ ] `storefront` : PWA (offline + Web Push), i18n (next-intl), thème par boutique éditable, image OG dynamique
-- [ ] `packages/ui` : Storybook + composants React partagés
-- [ ] `apps/dashboard` (onboarding, CRUD catalogue, inbox) et `apps/admin`
+- [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
+- [ ] `dashboard` : messagerie (inbox), analytique, TanStack Query, Storybook pour `packages/ui`
+- [ ] `apps/admin` (console plateforme)
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 - [ ] CI GitHub Actions + Terraform/Ansible (VPS)
 ```

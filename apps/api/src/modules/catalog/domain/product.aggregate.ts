@@ -2,7 +2,12 @@ import { AggregateRoot, Guard, Result, UniqueId } from '@jokko/domain-kernel';
 import type { DynamicAttributes, ProductStatus } from '@jokko/contracts';
 import { Money } from './value-objects/money';
 import { Slug } from './value-objects/slug';
-import { ProductCreated, ProductPublished } from './product.events';
+import {
+  ProductCreated,
+  ProductPublished,
+  ProductUnpublished,
+  ProductUpdated,
+} from './product.events';
 
 export interface ProductSnapshot {
   id: string;
@@ -119,6 +124,53 @@ export class Product extends AggregateRoot {
     this._status = 'published';
     this.touch();
     this.addDomainEvent(new ProductPublished(this.shopId, this.toSnapshot()));
+    return Result.ok(undefined);
+  }
+
+  unpublish(): Result<void> {
+    if (this._status !== 'published') return Result.ok(undefined);
+    this._status = 'draft';
+    this.touch();
+    this.addDomainEvent(new ProductUnpublished(this.shopId, this.toSnapshot()));
+    return Result.ok(undefined);
+  }
+
+  update(patch: {
+    name?: string;
+    description?: string;
+    category?: string;
+    price?: Money;
+    compareAtPrice?: Money | null;
+    stock?: number;
+    images?: string[];
+    attributes?: DynamicAttributes;
+  }): Result<void> {
+    if (patch.name !== undefined) {
+      if (patch.name.trim().length < 2) return Result.err('Nom trop court');
+      this._name = patch.name.trim();
+    }
+    if (patch.description !== undefined) this._description = patch.description.trim();
+    if (patch.category !== undefined) {
+      if (patch.category.trim().length === 0) return Result.err('Catégorie requise');
+      this._category = patch.category.trim();
+    }
+    if (patch.price !== undefined) this._price = patch.price;
+    if (patch.compareAtPrice !== undefined) this._compareAtPrice = patch.compareAtPrice;
+    if (patch.stock !== undefined) {
+      if (!Number.isInteger(patch.stock) || patch.stock < 0) {
+        return Result.err('Stock invalide');
+      }
+      this._stock = patch.stock;
+    }
+    if (patch.images !== undefined) this._images = [...patch.images];
+    if (patch.attributes !== undefined) this._attributes = { ...patch.attributes };
+
+    // Un produit publié dont on retire toutes les images repasse en brouillon.
+    if (this._status === 'published' && this._images.length === 0) {
+      this._status = 'draft';
+    }
+    this.touch();
+    this.addDomainEvent(new ProductUpdated(this.shopId, this.toSnapshot()));
     return Result.ok(undefined);
   }
 

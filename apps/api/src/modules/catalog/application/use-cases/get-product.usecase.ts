@@ -15,11 +15,15 @@ export class GetProductUseCase {
 
   /** Lecture publique : par id ou par slug, produit publié uniquement. */
   async publicByIdOrSlug(shopId: string, idOrSlug: string): Promise<ProductSnapshot | null> {
+    const snap = await this.anyByIdOrSlug(shopId, idOrSlug);
+    return snap && snap.status === 'published' ? snap : null;
+  }
+
+  /** Lecture réservée aux membres : quel que soit le statut (édition dashboard). */
+  async anyByIdOrSlug(shopId: string, idOrSlug: string): Promise<ProductSnapshot | null> {
     const product = UUID_RE.test(idOrSlug)
       ? await this.products.findById(shopId, idOrSlug)
       : await this.products.findBySlug(shopId, idOrSlug);
-    if (!product) return null;
-    const snap = product.toSnapshot();
-    return snap.status === 'published' ? snap : null;
+    return product ? product.toSnapshot() : null;
   }
 }

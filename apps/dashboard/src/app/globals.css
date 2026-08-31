@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+@import '@jokko/ui/tokens.css';
+
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: inherit;
+}
+
+::selection {
+  background: var(--color-brand);
+  color: var(--color-brand-ink);
+}

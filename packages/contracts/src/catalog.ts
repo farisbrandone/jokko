@@ -48,5 +48,11 @@ export const CreateProductSchema = ProductSchema.pick({
 });
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 
+export const UpdateProductSchema = CreateProductSchema.partial().refine(
+  (v) => Object.keys(v).length > 0,
+  { message: 'au moins un champ à modifier' },
+);
+export type UpdateProductInput = z.infer<typeof UpdateProductSchema>;
+
 export const ProductListSchema = paginated(ProductSchema);
 export type ProductList = z.infer<typeof ProductListSchema>;

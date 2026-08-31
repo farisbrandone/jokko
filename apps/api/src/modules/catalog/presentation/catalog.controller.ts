@@ -5,6 +5,7 @@ import {
   NotFoundException,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UnprocessableEntityException,
@@ -14,8 +15,10 @@ import { ApiTags } from '@nestjs/swagger';
 import {
   CreateProductSchema,
   PaginationQuerySchema,
+  UpdateProductSchema,
   type CreateProductInput,
   type PaginationQuery,
+  type UpdateProductInput,
 } from '@jokko/contracts';
 import { ZodValidationPipe } from '../../../shared/zod-validation.pipe';
 import { TenantContext } from '../../../shared/tenant/tenant-context';
@@ -26,6 +29,7 @@ import { CheckPolicies } from '../../identity/authz/check-policies.decorator';
 import { CreateProductUseCase } from '../application/use-cases/create-product.usecase';
 import { ListProductsUseCase } from '../application/use-cases/list-products.usecase';
 import { PublishProductUseCase } from '../application/use-cases/publish-product.usecase';
+import { UpdateProductUseCase } from '../application/use-cases/update-product.usecase';
 import { GetProductUseCase } from '../application/use-cases/get-product.usecase';
 
 /**
@@ -41,6 +45,7 @@ export class CatalogController {
     private readonly createProduct: CreateProductUseCase,
     private readonly listProducts: ListProductsUseCase,
     private readonly publishProduct: PublishProductUseCase,
+    private readonly updateProduct: UpdateProductUseCase,
     private readonly getProduct: GetProductUseCase,
   ) {}
 
@@ -55,11 +60,36 @@ export class CatalogController {
     return result.unwrap();
   }
 
+  @Patch(':productId')
+  @UseGuards(TenantGuard, AuthGuard, PoliciesGuard)
+  @CheckPolicies((ability) => ability.can('update', 'Product'))
+  async update(
+    @Param('productId', ParseUUIDPipe) productId: string,
+    @Body(new ZodValidationPipe(UpdateProductSchema)) body: UpdateProductInput,
+  ) {
+    const result = await this.updateProduct.execute(
+      this.tenant.getShopId(),
+      productId,
+      body,
+    );
+    if (result.isErr) throw new UnprocessableEntityException(result.getError());
+    return result.unwrap();
+  }
+
   @Post(':productId/publish')
   @UseGuards(TenantGuard, AuthGuard, PoliciesGuard)
   @CheckPolicies((ability) => ability.can('update', 'Product'))
   async publish(@Param('productId', ParseUUIDPipe) productId: string) {
     const result = await this.publishProduct.execute(this.tenant.getShopId(), productId);
+    if (result.isErr) throw new UnprocessableEntityException(result.getError());
+    return result.unwrap();
+  }
+
+  @Post(':productId/unpublish')
+  @UseGuards(TenantGuard, AuthGuard, PoliciesGuard)
+  @CheckPolicies((ability) => ability.can('update', 'Product'))
+  async unpublish(@Param('productId', ParseUUIDPipe) productId: string) {
+    const result = await this.publishProduct.unpublish(this.tenant.getShopId(), productId);
     if (result.isErr) throw new UnprocessableEntityException(result.getError());
     return result.unwrap();
   }
@@ -70,6 +100,16 @@ export class CatalogController {
     @Query(new ZodValidationPipe(PaginationQuerySchema)) query: PaginationQuery,
   ) {
     return this.listProducts.execute(this.tenant.getShopId(), query);
+  }
+
+  /** Fiche produit — membres : quel que soit le statut (édition). */
+  @Get(':productId/edit')
+  @UseGuards(TenantGuard, AuthGuard, PoliciesGuard)
+  @CheckPolicies((ability) => ability.can('read', 'Product'))
+  async editView(@Param('productId', ParseUUIDPipe) productId: string) {
+    const product = await this.getProduct.anyByIdOrSlug(this.tenant.getShopId(), productId);
+    if (!product) throw new NotFoundException('Produit introuvable');
+    return product;
   }
 
   /** Fiche produit publique — par id ou slug, publiée uniquement. */
