@@ -725,3 +725,11 @@ describe('facturation : abonnement vendeur (Flutterwave)', () => {
     expect(sub[0].status).toBe('past_due');
   });
 });
+
+describe('durcissement', () => {
+  it('les réponses portent les en-têtes de sécurité (helmet)', async () => {
+    const res = await http.get('/api/auth/me').expect(401);
+    expect(res.headers['x-content-type-options']).toBe('nosniff');
+    expect(res.headers['x-frame-options']).toBeDefined();
+  });
+});

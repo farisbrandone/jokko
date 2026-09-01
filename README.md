@@ -397,10 +397,24 @@ presentation/    contrôleurs NestJS + validation Zod
   admin : KPI « Abonnements actifs »
 - [x] Intégration : essai → confirm → `pro` (idempotent), webhook, cron qui suspend
 
+**Incrément 22 — durcissement production**
+
+- [x] Limitation de débit globale (`@nestjs/throttler` + `APP_GUARD`) : 600 req/min/IP
+  par défaut ; **12/min sur `/auth/*`** ; `@SkipThrottle` sur `/healthz` et le webhook ;
+  IP internes exemptées (`THROTTLE_TRUSTED_IPS`)
+- [x] En-têtes de sécurité : `@fastify/helmet` sur l'API (nosniff / frameguard / HSTS /
+  `Referrer-Policy: no-referrer`) ; `headers()` sur les 3 apps Next (X-Frame-Options,
+  nosniff, Referrer-Policy, Permissions-Policy, HSTS)
+- [x] Observabilité : `src/tracing.ts` — SDK OpenTelemetry (auto-instrumentations +
+  exporteur OTLP/HTTP) chargé en tout premier, actif seulement si
+  `OTEL_EXPORTER_OTLP_ENDPOINT`
+- [x] Sauvegardes : `infra/scripts/pg-backup.sh` (pg_dump → gzip → MinIO, rétention) +
+  service compose `pg-backup` (profil `tools`) ; commande de restauration documentée
+- [x] Intégration : présence des en-têtes de sécurité sur les réponses
+
 **Suite**
 
 - [ ] OTP téléphone (Termii) + adaptateurs OAuth / SuperTokens
-- [ ] Durcissement prod : rate-limit global, observabilité OTEL, en-têtes sécurité, backups
 - [ ] Tests E2E Playwright ; `/security-review`
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

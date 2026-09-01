@@ -1,4 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiExcludeController } from '@nestjs/swagger';
 import {
   HealthCheck,
@@ -7,6 +8,7 @@ import {
 } from '@nestjs/terminus';
 
 @ApiExcludeController()
+@SkipThrottle()
 @Controller()
 export class HealthController {
   constructor(

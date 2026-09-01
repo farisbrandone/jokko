@@ -167,6 +167,30 @@ services:
     networks: [internal]
     profiles: [tools]
 
+  # Sauvegarde PostgreSQL → MinIO. À déclencher par cron hôte :
+  #   docker compose -f compose.prod.yaml run --rm pg-backup
+  pg-backup:
+    image: postgres:16-alpine
+    depends_on:
+      postgres: { condition: service_healthy }
+    environment:
+      PGHOST: postgres
+      PGUSER: ${POSTGRES_USER}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGDATABASE: ${POSTGRES_DB}
+      S3_ENDPOINT: http://minio:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      BACKUP_BUCKET: ${BACKUP_BUCKET:-jokko-backups}
+      RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - ../scripts/pg-backup.sh:/pg-backup.sh:ro
+    entrypoint: ['/bin/sh', '-c']
+    command: ['apk add --no-cache minio-client >/dev/null && sh /pg-backup.sh']
+    restart: 'no'
+    networks: [internal]
+    profiles: [tools]
+
   imgproxy:
     image: darthsim/imgproxy:latest
     restart: always

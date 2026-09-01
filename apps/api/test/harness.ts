@@ -9,6 +9,7 @@ import { GenericContainer, Wait, type StartedTestContainer } from 'testcontainer
 import { Test } from '@nestjs/testing';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import fastifyCookie from '@fastify/cookie';
+import fastifyHelmet from '@fastify/helmet';
 
 const APP_PWD = 'app_pwd';
 // Vitest lance ce paquet avec cwd = apps/api (racine de vitest.int.config.ts).
@@ -93,6 +94,8 @@ async function startHarnessInner(): Promise<Harness> {
   Object.assign(process.env, {
     NODE_ENV: 'test',
     LOG_LEVEL: 'fatal',
+    THROTTLE_DISABLED: '1', // la limitation de débit n'est pas exercée par la suite
+    OTP_DEV_CODE: '123456', // code OTP fixe en test (voir incrément OTP)
     DATABASE_URL: appUrl,
     DATABASE_ADMIN_URL: adminUrl,
     MEILI_URL: `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,
@@ -163,6 +166,11 @@ async function startHarnessInner(): Promise<Harness> {
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
   app.useLogger(false);
   await app.register(fastifyCookie);
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: 'no-referrer' },
+  });
   app.setGlobalPrefix('api', { exclude: ['healthz', 'readyz'] });
   await app.init();
   await app.getHttpAdapter().getInstance().ready();

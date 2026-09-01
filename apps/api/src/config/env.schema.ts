@@ -60,6 +60,21 @@ export const envSchema = z.object({
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
+  // Limitation de débit générale (par IP). Fenêtre en secondes + limite.
+  // Les routes d'authentification appliquent une limite fixe plus stricte.
+  THROTTLE_TTL_SEC: z.coerce.number().int().positive().default(60),
+  THROTTLE_LIMIT: z.coerce.number().int().positive().default(600),
+  // IP exemptées (front SSR interne, load balancer). CSV.
+  THROTTLE_TRUSTED_IPS: z.string().default('').transform(csv),
+
+  // Observabilité : traçage OTEL actif seulement si l'endpoint (http/https) est défini.
+  // Tolérant à la chaîne vide (souvent injectée par l'outillage).
+  OTEL_EXPORTER_OTLP_ENDPOINT: z
+    .string()
+    .optional()
+    .refine((v) => !v || /^https?:\/\//.test(v), 'URL http(s) attendue'),
+  OTEL_SERVICE_NAME: z.string().default('jokko-api'),
+
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),
   TENANT_HEADER_SECRET: z.string().min(16).default('dev_tenant_header_secret_0123456789'),
 

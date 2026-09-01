@@ -1,4 +1,5 @@
 import 'reflect-metadata';
+import './tracing'; // OTEL — doit être chargé en tout premier
 import { NestFactory } from '@nestjs/core';
 import { Logger as NestLogger } from '@nestjs/common';
 import {
@@ -8,6 +9,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import fastifyCookie from '@fastify/cookie';
+import fastifyHelmet from '@fastify/helmet';
 import { Logger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import type { AppConfig } from './config/configuration';
@@ -21,6 +23,13 @@ async function bootstrap() {
 
   app.useLogger(app.get(Logger));
   await app.register(fastifyCookie);
+  // En-têtes de sécurité. L'API sert du JSON : pas de CSP (inutile), mais
+  // nosniff / frameguard / HSTS / referrer-policy fermes.
+  await app.register(fastifyHelmet, {
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    referrerPolicy: { policy: 'no-referrer' },
+  });
 
   const config = app.get(ConfigService<AppConfig, true>);
   const api = config.get('api', { infer: true });

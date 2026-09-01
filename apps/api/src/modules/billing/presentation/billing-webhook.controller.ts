@@ -1,4 +1,5 @@
 import { Body, Controller, Headers, HttpCode, Logger, Post } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../../../config/configuration';
@@ -10,6 +11,7 @@ interface FlutterwaveEvent {
 
 /** Webhook Flutterwave (public, signé par l'en-tête `verif-hash`). */
 @ApiExcludeController()
+@SkipThrottle()
 @Controller('billing/webhook')
 export class BillingWebhookController {
   private readonly logger = new Logger(BillingWebhookController.name);

@@ -59,6 +59,11 @@ export interface AppConfig {
   messaging: {
     maxNewConversationsPerHour: number;
   };
+  throttle: {
+    ttlSec: number;
+    limit: number;
+    trustedIps: string[];
+  };
   billing: {
     priceXof: number;
     trialDays: number;
@@ -131,6 +136,11 @@ export const buildConfig = (env: Env): AppConfig => ({
   },
   messaging: {
     maxNewConversationsPerHour: env.MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR,
+  },
+  throttle: {
+    ttlSec: env.THROTTLE_TTL_SEC,
+    limit: env.THROTTLE_LIMIT,
+    trustedIps: env.THROTTLE_TRUSTED_IPS,
   },
   billing: {
     priceXof: env.BILLING_PRICE_XOF,

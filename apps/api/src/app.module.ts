@@ -1,7 +1,9 @@
 import { Module, type MiddlewareConsumer, type NestModule } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { PostgreSqlDriver } from '@mikro-orm/postgresql';
 import { buildConfig, type AppConfig } from './config/configuration';
@@ -43,6 +45,22 @@ import { AdminModule } from './modules/admin/admin.module';
     }),
     ScheduleModule.forRoot(),
     EventEmitterModule.forRoot({ global: true }),
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService<AppConfig, true>) => {
+        const t = config.get('throttle', { infer: true });
+        const trusted = new Set(t.trustedIps);
+        // Un seul throttler global ; les routes sensibles resserrent via @Throttle.
+        return {
+          throttlers: [{ name: 'default', ttl: t.ttlSec * 1000, limit: t.limit }],
+          skipIf: (ctx) => {
+            if (process.env.THROTTLE_DISABLED === '1') return true;
+            const req = ctx.switchToHttp().getRequest<{ ip?: string }>();
+            return !!req.ip && trusted.has(req.ip);
+          },
+        };
+      },
+    }),
     LoggerModule,
     TenantModule,
     HealthModule,
@@ -59,6 +77,7 @@ import { AdminModule } from './modules/admin/admin.module';
     BillingModule,
     AdminModule,
   ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer): void {

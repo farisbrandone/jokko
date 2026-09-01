@@ -7,7 +7,19 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const monorepoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+const securityHeaders = [
+  // La vitrine peut être intégrée par le vendeur sur son propre site → SAMEORIGIN.
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+  { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: '/:path*', headers: securityHeaders }];
+  },
   output: 'standalone',
   outputFileTracingRoot: monorepoRoot,
   transpilePackages: ['@jokko/contracts', '@jokko/ui'],

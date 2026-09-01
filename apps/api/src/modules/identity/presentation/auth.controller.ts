@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
@@ -15,6 +16,8 @@ import { TokenService } from '../infrastructure/security/token.service';
 
 @ApiTags('auth')
 @Controller('auth')
+// Limite stricte : force brute / énumération (12 requêtes / minute / IP).
+@Throttle({ default: { limit: 12, ttl: 60_000 } })
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
