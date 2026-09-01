@@ -30,4 +30,14 @@ describe('User', () => {
     );
     expect(User.createWithPhone({ phone: '0771234567', name: 'X' }).isErr).toBe(true);
   });
+
+  it('createFromOAuth : e-mail normalisé, sans mot de passe ; e-mail invalide → erreur', () => {
+    const u = User.createFromOAuth({ email: '  Fatou@Ex.COM ', name: '' }).unwrap();
+    const s = u.toSnapshot();
+    expect(s.email).toBe('fatou@ex.com');
+    expect(s.phone).toBeNull();
+    expect(s.passwordHash).toBeNull();
+    expect(s.name).toBe('Compte');
+    expect(User.createFromOAuth({ email: 'pas-un-email', name: 'X' }).isErr).toBe(true);
+  });
 });

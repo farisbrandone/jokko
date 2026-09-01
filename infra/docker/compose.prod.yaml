@@ -78,6 +78,8 @@ services:
       HOSTNAME: 0.0.0.0
       PORT: '3000'
       JOKKO_API_URL: http://api:3333/api
+      # URL publique de l'API (redirection OAuth du navigateur)
+      PUBLIC_API_BASE_URL: ${PUBLIC_API_BASE_URL:-https://api.jokko.shop/api}
     depends_on:
       api: { condition: service_started }
     networks: [internal]

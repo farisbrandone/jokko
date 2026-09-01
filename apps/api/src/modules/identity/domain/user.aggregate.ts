@@ -70,6 +70,25 @@ export class User extends AggregateRoot {
     );
   }
 
+  /** Compte créé via un fournisseur OAuth (Google, Facebook…) — sans mot de passe. */
+  static createFromOAuth(props: { email: string; name: string }): Result<User> {
+    const email = props.email.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return Result.err('E-mail OAuth invalide');
+    const now = new Date();
+    return Result.ok(
+      new User(
+        UniqueId.create(),
+        email,
+        null,
+        props.name.trim() || 'Compte',
+        null,
+        false,
+        now,
+        now,
+      ),
+    );
+  }
+
   static restore(snap: UserSnapshot): User {
     return new User(
       UniqueId.create(snap.id),

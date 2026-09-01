@@ -50,6 +50,27 @@ export class TokenService {
     };
   }
 
+  /**
+   * Jeton de transfert OAuth : court-vécu (90 s), échangé par le BFF du
+   * dashboard contre une vraie session. Évite de faire transiter les jetons de
+   * session dans une URL de redirection.
+   */
+  async signHandoff(userId: string): Promise<string> {
+    return new SignJWT({ purpose: 'oauth_handoff' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(userId)
+      .setIssuedAt()
+      .setIssuer('jokko')
+      .setExpirationTime('90s')
+      .sign(this.secret);
+  }
+
+  async verifyHandoff(token: string): Promise<string> {
+    const { payload } = await jwtVerify(token, this.secret, { issuer: 'jokko' });
+    if (payload.purpose !== 'oauth_handoff') throw new Error('jeton de transfert invalide');
+    return String(payload.sub);
+  }
+
   /** Refresh token opaque + son hash (stocké en base pour révocation). */
   newRefreshToken(): { token: string; hash: string; expiresAt: Date } {
     const token = randomBytes(32).toString('base64url');

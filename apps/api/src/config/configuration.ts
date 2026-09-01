@@ -32,6 +32,13 @@ export interface AppConfig {
     maxPerHour: number;
     devCode?: string;
   };
+  oauth: {
+    redirectBaseUrl: string;
+    postLoginUrl: string;
+    allowFake: boolean;
+    google: { clientId: string; clientSecret: string } | null;
+    facebook: { clientId: string; clientSecret: string } | null;
+  };
   search: {
     url: string;
     apiKey: string;
@@ -125,6 +132,25 @@ export const buildConfig = (env: Env): AppConfig => ({
     ttlSec: env.OTP_TTL_SEC,
     maxPerHour: env.OTP_MAX_PER_HOUR,
     devCode: env.OTP_DEV_CODE,
+  },
+  oauth: {
+    redirectBaseUrl: env.OAUTH_REDIRECT_BASE_URL.replace(/\/$/, ''),
+    postLoginUrl: env.OAUTH_POST_LOGIN_URL.replace(/\/$/, ''),
+    allowFake: env.OAUTH_ALLOW_FAKE || env.NODE_ENV === 'test',
+    google:
+      env.GOOGLE_OAUTH_CLIENT_ID && env.GOOGLE_OAUTH_CLIENT_SECRET
+        ? {
+            clientId: env.GOOGLE_OAUTH_CLIENT_ID,
+            clientSecret: env.GOOGLE_OAUTH_CLIENT_SECRET,
+          }
+        : null,
+    facebook:
+      env.FACEBOOK_OAUTH_CLIENT_ID && env.FACEBOOK_OAUTH_CLIENT_SECRET
+        ? {
+            clientId: env.FACEBOOK_OAUTH_CLIENT_ID,
+            clientSecret: env.FACEBOOK_OAUTH_CLIENT_SECRET,
+          }
+        : null,
   },
   search: {
     url: env.MEILI_URL,

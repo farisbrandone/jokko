@@ -1,9 +1,47 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { post } from '@/lib/client';
 import { LegalLinks } from '@/components/legal-links';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  google: 'Continuer avec Google',
+  facebook: 'Continuer avec Facebook',
+  fake: 'Continuer avec le fournisseur de test',
+};
+
+function SocialButtons() {
+  const [providers, setProviders] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/proxy/auth/oauth/providers')
+      .then((r) => (r.ok ? r.json() : { providers: [] }))
+      .then((d) => setProviders(Array.isArray(d.providers) ? d.providers : []))
+      .catch(() => setProviders([]));
+  }, []);
+
+  if (providers.length === 0) return null;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center gap-2 text-xs text-[var(--color-muted)]">
+        <span className="h-px flex-1 bg-[var(--color-border)]" />
+        ou
+        <span className="h-px flex-1 bg-[var(--color-border)]" />
+      </div>
+      {providers.map((p) => (
+        <a
+          key={p}
+          href={`/api/auth/oauth/${p}`}
+          className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 py-2 text-center text-sm font-medium"
+        >
+          {PROVIDER_LABELS[p] ?? `Continuer avec ${p}`}
+        </a>
+      ))}
+    </div>
+  );
+}
 
 const inputCls =
   'rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm';
@@ -162,7 +200,9 @@ function PhoneForm({ onDone }: { onDone: () => void }) {
 
 function LoginForm() {
   const router = useRouter();
-  const next = useSearchParams().get('next') || '/';
+  const params = useSearchParams();
+  const next = params.get('next') || '/';
+  const oauthError = params.get('error') === 'oauth';
   const [channel, setChannel] = useState<'email' | 'phone'>('email');
 
   const done = () => {
@@ -173,6 +213,11 @@ function LoginForm() {
   return (
     <div className="w-full max-w-sm rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-6 flex flex-col gap-4">
       <h1 className="font-[family-name:var(--font-display)] text-lg font-bold">Connexion vendeur</h1>
+      {oauthError ? (
+        <p className="text-sm text-[var(--color-danger)]">
+          La connexion via le fournisseur a échoué. Réessayez.
+        </p>
+      ) : null}
       <div className="flex gap-1 text-sm">
         {(['email', 'phone'] as const).map((c) => (
           <button
@@ -190,6 +235,7 @@ function LoginForm() {
         ))}
       </div>
       {channel === 'email' ? <EmailForm onDone={done} /> : <PhoneForm onDone={done} />}
+      <SocialButtons />
     </div>
   );
 }

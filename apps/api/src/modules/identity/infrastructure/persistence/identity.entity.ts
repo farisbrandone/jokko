@@ -77,6 +77,29 @@ export class AuthSessionEntity {
   revokedAt: Date | null = null;
 }
 
+@Entity({ tableName: 'oauth_identities' })
+@Unique({ properties: ['provider', 'providerAccountId'] })
+export class OAuthIdentityEntity {
+  @PrimaryKey({ type: 'uuid' })
+  id!: string;
+
+  @Index()
+  @Property({ type: 'uuid', fieldName: 'user_id' })
+  userId!: string;
+
+  @Property({ type: 'string', length: 20 })
+  provider!: string;
+
+  @Property({ type: 'string', length: 255, fieldName: 'provider_account_id' })
+  providerAccountId!: string;
+
+  @Property({ type: 'string', length: 320, nullable: true })
+  email: string | null = null;
+
+  @Property({ type: 'datetime', fieldName: 'created_at' })
+  createdAt: Date = new Date();
+}
+
 @Entity({ tableName: 'otp_challenges' })
 export class OtpChallengeEntity {
   @PrimaryKey({ type: 'uuid' })

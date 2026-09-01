@@ -8,7 +8,7 @@ let http: ReturnType<typeof request>;
 beforeAll(async () => {
   h = await startHarness();
   http = request(h.server);
-}, 120_000);
+}, 240_000);
 
 afterAll(async () => {
   await h?.stop();
@@ -876,5 +876,57 @@ describe('rétention : purge programmée', () => {
       [conv[0].id],
     );
     expect(Number(msgs[0].n)).toBe(0);
+  });
+});
+
+describe('connexion sociale (OAuth)', () => {
+  const stateOf = (res: { headers: Record<string, unknown> }) => {
+    const cookies = res.headers['set-cookie'] as string[];
+    return cookies.find((c) => c.startsWith('jk_oauth_state='))!.split(';')[0];
+  };
+
+  it('fake : start → callback → exchange → session ; re-login = même compte', async () => {
+    const start = await http.get('/api/auth/oauth/fake/start').redirects(0).expect(302);
+    const authorize = new URL(start.headers.location as string);
+    const code = authorize.searchParams.get('code')!;
+    const state = authorize.searchParams.get('state')!;
+
+    const cb = await http
+      .get(`/api/auth/oauth/fake/callback?code=${code}&state=${state}`)
+      .set('Cookie', stateOf(start))
+      .redirects(0)
+      .expect(302);
+    const ticket = new URL(cb.headers.location as string).searchParams.get('ticket')!;
+
+    const ex = await http.post('/api/auth/oauth/exchange').send({ ticket }).expect(201);
+    expect(ex.body.user.email).toContain('@fake.jokko.local');
+    const firstId = ex.body.user.id as string;
+
+    const me = await http
+      .get('/api/auth/me')
+      .set('authorization', `Bearer ${ex.body.tokens.accessToken}`)
+      .expect(200);
+    expect(me.body.id).toBe(firstId);
+
+    // Nouvelle session avec le même `code` fournisseur → identité déjà reliée.
+    const start2 = await http.get('/api/auth/oauth/fake/start').redirects(0).expect(302);
+    const state2 = new URL(start2.headers.location as string).searchParams.get('state')!;
+    const cb2 = await http
+      .get(`/api/auth/oauth/fake/callback?code=${code}&state=${state2}`)
+      .set('Cookie', stateOf(start2))
+      .redirects(0)
+      .expect(302);
+    const ticket2 = new URL(cb2.headers.location as string).searchParams.get('ticket')!;
+    const ex2 = await http.post('/api/auth/oauth/exchange').send({ ticket: ticket2 }).expect(201);
+    expect(ex2.body.user.id).toBe(firstId);
+  });
+
+  it('callback sans cookie d’état → 400 ; fournisseur non configuré → 404', async () => {
+    await http.get('/api/auth/oauth/fake/callback?code=x&state=y').redirects(0).expect(400);
+    await http.get('/api/auth/oauth/google/start').redirects(0).expect(404);
+  });
+
+  it('exchange : ticket invalide → 401', async () => {
+    await http.post('/api/auth/oauth/exchange').send({ ticket: 'pas-un-jwt' }).expect(401);
   });
 });

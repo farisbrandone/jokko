@@ -91,6 +91,20 @@ export const envSchema = z.object({
   AUTH_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   AUTH_COOKIE_DOMAIN: z.string().optional(),
 
+  // Connexion sociale (OAuth 2.0). Un fournisseur n'est actif que si ses deux
+  // secrets sont présents. OAUTH_ALLOW_FAKE active un fournisseur factice
+  // (« fake ») sans appel réseau, réservé au dev / CI (auto-activé si NODE_ENV=test).
+  GOOGLE_OAUTH_CLIENT_ID: z.string().optional(),
+  GOOGLE_OAUTH_CLIENT_SECRET: z.string().optional(),
+  FACEBOOK_OAUTH_CLIENT_ID: z.string().optional(),
+  FACEBOOK_OAUTH_CLIENT_SECRET: z.string().optional(),
+  OAUTH_REDIRECT_BASE_URL: z.string().url().default('http://localhost:3333/api'),
+  OAUTH_POST_LOGIN_URL: z.string().url().default('http://localhost:3001'),
+  OAUTH_ALLOW_FAKE: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+
   // RGPD / rétention : purge quotidienne des données périmées (cron `data-retention`).
   RETENTION_ENABLED: z
     .enum(['true', 'false'])

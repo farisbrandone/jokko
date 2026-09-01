@@ -516,8 +516,29 @@ presentation/    contrôleurs NestJS + validation Zod
   vendeurs indépendants, durées de rétention alignées sur le cron `data-retention`,
   droits RGPD (page « Mon compte » / support), cookies strictement nécessaires
 
+**Incrément 31 — connexion sociale (OAuth Google / Facebook)**
+
+- [x] Port `OAuthProvider` + registre ; adaptateurs `GoogleOAuthProvider` (OIDC,
+  userinfo), `FacebookOAuthProvider` (Graph API), `FakeOAuthProvider` (dev/CI,
+  sans réseau, auto-activé si `NODE_ENV=test` ou `OAUTH_ALLOW_FAKE`)
+- [x] Table `oauth_identities` (unique `provider` + `provider_account_id`) ;
+  `User.createFromOAuth` (sans mot de passe) ; `SocialAuthService.completeLogin`
+  (identité reliée → sinon compte par e-mail → sinon création + liaison)
+- [x] `GET /auth/oauth/:provider/start` (cookie d'état CSRF, 302 vers le
+  fournisseur) → `…/callback` (vérifie l'état, mint un *ticket* court 90 s,
+  302 vers le dashboard) → `POST /auth/oauth/exchange` (BFF ↔ API : ticket →
+  session ; les jetons ne transitent jamais par l'URL) ; `GET …/providers`
+- [x] Dashboard : boutons « Continuer avec … » (affichés selon `…/providers`),
+  BFF `/api/auth/oauth/[provider]` (redirection navigateur → API publique) et
+  `/oauth/callback` (échange ticket → `writeTokens`) ; middleware public
+- [x] Config : `GOOGLE_/FACEBOOK_OAUTH_CLIENT_*`, `OAUTH_REDIRECT_BASE_URL`,
+  `OAUTH_POST_LOGIN_URL`, `OAUTH_ALLOW_FAKE`, `PUBLIC_API_BASE_URL` (dashboard)
+- [x] Tests : 1 unitaire (`createFromOAuth`) + 3 d'intégration (flux complet
+  fake + re-login = même compte, état manquant → 400, fournisseur off → 404,
+  ticket invalide → 401)
+
 **Suite**
 
-- [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
+- [ ] SuperTokens / passkeys (WebAuthn)
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

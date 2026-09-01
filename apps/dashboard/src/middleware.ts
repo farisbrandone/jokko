@@ -5,7 +5,10 @@ export function middleware(req: NextRequest) {
   const authed = req.cookies.has(ACCESS);
   const { pathname } = req.nextUrl;
 
-  const isPublic = pathname === '/login' || pathname.startsWith('/legal/');
+  const isPublic =
+    pathname === '/login' ||
+    pathname === '/oauth/callback' ||
+    pathname.startsWith('/legal/');
   if (!authed && !isPublic) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';

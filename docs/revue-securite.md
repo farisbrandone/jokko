@@ -17,6 +17,7 @@ Dernière passe : incrément 26.
 | Mots de passe | ✅ | `bcrypt` coût 12 ; `login` refuse un compte sans `passwordHash` (comptes créés par OTP). |
 | OTP par SMS | ✅ | Code 6 chiffres, haché SHA-256, TTL 5 min, 5 tentatives max puis consommation, plafond `OTP_MAX_PER_HOUR` par numéro (429). `OTP_DEV_CODE` **doit rester vide en production** (absent de `.env.prod.example`). |
 | Usurpation d'identité (support) | ✅ | Jeton 15 min, claim `act`, sans rafraîchissement, tracé (`impersonatedBy`). Transmis en query au `POST /impersonate` du BFF ; TTL court accepté pour un outil interne. |
+| Connexion sociale (OAuth, inc. 31) | ✅ | Cookie d'état CSRF `HttpOnly`/`SameSite=Lax` comparé en temps constant ; e-mail non vérifié chez le fournisseur → refus ; les jetons de session ne transitent jamais par l'URL (ticket signé court 90 s échangé BFF↔API). Fournisseur `fake` réservé au dev/CI. |
 | Limitation de débit | ✅ | `@nestjs/throttler` global (`APP_GUARD`), 12/min sur `/auth`, ~600/min ailleurs. Bypass `THROTTLE_TRUSTED_IPS` — n'y mettre que des IP internes. |
 | Webhook facturation | ✅ (corrigé inc. 26) | Voir ci-dessous. |
 | En-têtes de sécurité | ✅ | API : `@fastify/helmet` (CSP désactivée sur JSON). Apps Next : `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, HSTS, CSP. |

@@ -6,6 +6,8 @@ import { User } from '../../domain/user.aggregate';
 import type {
   MembershipRecord,
   MembershipRepository,
+  OAuthIdentityRecord,
+  OAuthIdentityRepository,
   OtpChallenge,
   OtpChallengeRepository,
   SessionRecord,
@@ -16,6 +18,7 @@ import type {
 import { ShopEntity } from '../../../shop/infrastructure/persistence/shop.entity';
 import {
   AuthSessionEntity,
+  OAuthIdentityEntity,
   OtpChallengeEntity,
   ShopMembershipEntity,
   UserEntity,
@@ -111,6 +114,36 @@ export class MikroOrmOtpChallengeRepository implements OtpChallengeRepository {
       phone: phone.trim(),
       createdAt: { $gte: new Date(Date.now() - sinceMs) },
     });
+  }
+}
+
+@Injectable()
+export class MikroOrmOAuthIdentityRepository implements OAuthIdentityRepository {
+  constructor(private readonly em: EntityManager) {}
+
+  async find(provider: string, providerAccountId: string): Promise<OAuthIdentityRecord | null> {
+    const e = await this.em.fork().findOne(OAuthIdentityEntity, { provider, providerAccountId });
+    return e
+      ? { userId: e.userId, provider: e.provider, providerAccountId: e.providerAccountId }
+      : null;
+  }
+
+  async link(
+    userId: string,
+    provider: string,
+    providerAccountId: string,
+    email: string | null,
+  ): Promise<void> {
+    const em = this.em.fork();
+    const existing = await em.findOne(OAuthIdentityEntity, { provider, providerAccountId });
+    const entity = existing ?? new OAuthIdentityEntity();
+    entity.id = existing?.id ?? randomUUID();
+    entity.userId = userId;
+    entity.provider = provider;
+    entity.providerAccountId = providerAccountId;
+    entity.email = email;
+    em.persist(entity);
+    await em.flush();
   }
 }
 

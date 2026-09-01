@@ -43,6 +43,45 @@ export interface OtpSmsSender {
   send(phone: string, code: string): Promise<boolean>;
 }
 
+export interface OAuthIdentityRecord {
+  userId: string;
+  provider: string;
+  providerAccountId: string;
+}
+
+export const OAUTH_IDENTITY_REPOSITORY = Symbol('OAUTH_IDENTITY_REPOSITORY');
+export interface OAuthIdentityRepository {
+  find(provider: string, providerAccountId: string): Promise<OAuthIdentityRecord | null>;
+  link(
+    userId: string,
+    provider: string,
+    providerAccountId: string,
+    email: string | null,
+  ): Promise<void>;
+}
+
+/** Profil normalisé renvoyé par un fournisseur OAuth après échange du code. */
+export interface OAuthProfile {
+  providerAccountId: string;
+  email: string;
+  emailVerified: boolean;
+  name: string;
+}
+
+export interface OAuthProvider {
+  readonly name: string;
+  /** URL du fournisseur vers laquelle rediriger l'utilisateur. */
+  authorizeUrl(state: string, redirectUri: string): string;
+  /** Échange le `code` reçu en retour contre un profil normalisé. */
+  exchange(code: string, redirectUri: string): Promise<OAuthProfile>;
+}
+
+export const OAUTH_PROVIDERS = Symbol('OAUTH_PROVIDERS');
+export interface OAuthProviderRegistry {
+  get(name: string): OAuthProvider | null;
+  available(): string[];
+}
+
 export interface ShopMemberContact {
   userId: string;
   email: string;
