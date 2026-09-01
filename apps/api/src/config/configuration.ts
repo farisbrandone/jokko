@@ -69,6 +69,10 @@ export interface AppConfig {
     limit: number;
     trustedIps: string[];
   };
+  metrics: {
+    enabled: boolean;
+    token: string | null;
+  };
   billing: {
     priceXof: number;
     trialDays: number;
@@ -156,6 +160,10 @@ export const buildConfig = (env: Env): AppConfig => ({
     ttlSec: env.THROTTLE_TTL_SEC,
     limit: env.THROTTLE_LIMIT,
     trustedIps: env.THROTTLE_TRUSTED_IPS,
+  },
+  metrics: {
+    enabled: env.METRICS_ENABLED,
+    token: env.METRICS_TOKEN ?? null,
   },
   billing: {
     priceXof: env.BILLING_PRICE_XOF,

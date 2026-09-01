@@ -783,3 +783,24 @@ describe('connexion par SMS (OTP)', () => {
       .expect(401);
   });
 });
+
+describe('observabilité : métriques Prometheus', () => {
+  it('/metrics : jeton requis, format Prometheus, histogramme HTTP alimenté', async () => {
+    // génère au moins une requête mesurée (route /api/shops)
+    const t = await newSeller('metrics@ex.com');
+    await newShop(t, 'Metrics Shop');
+
+    await http.get('/metrics').expect(401); // sans porteur
+    await http.get('/metrics').set('authorization', 'Bearer mauvais').expect(401);
+
+    const res = await http
+      .get('/metrics')
+      .set('authorization', 'Bearer metrics_test_token')
+      .expect(200);
+    expect(res.headers['content-type']).toContain('text/plain');
+    expect(res.text).toContain('process_cpu_user_seconds_total');
+    expect(res.text).toContain('nodejs_eventloop_lag_seconds');
+    expect(res.text).toContain('http_request_duration_seconds_bucket');
+    expect(res.text).toMatch(/http_request_duration_seconds_count\{[^}]*route="\/api\/shops"/);
+  });
+});

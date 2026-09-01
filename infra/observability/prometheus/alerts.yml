@@ -1,0 +1,54 @@
+groups:
+  - name: jokko-api
+    rules:
+      - alert: ApiDown
+        expr: up{job="jokko-api"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API Jokko injoignable"
+          description: "La cible {{ $labels.instance }} ne répond plus depuis 2 min."
+
+      - alert: HighHttp5xxRate
+        expr: |
+          sum(rate(http_request_duration_seconds_count{status=~"5.."}[5m]))
+            / clamp_min(sum(rate(http_request_duration_seconds_count[5m])), 1e-9) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Taux d'erreurs 5xx > 5 %"
+          description: "{{ $value | humanizePercentage }} des requêtes HTTP sur 5 min."
+
+      - alert: HighRequestLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 1.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Latence HTTP p95 > 1,5 s"
+          description: "p95 = {{ $value }}s (fenêtre 5 min)."
+
+      - alert: EventLoopLagHigh
+        expr: nodejs_eventloop_lag_p99_seconds > 0.2
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event-loop Node.js saturé"
+          description: "p99 du lag = {{ $value }}s."
+
+      - alert: ProcessHeapHigh
+        expr: |
+          nodejs_heap_size_used_bytes / clamp_min(nodejs_heap_size_total_bytes, 1) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Tas V8 à saturation (> 90 %)"
+          description: "{{ $value | humanizePercentage }} du tas alloué est utilisé."

@@ -1,0 +1,30 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: jokko
+
+rule_files:
+  - /etc/prometheus/alerts.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ['alertmanager:9093']
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: jokko-api
+    metrics_path: /metrics
+    # Si METRICS_TOKEN est défini côté API, décommenter et monter le fichier
+    # (une seule ligne : le jeton brut) dans infra/observability/prometheus/ :
+    # authorization:
+    #   type: Bearer
+    #   credentials_file: /etc/prometheus/metrics-token
+    static_configs:
+      - targets: ['api:3333']
+        labels:
+          service: jokko-api

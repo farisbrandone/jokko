@@ -12,6 +12,7 @@ import { buildMikroOrmConfig } from './config/mikro-orm.config';
 import { LoggerModule } from './shared/logger/logger.module';
 import { TenantModule } from './shared/tenant/tenant.module';
 import { HealthModule } from './shared/health/health.module';
+import { MetricsModule } from './shared/metrics/metrics.module';
 import { IdentityModule } from './modules/identity/identity.module';
 import { ShopModule } from './modules/shop/shop.module';
 import { TenantMiddleware } from './modules/shop/tenant/tenant.middleware';
@@ -64,6 +65,7 @@ import { AdminModule } from './modules/admin/admin.module';
     LoggerModule,
     TenantModule,
     HealthModule,
+    MetricsModule,
     IdentityModule,
     ShopModule,
     CatalogModule,

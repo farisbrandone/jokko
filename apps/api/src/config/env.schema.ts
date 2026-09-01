@@ -75,6 +75,14 @@ export const envSchema = z.object({
     .refine((v) => !v || /^https?:\/\//.test(v), 'URL http(s) attendue'),
   OTEL_SERVICE_NAME: z.string().default('jokko-api'),
 
+  // Métriques Prometheus sur GET /metrics (hors préfixe API). Si METRICS_TOKEN
+  // est défini, la route exige `Authorization: Bearer <jeton>`.
+  METRICS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  METRICS_TOKEN: z.string().optional(),
+
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),
   TENANT_HEADER_SECRET: z.string().min(16).default('dev_tenant_header_secret_0123456789'),
 

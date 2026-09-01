@@ -34,7 +34,7 @@ async function bootstrap() {
   const config = app.get(ConfigService<AppConfig, true>);
   const api = config.get('api', { infer: true });
 
-  app.setGlobalPrefix(api.globalPrefix, { exclude: ['healthz', 'readyz'] });
+  app.setGlobalPrefix(api.globalPrefix, { exclude: ['healthz', 'readyz', 'metrics'] });
   app.enableCors({ origin: api.corsOrigins, credentials: true });
   // La validation des entrées passe par ZodValidationPipe (schémas @jokko/contracts),
   // pas par le ValidationPipe de Nest (qui exige class-validator).

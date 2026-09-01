@@ -461,10 +461,23 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Tests : cas « webhook sans `verif-hash` → 403 » ; harness fixe
   `FLW_WEBHOOK_SECRET` (20 tests d'intégration verts)
 
+**Incrément 27 — observabilité : métriques Prometheus**
+
+- [x] API : `GET /metrics` (hors préfixe API, `@SkipThrottle`, hors Swagger) —
+  `prom-client` (registre dédié) ; `METRICS_ENABLED` (404 si off),
+  `METRICS_TOKEN` (porteur exigé, comparaison `timingSafeEqual`)
+- [x] Histogramme `http_request_duration_seconds{method,route,status}` via un hook
+  Fastify `onResponse` (latence + statut réels ; `route` = motif, faible
+  cardinalité ; `/metrics` + sondes exclus) + métriques `process_*` / `nodejs_*`
+- [x] `infra/observability/` : Prometheus (scrape + 5 règles d'alerte),
+  Alertmanager, Grafana provisionné (datasource + dashboard « Jokko — API ») ;
+  `infra/docker/compose.obs.yaml` (rejoint `jokko_internal`)
+- [x] Test d'intégration : jeton requis (401 ×2), format Prometheus, histogramme
+  HTTP alimenté (`route="/api/shops"`) — 21 tests d'intégration verts
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] Observabilité : `/metrics` Prometheus + dashboards + alerting
 - [ ] E-mails HTML + SPF/DKIM/DMARC ; purge/RGPD ; pages légales
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

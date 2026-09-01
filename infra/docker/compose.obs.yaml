@@ -1,0 +1,57 @@
+# Pile d'observabilité Jokko — Prometheus + Alertmanager + Grafana.
+# À lancer À CÔTÉ de compose.prod.yaml (qui crée le réseau `jokko_internal`) :
+#   docker compose -f compose.prod.yaml up -d
+#   docker compose -f compose.obs.yaml up -d
+# Grafana : http://127.0.0.1:3009  (admin / $GRAFANA_ADMIN_PASSWORD)
+
+name: jokko-obs
+
+services:
+  prometheus:
+    image: prom/prometheus:v3.1.0
+    restart: always
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.retention.time=15d
+      - --web.enable-lifecycle
+    volumes:
+      - ../observability/prometheus:/etc/prometheus:ro
+      - prom_data:/prometheus
+    networks: [obs, jokko]
+
+  alertmanager:
+    image: prom/alertmanager:v0.28.0
+    restart: always
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+    volumes:
+      - ../observability/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+    networks: [obs]
+
+  grafana:
+    image: grafana/grafana:11.4.0
+    restart: always
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3009}
+    ports:
+      - '127.0.0.1:3009:3000'
+    volumes:
+      - ../observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ../observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on: [prometheus]
+    networks: [obs]
+
+networks:
+  obs:
+  jokko:
+    external: true
+    name: jokko_internal
+
+volumes:
+  prom_data:
+  alertmanager_data:
+  grafana_data:

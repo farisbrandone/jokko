@@ -52,6 +52,7 @@ Correctif :
    sessions expirées). Suivi : incrément « purge/RGPD ».
 4. **Pages légales** (CGU, confidentialité, mentions) absentes.
 5. **SPF/DKIM/DMARC** : à configurer côté DNS pour le domaine d'envoi.
-6. **`/metrics`** exposé sans authentification (prévu) → à restreindre au réseau
-   d'observabilité (pare-feu / mTLS / basic-auth reverse-proxy).
+6. **`/metrics`** (inc. 27) : jeton porteur optionnel (`METRICS_TOKEN`) +
+   `METRICS_ENABLED`. En production, le restreindre en plus au réseau
+   d'observabilité (pare-feu / reverse-proxy) même avec jeton.
 7. Audit de pénétration externe non réalisé.

@@ -97,6 +97,7 @@ async function startHarnessInner(): Promise<Harness> {
     THROTTLE_DISABLED: '1', // la limitation de débit n'est pas exercée par la suite
     OTP_DEV_CODE: '123456', // code OTP fixe en test (voir incrément OTP)
     FLW_WEBHOOK_SECRET: 'whsec_test', // secret du webhook facturation (passerelle fake)
+    METRICS_TOKEN: 'metrics_test_token', // /metrics exige ce porteur en test
     DATABASE_URL: appUrl,
     DATABASE_ADMIN_URL: adminUrl,
     MEILI_URL: `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,
@@ -172,7 +173,7 @@ async function startHarnessInner(): Promise<Harness> {
     crossOriginEmbedderPolicy: false,
     referrerPolicy: { policy: 'no-referrer' },
   });
-  app.setGlobalPrefix('api', { exclude: ['healthz', 'readyz'] });
+  app.setGlobalPrefix('api', { exclude: ['healthz', 'readyz', 'metrics'] });
   await app.init();
   await app.getHttpAdapter().getInstance().ready();
 
