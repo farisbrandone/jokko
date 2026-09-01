@@ -41,6 +41,9 @@ jobs:
       - name: Tests
         run: pnpm -r run test
 
+      - name: Storybook (packages/ui)
+        run: pnpm --filter @jokko/ui run build-storybook
+
       - name: Build (api + apps Next)
         run: pnpm -r run build
         env:

@@ -545,8 +545,22 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Migrations : `SocialButtons` (liste des fournisseurs OAuth) → `useQuery` ;
   suppression de compte (`AccountPrivacy`) → `useMutation` ; `del()` obsolète retiré
 
+**Incrément 33 — Storybook pour `packages/ui`**
+
+- [x] Composants partagés `Button` / `Badge` / `Card` : stylés par variables CSS
+  (`var(--color-*)`, `var(--radius-*)`) avec repli — se posent dans n'importe
+  quelle app et héritent du thème (dont la couleur de marque par boutique)
+- [x] Storybook 8 (builder React + Vite) : `.storybook/{main,preview}.ts` ;
+  `tokens.css` en CSS brut (miroir du bloc Tailwind `@theme`) pour le rendu hors
+  pipeline app ; stories `Button` / `Badge` / `Card` + `Fondations/Tokens`
+  (nuancier couleurs & rayons)
+- [x] `pnpm --filter @jokko/ui run storybook` (dev) / `run build-storybook` ;
+  étape CI `check` ; `storybook-static/` ignoré
+- [x] `packages/ui` : `react`/`react-dom` en `peerDependencies`, tsconfig
+  `jsx: react-jsx` (stories exclues du `tsc`, compilées par Storybook)
+
 **Suite**
 
 - [ ] SuperTokens / passkeys (WebAuthn)
-- [ ] Storybook pour `packages/ui`
+- [ ] Adopter `@jokko/ui` (`Button`/`Badge`/`Card`) dans dashboard & admin
 ```
