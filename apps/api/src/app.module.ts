@@ -19,6 +19,7 @@ import { MediaModule } from './modules/media/media.module';
 import { MessagingModule } from './modules/messaging/messaging.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { ModerationModule } from './modules/moderation/moderation.module';
 import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
@@ -51,6 +52,7 @@ import { AdminModule } from './modules/admin/admin.module';
     MessagingModule,
     NotificationsModule,
     AnalyticsModule,
+    ModerationModule,
     AdminModule,
   ],
 })

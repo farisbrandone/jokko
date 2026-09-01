@@ -128,6 +128,7 @@ async function startHarnessInner(): Promise<Harness> {
 
   // Meilisearch indexe de façon asynchrone (file de tâches). Après avoir rejoué
   // l'outbox, on attend que la file soit vide pour que les tests soient déterministes.
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
   const waitForMeili = async (): Promise<void> => {
     const deadline = Date.now() + 30_000;
     while (Date.now() < deadline) {
@@ -140,7 +141,7 @@ async function startHarnessInner(): Promise<Harness> {
       } catch {
         /* Meili momentanément indisponible : on réessaie */
       }
-      await new Promise((r) => setTimeout(r, 100));
+      await sleep(100);
     }
     throw new Error('Meilisearch : la file de tâches ne se vide pas');
   };

@@ -302,11 +302,28 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Fumée : `/manifest.webmanifest` (JSON), `/sw.js`, `/icon` (PNG 512²),
   `/apple-icon`, `/offline` → `200`
 
+**Incrément 16 — modération : signalements & retrait de contenu**
+
+- [x] Contexte `moderation` : `content_reports` (RLS) — `POST /shops/:id/reports`
+  (public vitrine) ; index unique partiel = dédoublonnage par auteur ; garde-fou
+  anti-flood par boutique
+- [x] `admin` : `GET /admin/reports?status=`, `POST /admin/reports/:id/resolve`
+  (`dismiss` | `takedown`) ; takedown produit → `archived` + retrait de l'index
+  Meilisearch ; takedown boutique → `suspended` ; clôture des doublons ;
+  `pendingReports` dans `/admin/overview`
+- [x] storefront : `ReportButton` (motif + note) sur la fiche produit → BFF
+  `/api/report` ; `reporterKey` d'appareil (localStorage)
+- [x] `apps/admin` : page `/reports` (onglets en attente / traités / rejetés,
+  actions), KPI signalements
+- [x] Intégration : dépôt + dédoublonnage, non-admin `403`, `takedown` → produit
+  hors recherche, re-traitement `409` ; assertions de recherche rendues
+  robustes (`expectSearchTotal` sonde la cohérence éventuelle de Meilisearch)
+
 **Suite**
 
 - [ ] Notifications **push** (Web Push, abonnements + VAPID) ; préférences par membre
 - [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
-- [ ] `admin` : file de modération (produits / messages signalés), impersonation support
+- [ ] `admin` : signalements de messages, impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 ```

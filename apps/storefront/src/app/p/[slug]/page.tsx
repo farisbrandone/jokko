@@ -5,6 +5,7 @@ import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, type ProductView } from '@/lib/api';
 import { ContactBar } from '@/components/contact-bar';
+import { ReportButton } from '@/components/report-button';
 import { TrackOnMount } from '@/components/track-event';
 import { ShopUnavailable } from '@/components/shop-unavailable';
 
@@ -129,6 +130,10 @@ export default async function ProductPage({ params }: Params) {
           productName={product.name}
           productUrl={url}
         />
+
+        <div className="pt-1">
+          <ReportButton targetType="product" targetId={product.id} />
+        </div>
       </div>
     </article>
   );

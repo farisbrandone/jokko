@@ -7,6 +7,7 @@ import { post } from '@/lib/client';
 const nav = [
   { href: '/', label: "Vue d'ensemble" },
   { href: '/shops', label: 'Boutiques' },
+  { href: '/reports', label: 'Signalements' },
 ];
 
 export function Shell({ email, children }: { email?: string; children: React.ReactNode }) {

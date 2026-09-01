@@ -17,6 +17,18 @@ afterAll(async () => {
 // le relais tourne toutes les 2 s ; on le déclenche à la main
 const drainOutbox = () => h.drainOutbox();
 
+/** Recherche vitrine éventuellement cohérente : on sonde jusqu'au total attendu. */
+async function expectSearchTotal(shop: string, q: string, expected: number): Promise<void> {
+  let last = -1;
+  for (let i = 0; i < 20; i++) {
+    const res = await http.get(`/api/shops/${shop}/search?q=${encodeURIComponent(q)}`).expect(200);
+    last = res.body.total;
+    if (last === expected) return;
+    await new Promise((r) => setTimeout(r, 200));
+  }
+  expect(last).toBe(expected);
+}
+
 async function newSeller(email: string) {
   const res = await http
     .post('/api/auth/register')
@@ -87,10 +99,8 @@ describe('isolation multi-tenant', () => {
     const listB = await http.get(`/api/shops/${shopB}/products`).expect(200);
     expect(listB.body.total).toBe(0);
 
-    const searchA = await http.get(`/api/shops/${shopA}/search?q=radio`).expect(200);
-    expect(searchA.body.total).toBe(1);
-    const searchB = await http.get(`/api/shops/${shopB}/search?q=radio`).expect(200);
-    expect(searchB.body.total).toBe(0);
+    await expectSearchTotal(shopA, 'radio', 1);
+    await expectSearchTotal(shopB, 'radio', 0);
 
     // écriture inter-boutiques refusée (B non membre de A)
     await http
@@ -107,18 +117,14 @@ describe('catalogue → outbox → recherche', () => {
     const shop = await newShop(t, 'Cat Shop');
     const pid = await newPublishedProduct(t, shop, 'Chargeur Rapide', 8000);
     await drainOutbox();
-
-    let s = await http.get(`/api/shops/${shop}/search?q=chargeur`).expect(200);
-    expect(s.body.total).toBe(1);
+    await expectSearchTotal(shop, 'chargeur', 1);
 
     await http
       .post(`/api/shops/${shop}/products/${pid}/unpublish`)
       .set('authorization', `Bearer ${t}`)
       .expect(201);
     await drainOutbox();
-
-    s = await http.get(`/api/shops/${shop}/search?q=chargeur`).expect(200);
-    expect(s.body.total).toBe(0);
+    await expectSearchTotal(shop, 'chargeur', 0);
   });
 });
 
@@ -334,5 +340,80 @@ describe('profil boutique (couleur de marque)', () => {
     const after = await http.get(`/api/shops/${slug}`).expect(200);
     expect(after.body.name).toBe('Brand Shop ✦');
     expect(after.body.brandColor).toBe('#0ea5e9');
+  });
+});
+
+describe('modération : signalements & retrait', () => {
+  async function makeAdmin(email: string) {
+    const token = await newSeller(email);
+    await h.query('update users set is_platform_admin = true where email = $1', [email]);
+    return token;
+  }
+
+  it('signalement → file admin → retrait du produit → hors recherche', async () => {
+    const seller = await newSeller('mod-seller@ex.com');
+    const admin = await makeAdmin('mod-admin@ex.com');
+    const shop = await newShop(seller, 'Mod Shop');
+    const pid = await newPublishedProduct(seller, shop, 'Sac Contrefait', 20000);
+    await drainOutbox();
+
+    // présent dans la recherche
+    await expectSearchTotal(shop, 'contrefait', 1);
+
+    // dépôt public d'un signalement
+    const r1 = await http
+      .post(`/api/shops/${shop}/reports`)
+      .send({ targetType: 'product', targetId: pid, reason: 'counterfeit', reporterKey: 'dev-1' })
+      .expect(202);
+    expect(r1.body.created).toBe(true);
+
+    // même auteur → dédoublonné
+    const r2 = await http
+      .post(`/api/shops/${shop}/reports`)
+      .send({ targetType: 'product', targetId: pid, reason: 'counterfeit', reporterKey: 'dev-1' })
+      .expect(202);
+    expect(r2.body.created).toBe(false);
+
+    // non-admin refusé
+    await http
+      .get('/api/admin/reports')
+      .set('authorization', `Bearer ${seller}`)
+      .expect(403);
+
+    // file admin
+    const pending = await http
+      .get('/api/admin/reports?status=pending')
+      .set('authorization', `Bearer ${admin}`)
+      .expect(200);
+    const mine = pending.body.items.find((x: { targetId: string }) => x.targetId === pid);
+    expect(mine).toBeTruthy();
+    expect(mine.targetLabel).toBe('Sac Contrefait');
+    expect(mine.shopName).toBe('Mod Shop');
+
+    // retrait
+    const resolved = await http
+      .post(`/api/admin/reports/${mine.id}/resolve`)
+      .set('authorization', `Bearer ${admin}`)
+      .send({ action: 'takedown' })
+      .expect(201);
+    expect(resolved.body.status).toBe('actioned');
+
+    await drainOutbox(); // laisse Meilisearch appliquer la suppression du document
+    await expectSearchTotal(shop, 'contrefait', 0);
+
+    // le signalement a changé de file, un second traitement échoue
+    const stillPending = await http
+      .get('/api/admin/reports?status=pending')
+      .set('authorization', `Bearer ${admin}`)
+      .expect(200);
+    expect(
+      stillPending.body.items.some((x: { id: string }) => x.id === mine.id),
+    ).toBe(false);
+
+    await http
+      .post(`/api/admin/reports/${mine.id}/resolve`)
+      .set('authorization', `Bearer ${admin}`)
+      .send({ action: 'dismiss' })
+      .expect(409);
   });
 });

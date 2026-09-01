@@ -1,10 +1,19 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import type { AdminShopList, PlatformOverview } from '@jokko/contracts';
+import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type {
+  AdminReportList,
+  AdminShopList,
+  PlatformOverview,
+  ResolveReportInput,
+} from '@jokko/contracts';
+import { ProductIndex } from '../../search/infrastructure/product-index';
 import { ADMIN_DB, type AdminDb } from '../infrastructure/admin-db';
 
 @Injectable()
 export class AdminService {
-  constructor(@Inject(ADMIN_DB) private readonly db: AdminDb) {}
+  constructor(
+    @Inject(ADMIN_DB) private readonly db: AdminDb,
+    private readonly index: ProductIndex,
+  ) {}
 
   async overview(): Promise<PlatformOverview> {
     const { rows } = await this.db.query<{
@@ -17,6 +26,7 @@ export class AdminService {
       conv_open: string;
       events_7d: string;
       new_shops_7d: string;
+      pending_reports: string;
     }>(`
       select
         (select count(*) from shops)                                   shops_total,
@@ -27,7 +37,8 @@ export class AdminService {
         (select count(*) from catalog_products where status='published') products_published,
         (select count(*) from conversations where status = 'open')     conv_open,
         (select count(*) from analytics_events where created_at >= now() - interval '7 days') events_7d,
-        (select count(*) from shops where created_at >= now() - interval '7 days')            new_shops_7d
+        (select count(*) from shops where created_at >= now() - interval '7 days')            new_shops_7d,
+        (select count(*) from content_reports where status = 'pending') pending_reports
     `);
     const r = rows[0];
     const n = (v: string) => Number(v);
@@ -38,6 +49,7 @@ export class AdminService {
       conversationsOpen: n(r.conv_open),
       eventsLast7d: n(r.events_7d),
       newShops7d: n(r.new_shops_7d),
+      pendingReports: n(r.pending_reports),
     };
   }
 
@@ -85,5 +97,110 @@ export class AdminService {
       [shopId, status],
     );
     if (res.rowCount === 0) throw new NotFoundException('Boutique introuvable');
+  }
+
+  async listReports(
+    status: string | undefined,
+    page: number,
+    pageSize: number,
+  ): Promise<AdminReportList> {
+    const where = status ? `where r.status = $1` : '';
+    const params: unknown[] = status ? [status] : [];
+    const off = (page - 1) * pageSize;
+
+    const total = await this.db.query<{ c: string }>(
+      `select count(*)::int c from content_reports r ${where}`,
+      params,
+    );
+    const { rows } = await this.db.query(
+      `select r.id, r.shop_id, s.name shop_name, s.slug shop_slug,
+              r.target_type, r.target_id, r.reason, r.note, r.status,
+              r.created_at, r.updated_at,
+              case when r.target_type = 'product'
+                   then (select p.name from catalog_products p where p.id = r.target_id)
+                   else s.name end target_label
+         from content_reports r
+         join shops s on s.id = r.shop_id
+         ${where}
+         order by (r.status = 'pending') desc, r.created_at desc
+         limit ${pageSize} offset ${off}`,
+      params,
+    );
+
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        shopId: r.shop_id,
+        shopName: r.shop_name,
+        shopSlug: r.shop_slug,
+        targetType: r.target_type,
+        targetId: r.target_id,
+        targetLabel: r.target_label ?? null,
+        reason: r.reason,
+        note: r.note ?? null,
+        status: r.status,
+        createdAt: new Date(r.created_at).toISOString(),
+        updatedAt: new Date(r.updated_at).toISOString(),
+      })),
+      total: Number(total.rows[0].c),
+      page,
+      pageSize,
+    };
+  }
+
+  async resolveReport(
+    id: string,
+    action: ResolveReportInput['action'],
+  ): Promise<{ status: 'actioned' | 'dismissed' }> {
+    const found = await this.db.query<{
+      shop_id: string;
+      target_type: 'product' | 'shop';
+      target_id: string;
+      status: string;
+    }>(`select shop_id, target_type, target_id, status from content_reports where id = $1`, [id]);
+    const rep = found.rows[0];
+    if (!rep) throw new NotFoundException('Signalement introuvable');
+    if (rep.status !== 'pending') {
+      throw new ConflictException('Signalement déjà traité');
+    }
+
+    if (action === 'dismiss') {
+      await this.db.query(
+        `update content_reports set status = 'dismissed', updated_at = now() where id = $1`,
+        [id],
+      );
+      return { status: 'dismissed' };
+    }
+
+    // takedown
+    if (rep.target_type === 'product') {
+      await this.db.query(
+        `update catalog_products set status = 'archived', updated_at = now() where id = $1`,
+        [rep.target_id],
+      );
+      try {
+        await this.index.remove(rep.target_id);
+      } catch {
+        /* réindexation best-effort — l'archivage en base fait foi */
+      }
+    } else {
+      await this.db.query(
+        `update shops set status = 'suspended', updated_at = now() where id = $1`,
+        [rep.shop_id],
+      );
+    }
+
+    await this.db.query(
+      `update content_reports set status = 'actioned', updated_at = now() where id = $1`,
+      [id],
+    );
+    // Clôt les autres signalements en attente sur la même cible.
+    await this.db.query(
+      `update content_reports set status = 'dismissed', updated_at = now()
+         where shop_id = $1 and target_type = $2 and target_id = $3
+           and status = 'pending' and id <> $4`,
+      [rep.shop_id, rep.target_type, rep.target_id, id],
+    );
+    return { status: 'actioned' };
   }
 }

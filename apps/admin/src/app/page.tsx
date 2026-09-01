@@ -46,6 +46,7 @@ export default async function OverviewPage() {
         />
         <Kpi label="Conversations ouvertes" value={o.conversationsOpen} />
         <Kpi label="Événements (7 j)" value={o.eventsLast7d} />
+        <Kpi label="Signalements en attente" value={o.pendingReports} />
       </div>
     </Shell>
   );

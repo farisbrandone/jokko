@@ -13,6 +13,31 @@ export interface PlatformOverview {
   conversationsOpen: number;
   eventsLast7d: number;
   newShops7d: number;
+  pendingReports: number;
+}
+
+export type ReportStatus = 'pending' | 'actioned' | 'dismissed';
+
+export interface AdminReportRow {
+  id: string;
+  shopId: string;
+  shopName: string;
+  shopSlug: string;
+  targetType: 'product' | 'shop';
+  targetId: string;
+  targetLabel: string | null;
+  reason: string;
+  note: string | null;
+  status: ReportStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminReportList {
+  items: AdminReportRow[];
+  total: number;
+  page: number;
+  pageSize: number;
 }
 
 export interface AdminShopRow {

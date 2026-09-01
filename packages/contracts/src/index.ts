@@ -8,4 +8,5 @@ export * from './media';
 export * from './messaging';
 export * from './notifications';
 export * from './analytics';
+export * from './moderation';
 export * from './admin';

@@ -10,6 +10,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
+import { resolveReportSchema, type ResolveReportInput } from '@jokko/contracts';
 import { ZodValidationPipe } from '../../../shared/zod-validation.pipe';
 import { AuthGuard } from '../../identity/guards/auth.guard';
 import { PlatformAdminGuard } from '../../identity/guards/platform-admin.guard';
@@ -21,6 +22,13 @@ const ListQuerySchema = z.object({
   pageSize: z.coerce.number().int().positive().max(100).default(30),
 });
 type ListQuery = z.infer<typeof ListQuerySchema>;
+
+const ReportsQuerySchema = z.object({
+  status: z.enum(['pending', 'actioned', 'dismissed']).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(30),
+});
+type ReportsQuery = z.infer<typeof ReportsQuerySchema>;
 
 const StatusSchema = z.object({ status: z.enum(['active', 'suspended']) });
 
@@ -47,5 +55,18 @@ export class AdminController {
   ) {
     await this.admin.setShopStatus(id, body.status);
     return { ok: true, status: body.status };
+  }
+
+  @Get('reports')
+  reports(@Query(new ZodValidationPipe(ReportsQuerySchema)) q: ReportsQuery) {
+    return this.admin.listReports(q.status, q.page, q.pageSize);
+  }
+
+  @Post('reports/:id/resolve')
+  resolve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(resolveReportSchema)) body: ResolveReportInput,
+  ) {
+    return this.admin.resolveReport(id, body.action);
   }
 }
