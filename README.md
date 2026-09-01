@@ -537,8 +537,16 @@ presentation/    contrôleurs NestJS + validation Zod
   fake + re-login = même compte, état manquant → 400, fournisseur off → 404,
   ticket invalide → 401)
 
+**Incrément 32 — dashboard : TanStack Query**
+
+- [x] `@tanstack/react-query` (+ devtools en dev) ; `QueryProvider` monté dans
+  `layout.tsx` (staleTime 30 s, `retry: 1`, pas de refetch au focus)
+- [x] `src/lib/bff.ts` : fetchers `bffGet` / `bffSend` + `BffError`
+- [x] Migrations : `SocialButtons` (liste des fournisseurs OAuth) → `useQuery` ;
+  suppression de compte (`AccountPrivacy`) → `useMutation` ; `del()` obsolète retiré
+
 **Suite**
 
 - [ ] SuperTokens / passkeys (WebAuthn)
-- [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
+- [ ] Storybook pour `packages/ui`
 ```

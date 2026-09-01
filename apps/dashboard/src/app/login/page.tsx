@@ -1,8 +1,10 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { post } from '@/lib/client';
+import { bffGet } from '@/lib/bff';
 import { LegalLinks } from '@/components/legal-links';
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -12,14 +14,12 @@ const PROVIDER_LABELS: Record<string, string> = {
 };
 
 function SocialButtons() {
-  const [providers, setProviders] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch('/api/proxy/auth/oauth/providers')
-      .then((r) => (r.ok ? r.json() : { providers: [] }))
-      .then((d) => setProviders(Array.isArray(d.providers) ? d.providers : []))
-      .catch(() => setProviders([]));
-  }, []);
+  const { data } = useQuery({
+    queryKey: ['oauth', 'providers'],
+    queryFn: () => bffGet<{ providers: string[] }>('/api/proxy/auth/oauth/providers'),
+    staleTime: 5 * 60_000,
+  });
+  const providers = data?.providers ?? [];
 
   if (providers.length === 0) return null;
 

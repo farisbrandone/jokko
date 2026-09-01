@@ -2,26 +2,22 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { del } from '@/lib/client';
+import { useMutation } from '@tanstack/react-query';
+import { bffSend } from '@/lib/bff';
 
 export function AccountPrivacy() {
   const router = useRouter();
   const [confirm, setConfirm] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
 
-  const remove = async () => {
-    setBusy(true);
-    setMsg(null);
-    try {
-      await del('/api/account');
+  const remove = useMutation({
+    mutationFn: () => bffSend<{ deleted: boolean }>('/api/account', 'DELETE'),
+    onSuccess: () => {
       router.push('/login');
       router.refresh();
-    } catch (e) {
-      setMsg((e as Error).message);
-      setBusy(false);
-    }
-  };
+    },
+  });
+  const busy = remove.isPending;
+  const msg = remove.error ? (remove.error as Error).message : null;
 
   return (
     <div className="flex flex-col gap-8 max-w-lg">
@@ -56,7 +52,7 @@ export function AccountPrivacy() {
         />
         <button
           type="button"
-          onClick={remove}
+          onClick={() => remove.mutate()}
           disabled={busy || confirm !== 'SUPPRIMER'}
           className="rounded-[var(--radius-btn)] bg-[var(--color-danger,#b91c1c)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >

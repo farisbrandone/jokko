@@ -4,6 +4,7 @@ import './globals.css';
 import { apiJson } from '@/lib/api';
 import type { SessionUser } from '@/lib/types';
 import { SupportBanner } from '@/components/support-banner';
+import { QueryProvider } from '@/components/query-provider';
 
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -28,8 +29,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="fr" className={`${display.variable} ${sans.variable}`}>
       <body className="min-h-dvh">
-        {impersonatedEmail ? <SupportBanner email={impersonatedEmail} /> : null}
-        {children}
+        <QueryProvider>
+          {impersonatedEmail ? <SupportBanner email={impersonatedEmail} /> : null}
+          {children}
+        </QueryProvider>
       </body>
     </html>
   );
