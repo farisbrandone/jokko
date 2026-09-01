@@ -46,8 +46,10 @@ export default async function ShopDetailPage({ params }: Params) {
 
   const shop = await apiJson<AdminShopDetail>(`/admin/shops/${id}`);
 
+  const dashboardUrl = process.env.DASHBOARD_PUBLIC_URL ?? 'http://localhost:3001';
   let view: { products: ProductList; inbox: InboxList; summary: Summary } | null = null;
   let viewError: string | null = null;
+  let handoffToken: string | null = null;
   if (shop.owner) {
     try {
       const grant = await apiJson<ImpersonationGrant>('/admin/impersonate', {
@@ -55,6 +57,7 @@ export default async function ShopDetailPage({ params }: Params) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ userId: shop.owner.id }),
       });
+      handoffToken = grant.token;
       const [products, inbox, summary] = await Promise.all([
         apiJsonAs<ProductList>(`/shops/${id}/products?pageSize=50`, grant.token),
         apiJsonAs<InboxList>(`/shops/${id}/inbox?pageSize=20`, grant.token),
@@ -79,7 +82,19 @@ export default async function ShopDetailPage({ params }: Params) {
             {shop.owner ? shop.owner.email : 'sans propriétaire'}
           </p>
         </div>
-        <ShopStatusToggle shopId={shop.id} status={shop.status} />
+        <div className="flex items-center gap-2">
+          {handoffToken ? (
+            <a
+              href={`${dashboardUrl}/impersonate?token=${encodeURIComponent(handoffToken)}&shopId=${shop.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-1.5 text-xs font-medium"
+            >
+              Ouvrir le tableau de bord
+            </a>
+          ) : null}
+          <ShopStatusToggle shopId={shop.id} status={shop.status} />
+        </div>
       </div>
 
       <p className="text-xs text-[var(--color-faint)] mb-4">

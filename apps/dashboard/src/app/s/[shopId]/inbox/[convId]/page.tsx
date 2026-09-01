@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation';
 import { apiJson, ApiError } from '@/lib/api';
 import { Shell } from '@/components/shell';
 import { InboxThread } from '@/components/inbox-thread';
+import { ReportConversation } from '@/components/report-conversation';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,9 @@ export default async function InboxThreadPage({ params }: Params) {
         initial={thread.messages}
         status={thread.status}
       />
+      <div className="mt-4">
+        <ReportConversation shopId={shopId} convId={convId} />
+      </div>
     </Shell>
   );
 }

@@ -16,7 +16,7 @@ export class ContentReportEntity {
   @Property({ type: 'uuid', fieldName: 'shop_id' })
   shopId!: string;
 
-  @Property({ type: 'string', length: 10, fieldName: 'target_type' })
+  @Property({ type: 'string', length: 16, fieldName: 'target_type' })
   targetType!: ReportTarget;
 
   @Property({ type: 'uuid', fieldName: 'target_id' })

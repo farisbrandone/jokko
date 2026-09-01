@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { IdSchema, paginated } from './common';
 
-export const reportTargetSchema = z.enum(['product', 'shop']);
+export const reportTargetSchema = z.enum(['product', 'shop', 'conversation']);
 export type ReportTarget = z.infer<typeof reportTargetSchema>;
 
 export const reportReasonSchema = z.enum([

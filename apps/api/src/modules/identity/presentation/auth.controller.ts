@@ -69,8 +69,8 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
-  me(@CurrentUser() user: { id: string }) {
-    return this.auth.me(user.id);
+  me(@CurrentUser() user: { id: string; impersonatedBy?: string }) {
+    return this.auth.me(user.id, user.impersonatedBy);
   }
 
   private setCookies(res: FastifyReply, result: AuthResult): void {

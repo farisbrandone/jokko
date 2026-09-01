@@ -2,6 +2,7 @@ export interface SessionUser {
   id: string;
   email: string;
   name: string;
+  impersonatedBy?: string | null;
   memberships: { shopId: string; slug: string; role: string }[];
 }
 

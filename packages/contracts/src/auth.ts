@@ -20,6 +20,8 @@ export const SessionUserSchema = z.object({
   email: z.string().email(),
   name: z.string(),
   isPlatformAdmin: z.boolean(),
+  /** Id de l'administrateur agissant si la session résulte d'une usurpation support. */
+  impersonatedBy: z.string().nullable().optional(),
   memberships: z.array(
     z.object({ shopId: IdSchema, slug: z.string(), role: ShopRoleSchema }),
   ),

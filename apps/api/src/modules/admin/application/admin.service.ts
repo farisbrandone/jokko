@@ -184,8 +184,11 @@ export class AdminService {
       `select r.id, r.shop_id, s.name shop_name, s.slug shop_slug,
               r.target_type, r.target_id, r.reason, r.note, r.status,
               r.created_at, r.updated_at,
-              case when r.target_type = 'product'
-                   then (select p.name from catalog_products p where p.id = r.target_id)
+              case r.target_type
+                   when 'product' then (select p.name from catalog_products p where p.id = r.target_id)
+                   when 'conversation' then (
+                     select 'Conversation — ' || c.buyer_name from conversations c where c.id = r.target_id
+                   )
                    else s.name end target_label
          from content_reports r
          join shops s on s.id = r.shop_id
@@ -222,7 +225,7 @@ export class AdminService {
   ): Promise<{ status: 'actioned' | 'dismissed' }> {
     const found = await this.db.query<{
       shop_id: string;
-      target_type: 'product' | 'shop';
+      target_type: 'product' | 'shop' | 'conversation';
       target_id: string;
       status: string;
     }>(`select shop_id, target_type, target_id, status from content_reports where id = $1`, [id]);
@@ -251,6 +254,10 @@ export class AdminService {
       } catch {
         /* réindexation best-effort — l'archivage en base fait foi */
       }
+    } else if (rep.target_type === 'conversation') {
+      await this.db.query(`update conversations set status = 'closed' where id = $1`, [
+        rep.target_id,
+      ]);
     } else {
       await this.db.query(
         `update shops set status = 'suspended', updated_at = now() where id = $1`,

@@ -548,6 +548,14 @@ describe("support : usurpation d'identité (impersonation)", () => {
       .set('authorization', `Bearer ${grant.body.token}`)
       .expect(200);
     expect(asSeller.body.id).toBe(sellerId);
+    expect(asSeller.body.impersonatedBy).toBe(adminId);
+
+    // une session normale n'est pas marquée
+    const normal = await http
+      .get('/api/auth/me')
+      .set('authorization', `Bearer ${seller}`)
+      .expect(200);
+    expect(normal.body.impersonatedBy).toBeNull();
 
     // …y compris sur une route réservée aux membres
     const inbox = await http
@@ -570,5 +578,51 @@ describe("support : usurpation d'identité (impersonation)", () => {
       .expect(200);
     expect(detail.body.owner.email).toBe('imp-seller@ex.com');
     expect(detail.body.slug).toBe('imp-shop');
+  });
+});
+
+describe('modération : signalement de conversation', () => {
+  it('signalée depuis le vendeur → file admin → conversation clôturée', async () => {
+    const admin = await makeAdmin('conv-admin@ex.com');
+    const seller = await newSeller('conv-seller@ex.com');
+    const shop = await newShop(seller, 'Conv Shop');
+
+    const open = await http
+      .post(`/api/shops/${shop}/conversations`)
+      .send({ buyerName: 'Sam', buyerPhone: '+221770000404', message: 'propos déplacés' })
+      .expect(201);
+    const convId = open.body.conversationId;
+
+    await http
+      .post(`/api/shops/${shop}/reports`)
+      .send({
+        targetType: 'conversation',
+        targetId: convId,
+        reason: 'offensive',
+        reporterKey: `seller:${shop}`,
+      })
+      .expect(202);
+
+    const pending = await http
+      .get('/api/admin/reports?status=pending')
+      .set('authorization', `Bearer ${admin}`)
+      .expect(200);
+    const mine = pending.body.items.find(
+      (x: { targetId: string }) => x.targetId === convId,
+    );
+    expect(mine.targetType).toBe('conversation');
+    expect(mine.targetLabel).toContain('Sam');
+
+    await http
+      .post(`/api/admin/reports/${mine.id}/resolve`)
+      .set('authorization', `Bearer ${admin}`)
+      .send({ action: 'takedown' })
+      .expect(201);
+
+    const thread = await http
+      .get(`/api/shops/${shop}/inbox/${convId}`)
+      .set('authorization', `Bearer ${seller}`)
+      .expect(200);
+    expect(thread.body.status).toBe('closed');
   });
 });

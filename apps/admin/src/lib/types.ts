@@ -3,6 +3,7 @@ export interface SessionUser {
   email: string;
   name: string;
   isPlatformAdmin: boolean;
+  impersonatedBy?: string | null;
   memberships: { shopId: string; slug: string; role: string }[];
 }
 

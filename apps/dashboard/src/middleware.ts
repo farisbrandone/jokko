@@ -21,5 +21,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/).*)'],
+  // `impersonate` : point d'entrée d'une session support, pose lui-même le cookie.
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|api/|impersonate).*)'],
 };

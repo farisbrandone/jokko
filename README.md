@@ -350,10 +350,25 @@ presentation/    contrôleurs NestJS + validation Zod
   comme le vendeur (`/auth/me`, route membre `/inbox`), ligne d'audit,
   `GET /admin/shops/:id`
 
+**Incrément 19 — support : session d'usurpation inter-apps + signalement de conversation**
+
+- [x] `/auth/me` renvoie `impersonatedBy` (contrat `SessionUser`)
+- [x] Dashboard : route `/impersonate?token=&shopId=` — vérifie que le jeton est
+  bien une usurpation (`act`) puis le pose en cookie court (`d_access`, 15 min,
+  sans refresh) et redirige ; bandeau `SupportBanner` permanent (bouton
+  « Quitter ») dans le layout dès que `impersonatedBy`
+- [x] Console : bouton « Ouvrir le tableau de bord » sur `/shops/[id]`
+  (`DASHBOARD_PUBLIC_URL/impersonate?token=…`)
+- [x] Signalement de conversation : `reportTargetSchema` += `conversation`
+  (colonne `target_type` élargie) ; `takedown` → conversation `closed` ;
+  libellé admin = « Conversation — <acheteur> » ; bouton `ReportConversation`
+  dans le fil de la boîte de réception
+- [x] Intégration : `impersonatedBy` présent/nul selon la session ; signalement
+  vendeur → file admin → conversation clôturée
+
 **Suite**
 
 - [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
-- [ ] `admin` : signalements de messages ; bannière « session support » côté dashboard
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 ```

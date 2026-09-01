@@ -65,8 +65,9 @@ export class AuthService {
     if (refreshToken) await this.sessions.revokeByHash(this.tokens.hashRefresh(refreshToken));
   }
 
-  async me(userId: string): Promise<SessionUser> {
-    return this.buildSessionUser(userId);
+  async me(userId: string, impersonatedBy?: string): Promise<SessionUser> {
+    const user = await this.buildSessionUser(userId);
+    return { ...user, impersonatedBy: impersonatedBy ?? null };
   }
 
   private async issueSession(userId: string, userAgent?: string): Promise<AuthResult> {
