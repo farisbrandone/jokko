@@ -439,9 +439,20 @@ presentation/    contrôleurs NestJS + validation Zod
   explicites (`getMessages()`) — les composants clients de la vitrine levaient
   `MISSING_MESSAGE`
 
+**Incrément 25 — CSP & chaîne de dépendances**
+
+- [x] `Content-Security-Policy` sur les 3 apps Next : `default-src 'self'`,
+  `object-src 'none'`, `base-uri`/`form-action` `'self'`, `frame-ancestors`
+  (`'none'` dashboard/admin, `'self'` vitrine), `img-src https:` ;
+  `script-src 'unsafe-inline'` (limitation Next, à passer en nonce ensuite)
+- [x] `.github/dependabot.yml` : npm (groupé) + github-actions + docker, hebdo
+- [x] CI : `pnpm audit --prod --audit-level high` (advisory)
+- [x] E2E rejoués avec CSP active (3/3 verts)
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] `/security-review` avant ouverture ; observabilité (dashboards, alerting)
+- [ ] Observabilité : `/metrics` Prometheus + dashboards + alerting
+- [ ] E-mails HTML + SPF/DKIM/DMARC ; purge/RGPD ; pages légales
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```
