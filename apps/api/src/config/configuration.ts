@@ -74,6 +74,11 @@ export interface AppConfig {
     trialDays: number;
     graceDays: number;
     appPublicUrl: string;
+    /**
+     * Secret du webhook Flutterwave (en-tête `verif-hash`), découplé de la
+     * passerelle : sans lui, aucun webhook n'est accepté (même en mode « fake »).
+     */
+    webhookSecret: string | null;
     flutterwave: {
       secretKey: string;
       webhookSecret: string;
@@ -157,6 +162,7 @@ export const buildConfig = (env: Env): AppConfig => ({
     trialDays: env.BILLING_TRIAL_DAYS,
     graceDays: env.BILLING_GRACE_DAYS,
     appPublicUrl: env.APP_PUBLIC_URL,
+    webhookSecret: env.FLW_WEBHOOK_SECRET ?? null,
     flutterwave:
       env.FLW_SECRET_KEY && env.FLW_WEBHOOK_SECRET
         ? {

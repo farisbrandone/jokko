@@ -449,6 +449,18 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] CI : `pnpm audit --prod --audit-level high` (advisory)
 - [x] E2E rejoués avec CSP active (3/3 verts)
 
+**Incrément 26 — revue de sécurité & durcissement du webhook**
+
+- [x] `docs/revue-securite.md` : revue manuelle (l'outil `/security-review` exige
+  un distant `origin`, absent — dépôt local) ; tableau de couverture + risques
+  résiduels
+- [x] Webhook `POST /billing/webhook/flutterwave` : `FLW_WEBHOOK_SECRET` découplé
+  de la passerelle ; sans secret → `503` (fermé), signature absente/fausse →
+  `403`, comparaison `timingSafeEqual`. Corrige une faille : en mode « fake » le
+  webhook acceptait des requêtes non signées → prolongation d'abonnement gratuite
+- [x] Tests : cas « webhook sans `verif-hash` → 403 » ; harness fixe
+  `FLW_WEBHOOK_SECRET` (20 tests d'intégration verts)
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens

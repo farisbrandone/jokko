@@ -688,8 +688,15 @@ describe('facturation : abonnement vendeur (Flutterwave)', () => {
       .expect(201);
     const txRef = txRefOf(co.body.url);
 
+    // Sans en-tête `verif-hash` valide → rejeté.
+    await http
+      .post('/api/billing/webhook/flutterwave')
+      .send({ data: { tx_ref: txRef, status: 'successful' } })
+      .expect(403);
+
     const wh = await http
       .post('/api/billing/webhook/flutterwave')
+      .set('verif-hash', 'whsec_test')
       .send({ event: 'charge.completed', data: { tx_ref: txRef, status: 'successful' } })
       .expect(200);
     expect(wh.body.status).toBe('applied');

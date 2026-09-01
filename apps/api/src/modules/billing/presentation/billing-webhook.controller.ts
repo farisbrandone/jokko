@@ -1,4 +1,14 @@
-import { Body, Controller, Headers, HttpCode, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  ForbiddenException,
+  Headers,
+  HttpCode,
+  Logger,
+  Post,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { timingSafeEqual } from 'node:crypto';
 import { SkipThrottle } from '@nestjs/throttler';
 import { ApiExcludeController } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
@@ -7,6 +17,14 @@ import { ApplyPaymentUseCase } from '../application/apply-payment.usecase';
 
 interface FlutterwaveEvent {
   data?: { tx_ref?: string; txRef?: string };
+}
+
+/** Comparaison à temps constant de deux secrets encodés en UTF-8. */
+function safeEqual(a: string, b: string): boolean {
+  const ba = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ba.length !== bb.length) return false;
+  return timingSafeEqual(ba, bb);
 }
 
 /** Webhook Flutterwave (public, signé par l'en-tête `verif-hash`). */
@@ -21,7 +39,7 @@ export class BillingWebhookController {
     config: ConfigService<AppConfig, true>,
     private readonly applyPayment: ApplyPaymentUseCase,
   ) {
-    this.webhookSecret = config.get('billing', { infer: true }).flutterwave?.webhookSecret ?? null;
+    this.webhookSecret = config.get('billing', { infer: true }).webhookSecret;
   }
 
   @Post('flutterwave')
@@ -30,9 +48,14 @@ export class BillingWebhookController {
     @Headers('verif-hash') signature: string | undefined,
     @Body() body: FlutterwaveEvent,
   ) {
-    if (this.webhookSecret && signature !== this.webhookSecret) {
+    // Sans secret configuré (mode « fake », dev), aucun webhook n'est légitime :
+    // la vérification de paiement renverrait toujours « succès ».
+    if (!this.webhookSecret) {
+      throw new ServiceUnavailableException('webhook de facturation non configuré');
+    }
+    if (!signature || !safeEqual(signature, this.webhookSecret)) {
       this.logger.warn('webhook Flutterwave: signature invalide');
-      return { status: 'rejected' };
+      throw new ForbiddenException('signature invalide');
     }
     const txRef = body?.data?.tx_ref ?? body?.data?.txRef;
     if (!txRef) return { status: 'ignored' };

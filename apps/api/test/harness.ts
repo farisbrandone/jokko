@@ -96,6 +96,7 @@ async function startHarnessInner(): Promise<Harness> {
     LOG_LEVEL: 'fatal',
     THROTTLE_DISABLED: '1', // la limitation de débit n'est pas exercée par la suite
     OTP_DEV_CODE: '123456', // code OTP fixe en test (voir incrément OTP)
+    FLW_WEBHOOK_SECRET: 'whsec_test', // secret du webhook facturation (passerelle fake)
     DATABASE_URL: appUrl,
     DATABASE_ADMIN_URL: adminUrl,
     MEILI_URL: `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,
