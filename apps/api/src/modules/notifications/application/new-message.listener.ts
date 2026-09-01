@@ -28,6 +28,7 @@ import {
   type WhatsAppSender,
 } from '../domain/ports';
 import { Mailer } from '../infrastructure/mailer';
+import { renderEmail } from '../infrastructure/email-template';
 
 interface MessagePayload {
   sender: string;
@@ -150,21 +151,17 @@ export class NewMessageListener {
   private async dispatch(channel: NotificationChannel, ctx: DispatchContext): Promise<boolean> {
     try {
       if (channel === 'email') {
+        const { html, text } = renderEmail({
+          title: `Nouveau message sur ${ctx.shopName}`,
+          lines: [`${ctx.buyerName} vous a écrit${ctx.about} :`],
+          quote: ctx.preview,
+          cta: { label: 'Répondre dans la boîte de réception', url: ctx.link },
+        });
         return this.mailer.send({
           to: ctx.recipients,
           subject: `Nouveau message de ${ctx.buyerName}${ctx.about ? ' —' + ctx.about : ''}`,
-          text: [
-            `${ctx.buyerName} vous a écrit sur ${ctx.shopName}${ctx.about} :`,
-            '',
-            `« ${ctx.preview} »`,
-            '',
-            `Répondre : ${ctx.link}`,
-          ].join('\n'),
-          html: `<p><strong>${escapeHtml(ctx.buyerName)}</strong> vous a écrit sur ${escapeHtml(
-            ctx.shopName,
-          )}${escapeHtml(ctx.about)} :</p><blockquote>${escapeHtml(
-            ctx.preview,
-          )}</blockquote><p><a href="${ctx.link}">Répondre dans la boîte de réception</a></p>`,
+          text,
+          html,
         });
       }
       if (channel === 'push') {
@@ -192,21 +189,4 @@ export class NewMessageListener {
       return false;
     }
   }
-}
-
-function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => {
-    switch (c) {
-      case '&':
-        return '&amp;';
-      case '<':
-        return '&lt;';
-      case '>':
-        return '&gt;';
-      case '"':
-        return '&quot;';
-      default:
-        return '&#39;';
-    }
-  });
 }

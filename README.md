@@ -491,9 +491,21 @@ presentation/    contrôleurs NestJS + validation Zod
   + BFF `/api/account` & `/api/account/export`
 - [x] Tests : 3 d'intégration (export, effacement refusé/accepté, purge) — 24 verts
 
+**Incrément 29 — e-mails HTML + délivrabilité (SPF/DKIM/DMARC)**
+
+- [x] `email-template.ts` : gabarit `renderEmail()` (HTML compatible clients de
+  messagerie — tableaux, styles en ligne, largeur 480, en-tête marque, bouton,
+  pied de page) + repli texte ; échappement centralisé
+- [x] `NewMessageListener` : notification e-mail rendue via le gabarit
+  (l'ancien `escapeHtml` local supprimé)
+- [x] `docs/email-dns.md` : SPF (`include:` fournisseur), DKIM (CNAME sélecteur),
+  DMARC (`p=none` → `quarantine` → `reject`), alignement `SMTP_FROM` / Return-Path
+- [x] Tests : 3 unitaires (`renderEmail` : structure, échappement, repli texte) —
+  36 unitaires, 24 d'intégration verts
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] E-mails HTML + SPF/DKIM/DMARC ; pages légales (CGU / confidentialité)
+- [ ] Pages légales (CGU / confidentialité / mentions) — vitrine + dashboard
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```
