@@ -290,3 +290,49 @@ describe('notifications multi-canal & anti-spam', () => {
       .expect(429);
   });
 });
+
+describe('profil boutique (couleur de marque)', () => {
+  it('un membre édite nom / thème / couleur, un tiers est refusé', async () => {
+    const owner = await newSeller('brand-owner@ex.com');
+    const stranger = await newSeller('brand-stranger@ex.com');
+
+    const created = await http
+      .post('/api/shops')
+      .set('authorization', `Bearer ${owner}`)
+      .send({ name: 'Brand Shop', verticals: ['electronique'] })
+      .expect(201);
+    const { id: shopId, slug } = created.body.shop;
+
+    // défaut : pas de couleur de marque
+    const before = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(before.body.brandColor).toBeNull();
+
+    // couleur invalide → 400 (validation Zod)
+    await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ brandColor: 'bleu' })
+      .expect(400);
+
+    // édition valide
+    const patched = await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ name: 'Brand Shop ✦', themePreset: 'editorial', brandColor: '#0EA5E9' })
+      .expect(200);
+    expect(patched.body.brandColor).toBe('#0ea5e9');
+    expect(patched.body.themePreset).toBe('editorial');
+
+    // non-membre refusé
+    await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${stranger}`)
+      .send({ brandColor: '#000000' })
+      .expect(403);
+
+    // la vitrine voit la nouvelle identité
+    const after = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(after.body.name).toBe('Brand Shop ✦');
+    expect(after.body.brandColor).toBe('#0ea5e9');
+  });
+});

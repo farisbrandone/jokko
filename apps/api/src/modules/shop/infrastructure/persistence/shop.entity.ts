@@ -23,6 +23,9 @@ export class ShopEntity {
   @Property({ type: 'string', length: 20, fieldName: 'theme_preset' })
   themePreset: ThemePreset = 'grid';
 
+  @Property({ type: 'string', length: 7, fieldName: 'brand_color', nullable: true })
+  brandColor: string | null = null;
+
   @Property({ type: 'string', length: 10 })
   locale = 'fr';
 

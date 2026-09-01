@@ -17,13 +17,22 @@ export const SlugSchema = z
   .max(40)
   .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'slug invalide (a-z, 0-9, tirets)');
 
+export const ThemePresetSchema = z.enum(['grid', 'editorial', 'single', 'dense']);
+export type ThemePreset = z.infer<typeof ThemePresetSchema>;
+
+/** Couleur de marque en hexadécimal `#rrggbb` (surcharge le token `--color-brand`). */
+export const BrandColorSchema = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'couleur hexadécimale #rrggbb attendue');
+
 export const ShopSchema = z.object({
   id: IdSchema,
   slug: SlugSchema,
   name: z.string().min(2).max(80),
   verticals: z.array(VerticalSchema).min(1),
   whatsapp: z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro E.164 attendu').optional(),
-  themePreset: z.enum(['grid', 'editorial', 'single', 'dense']).default('grid'),
+  themePreset: ThemePresetSchema.default('grid'),
+  brandColor: BrandColorSchema.nullable().optional(),
   locale: z.string().default('fr'),
   currency: z.string().length(3).default('XOF'),
   customDomain: z.string().optional(),
@@ -36,7 +45,20 @@ export const CreateShopSchema = ShopSchema.pick({
   verticals: true,
   whatsapp: true,
   themePreset: true,
+  brandColor: true,
 }).extend({
   slug: SlugSchema.optional(), // dérivé du nom si absent
 });
 export type CreateShopInput = z.infer<typeof CreateShopSchema>;
+
+/** Édition du profil de la boutique par un membre autorisé (au moins un champ). */
+export const UpdateShopSchema = z
+  .object({
+    name: z.string().min(2).max(80),
+    whatsapp: z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro E.164 attendu').nullable(),
+    themePreset: ThemePresetSchema,
+    brandColor: BrandColorSchema.nullable(),
+  })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });
+export type UpdateShopInput = z.infer<typeof UpdateShopSchema>;

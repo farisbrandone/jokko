@@ -1,6 +1,9 @@
 import { ImageResponse } from 'next/og';
 import { currentShop } from '@/lib/shop';
 import { searchProducts } from '@/lib/api';
+import { darken } from '@/lib/theme';
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 export const runtime = 'nodejs';
 export const alt = 'Boutique Jokko';
@@ -25,6 +28,11 @@ export default async function OgImage() {
     .map((v) => v.replace(/-/g, ' '))
     .slice(0, 3)
     .join('  ·  ');
+
+  const brand = shop?.brandColor && HEX_RE.test(shop.brandColor) ? shop.brandColor : null;
+  const background = brand
+    ? `linear-gradient(135deg, ${darken(brand, 0.42)} 0%, ${brand} 70%, ${darken(brand, -0.18)} 100%)`
+    : 'linear-gradient(135deg, #7c2d12 0%, #c2410c 60%, #ea580c 100%)';
 
   return new ImageResponse(
     (

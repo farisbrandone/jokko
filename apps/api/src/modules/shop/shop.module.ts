@@ -4,6 +4,7 @@ import { ShopController } from './presentation/shop.controller';
 import { InternalTlsController } from './presentation/internal-tls.controller';
 import { CreateShopUseCase } from './application/use-cases/create-shop.usecase';
 import { GetShopUseCase } from './application/use-cases/get-shop.usecase';
+import { UpdateShopUseCase } from './application/use-cases/update-shop.usecase';
 import { SHOP_REPOSITORY } from './domain/ports/shop.repository';
 import { MikroOrmShopRepository } from './infrastructure/persistence/mikro-orm-shop.repository';
 import { TenantResolver } from './tenant/tenant-resolver';
@@ -16,6 +17,7 @@ import { TenantGuard } from './tenant/tenant.guard';
   providers: [
     CreateShopUseCase,
     GetShopUseCase,
+    UpdateShopUseCase,
     TenantResolver,
     TenantMiddleware,
     TenantGuard,

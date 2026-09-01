@@ -6,6 +6,8 @@ import { ShopCreated } from './shop.events';
 export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
 export type ShopStatus = 'active' | 'suspended';
 
+const BRAND_COLOR_RE = /^#[0-9a-f]{6}$/i;
+
 export interface ShopSnapshot {
   id: string;
   slug: string;
@@ -13,6 +15,7 @@ export interface ShopSnapshot {
   verticals: Vertical[];
   whatsapp: string | null;
   themePreset: ThemePreset;
+  brandColor: string | null;
   locale: string;
   currency: string;
   customDomain: string | null;
@@ -27,7 +30,15 @@ interface CreateShopProps {
   verticals: Vertical[];
   whatsapp?: string;
   themePreset?: ThemePreset;
+  brandColor?: string | null;
   ownerUserId: string;
+}
+
+export interface UpdateShopProfileProps {
+  name?: string;
+  whatsapp?: string | null;
+  themePreset?: ThemePreset;
+  brandColor?: string | null;
 }
 
 export class Shop extends AggregateRoot {
@@ -38,6 +49,7 @@ export class Shop extends AggregateRoot {
     private _verticals: Vertical[],
     private _whatsapp: string | null,
     private _themePreset: ThemePreset,
+    private _brandColor: string | null,
     private _locale: string,
     private _currency: string,
     private _customDomain: string | null,
@@ -59,6 +71,9 @@ export class Shop extends AggregateRoot {
     const slug = Slug.fromString(props.slug?.trim() || props.name);
     if (slug.isErr) return Result.err(slug.getError());
 
+    const brandColor = normalizeBrandColor(props.brandColor);
+    if (brandColor.isErr) return Result.err(brandColor.getError());
+
     const now = new Date();
     const shop = new Shop(
       UniqueId.create(),
@@ -67,6 +82,7 @@ export class Shop extends AggregateRoot {
       [...props.verticals],
       props.whatsapp?.trim() ?? null,
       props.themePreset ?? 'grid',
+      brandColor.unwrap(),
       'fr',
       'XOF',
       null,
@@ -86,6 +102,7 @@ export class Shop extends AggregateRoot {
       [...snap.verticals],
       snap.whatsapp,
       snap.themePreset,
+      snap.brandColor,
       snap.locale,
       snap.currency,
       snap.customDomain,
@@ -99,6 +116,28 @@ export class Shop extends AggregateRoot {
     return this._slug.value;
   }
 
+  /** Édition du profil par un membre autorisé (nom, WhatsApp, thème, couleur). */
+  updateProfile(patch: UpdateShopProfileProps): Result<void> {
+    if (patch.name !== undefined) {
+      const name = patch.name.trim();
+      if (name.length < 2) return Result.err('Le nom de la boutique est trop court');
+      this._name = name;
+    }
+    if (patch.whatsapp !== undefined) {
+      this._whatsapp = patch.whatsapp?.trim() || null;
+    }
+    if (patch.themePreset !== undefined) {
+      this._themePreset = patch.themePreset;
+    }
+    if (patch.brandColor !== undefined) {
+      const color = normalizeBrandColor(patch.brandColor);
+      if (color.isErr) return Result.err(color.getError());
+      this._brandColor = color.unwrap();
+    }
+    this._updatedAt = new Date();
+    return Result.ok(undefined);
+  }
+
   toSnapshot(): ShopSnapshot {
     return {
       id: this.id.value,
@@ -107,6 +146,7 @@ export class Shop extends AggregateRoot {
       verticals: [...this._verticals],
       whatsapp: this._whatsapp,
       themePreset: this._themePreset,
+      brandColor: this._brandColor,
       locale: this._locale,
       currency: this._currency,
       customDomain: this._customDomain,
@@ -115,4 +155,11 @@ export class Shop extends AggregateRoot {
       updatedAt: this._updatedAt.toISOString(),
     };
   }
+}
+
+function normalizeBrandColor(value: string | null | undefined): Result<string | null> {
+  if (value === undefined || value === null || value === '') return Result.ok(null);
+  const hex = value.trim().toLowerCase();
+  if (!BRAND_COLOR_RE.test(hex)) return Result.err('Couleur de marque invalide (#rrggbb attendu)');
+  return Result.ok(hex);
 }

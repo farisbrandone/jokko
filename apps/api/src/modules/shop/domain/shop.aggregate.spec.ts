@@ -31,5 +31,49 @@ describe('Shop (agrégat)', () => {
     expect(snap.currency).toBe('XOF');
     expect(snap.locale).toBe('fr');
     expect(snap.status).toBe('active');
+    expect(snap.brandColor).toBeNull();
+  });
+
+  it('refuse une couleur de marque invalide à la création', () => {
+    const res = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+      brandColor: 'rouge',
+    });
+    expect(res.isErr).toBe(true);
+  });
+
+  it('updateProfile met à jour nom, thème et couleur (normalisée)', () => {
+    const shop = Shop.create({
+      name: 'Ancien',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+
+    const res = shop.updateProfile({
+      name: '  Nouveau nom ',
+      themePreset: 'editorial',
+      brandColor: '#0EA5E9',
+    });
+    expect(res.isOk).toBe(true);
+
+    const snap = shop.toSnapshot();
+    expect(snap.name).toBe('Nouveau nom');
+    expect(snap.themePreset).toBe('editorial');
+    expect(snap.brandColor).toBe('#0ea5e9');
+  });
+
+  it('updateProfile : brandColor null efface la couleur, hex invalide échoue', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+      brandColor: '#123456',
+    }).unwrap();
+
+    expect(shop.updateProfile({ brandColor: null }).isOk).toBe(true);
+    expect(shop.toSnapshot().brandColor).toBeNull();
+    expect(shop.updateProfile({ brandColor: '#12' }).isErr).toBe(true);
   });
 });

@@ -41,6 +41,17 @@ export interface NotificationSettings {
   cooldownSeconds: number;
 }
 
+export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
+
+export interface ShopProfile {
+  id: string;
+  slug: string;
+  name: string;
+  whatsapp: string | null;
+  themePreset: ThemePreset;
+  brandColor: string | null;
+}
+
 export const VERTICALS = [
   'electronique',
   'mode-accessoires',

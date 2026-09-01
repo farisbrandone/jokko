@@ -10,6 +10,7 @@ export const ShopMapper = {
       verticals: entity.verticals,
       whatsapp: entity.whatsapp,
       themePreset: entity.themePreset,
+      brandColor: entity.brandColor,
       locale: entity.locale,
       currency: entity.currency,
       customDomain: entity.customDomain,
@@ -27,6 +28,7 @@ export const ShopMapper = {
     entity.verticals = s.verticals;
     entity.whatsapp = s.whatsapp;
     entity.themePreset = s.themePreset;
+    entity.brandColor = s.brandColor;
     entity.locale = s.locale;
     entity.currency = s.currency;
     entity.customDomain = s.customDomain;

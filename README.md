@@ -274,11 +274,24 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] `sitemap.xml` propre à la boutique (pages + produits publiés, paginé) et
   `robots.txt` (avec lien sitemap)
 
+**Incrément 14 — identité de marque par boutique (couleur éditable)**
+
+- [x] `shops.brand_color` (agrégat + entité + migration) ; `Shop.updateProfile()`
+  (nom, WhatsApp, thème, couleur — hex `#rrggbb` normalisé/validé), tests unitaires
+- [x] API `PATCH /shops/:id` (TenantGuard + AuthGuard + CASL `update Shop`) →
+  `UpdateShopUseCase` ; `brandColor` exposé par `GET /shops/:slug`
+- [x] storefront `lib/theme.ts` : `brandThemeCss()` surcharge `--color-brand` /
+  `--color-brand-ink` (luminance WCAG) / `--color-brand-soft` (`color-mix`) ;
+  `<meta name="theme-color">` ; carte OG boutique teintée à la couleur
+- [x] dashboard : `/s/:id/settings` → section « Profil de la boutique »
+  (nom, WhatsApp, mise en page, sélecteur de couleur)
+- [x] Intégration : édition membre (nom + thème + couleur), non-membre `403`,
+  hex invalide `400`, propagation à `GET /shops/:slug`
+
 **Suite**
 
 - [ ] Notifications **push** (Web Push / PWA) ; préférences par membre ; heures calmes
-- [ ] `storefront` : PWA (manifest + service worker), i18n (next-intl), thème par
-  boutique éditable (couleur de marque)
+- [ ] `storefront` : PWA (manifest + service worker), i18n (next-intl)
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : file de modération (produits / messages signalés), impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs

@@ -31,6 +31,7 @@ export class CreateShopUseCase {
       verticals: input.verticals,
       whatsapp: input.whatsapp,
       themePreset: input.themePreset,
+      brandColor: input.brandColor ?? null,
       ownerUserId,
     });
     if (created.isErr) return Result.err(created.getError());

@@ -9,6 +9,7 @@ export interface ShopView {
   verticals: string[];
   whatsapp: string | null;
   themePreset: string;
+  brandColor: string | null;
   locale: string;
   currency: string;
   customDomain: string | null;

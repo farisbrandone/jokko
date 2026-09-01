@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
 import './globals.css';
 import { currentShop, siteUrl } from '@/lib/shop';
+import { brandThemeCss } from '@/lib/theme';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PageViewTracker } from '@/components/track-event';
@@ -39,8 +40,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const shop = await currentShop();
+  const themeCss = brandThemeCss(shop?.brandColor);
   return (
     <html lang={shop?.locale ?? 'fr'} className={`${display.variable} ${sans.variable}`}>
+      {themeCss ? (
+        <head>
+          <style dangerouslySetInnerHTML={{ __html: themeCss }} />
+          <meta name="theme-color" content={shop?.brandColor ?? ''} />
+        </head>
+      ) : null}
       <body className="min-h-dvh flex flex-col">
         {shop ? <PageViewTracker /> : null}
         <SiteHeader shop={shop} />
