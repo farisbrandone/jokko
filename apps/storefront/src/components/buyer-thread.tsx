@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import type { Message } from '@jokko/contracts';
 
 export function BuyerThread({
@@ -14,6 +15,7 @@ export function BuyerThread({
   initial: Message[];
 }) {
   const router = useRouter();
+  const t = useTranslations('thread');
   const [messages, setMessages] = useState(initial);
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
@@ -64,14 +66,14 @@ export function BuyerThread({
         <input
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder="Votre message…"
+          placeholder={t('yourMessage')}
           className="flex-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
         />
         <button
           disabled={busy}
           className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-4 text-sm font-medium"
         >
-          Envoyer
+          {t('send')}
         </button>
       </form>
     </div>

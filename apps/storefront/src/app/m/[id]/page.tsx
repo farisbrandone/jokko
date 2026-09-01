@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import type { Message } from '@jokko/contracts';
 import { currentShop } from '@/lib/shop';
 import { apiBase } from '@/lib/api';
@@ -39,22 +40,21 @@ export default async function BuyerConversationPage({ params, searchParams }: Pa
   );
   if (!res.ok) notFound();
   const thread = (await res.json()) as ThreadView;
+  const t = await getTranslations('thread');
 
   return (
     <div className="max-w-lg mx-auto flex flex-col gap-4">
       <h1 className="font-[family-name:var(--font-display)] text-lg font-bold">
-        Conversation avec {shop.name}
+        {t('title', { shop: shop.name })}
         {thread.productName ? (
           <span className="block text-sm font-normal text-[var(--color-muted)]">
-            À propos de {thread.productName}
+            {t('about', { product: thread.productName })}
           </span>
         ) : null}
       </h1>
       <BuyerThread id={id} token={token} initial={thread.messages} />
       {thread.status === 'closed' ? (
-        <p className="text-xs text-[var(--color-muted)]">
-          Conversation clôturée par le vendeur.
-        </p>
+        <p className="text-xs text-[var(--color-muted)]">{t('closed')}</p>
       ) : null}
     </div>
   );

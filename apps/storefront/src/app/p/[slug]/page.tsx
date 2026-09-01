@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, type ProductView } from '@/lib/api';
@@ -46,6 +47,7 @@ export default async function ProductPage({ params }: Params) {
   const { shop, product } = data;
   if (!product) notFound();
 
+  const t = await getTranslations('product');
   const url = `${await siteUrl()}/p/${product.slug}`;
 
   const jsonLd = {
@@ -119,7 +121,7 @@ export default async function ProductPage({ params }: Params) {
           ) : null}
         </p>
         <p className="text-sm text-[var(--color-muted)]">
-          {product.stock > 0 ? 'En stock' : 'Rupture de stock'} · {product.category}
+          {product.stock > 0 ? t('inStock') : t('outOfStock')} · {product.category}
         </p>
         <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
 

@@ -366,9 +366,23 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Intégration : `impersonatedBy` présent/nul selon la session ; signalement
   vendeur → file admin → conversation clôturée
 
+**Incrément 20 — storefront : i18n (next-intl) + invite d'installation PWA**
+
+- [x] `next-intl` **sans routing par URL** : `src/i18n/request.ts` résout la locale
+  par cookie `NEXT_LOCALE` → `locale` de la boutique → repli `fr` ; `next.config`
+  enveloppé par `createNextIntlPlugin`
+- [x] Catalogues `messages/{fr,en}.json` (namespaces `nav`, `home`, `product`,
+  `contact`, `search`, `thread`, `report`, `errors`, `footer`, `install`) —
+  toutes les chaînes visibles de la vitrine extraites (pluriels ICU inclus)
+- [x] `<html lang>` = locale résolue ; `NextIntlClientProvider` global ;
+  `LocaleSwitcher` (FR / EN, cookie) dans le pied de page
+- [x] `InstallPrompt` : capture `beforeinstallprompt`, propose l'installation,
+  « plus tard » mémorisé (localStorage)
+- [x] Fumée : cookie `NEXT_LOCALE=en` → « Shop not found » + `<html lang="en">` ;
+  défaut → « Boutique introuvable » + `lang="fr"`
+
 **Suite**
 
-- [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 ```

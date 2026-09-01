@@ -1,14 +1,16 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getTranslations('errors');
   return (
     <div className="py-20 text-center">
       <h1 className="font-[family-name:var(--font-display)] text-xl font-bold">
-        Page introuvable
+        {t('notFoundTitle')}
       </h1>
       <p className="mt-2">
         <Link href="/" className="text-[var(--color-brand)] underline">
-          Retour à la boutique
+          {t('backToShop')}
         </Link>
       </p>
     </div>

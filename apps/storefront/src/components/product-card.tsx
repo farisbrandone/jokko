@@ -1,9 +1,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import type { SearchHit } from '@jokko/contracts';
 
-export function ProductCard({ hit }: { hit: SearchHit }) {
+export async function ProductCard({ hit }: { hit: SearchHit }) {
+  const t = await getTranslations('product');
   const img = hit.images[0];
   const hasPromo =
     hit.compareAtPriceAmount != null && hit.compareAtPriceAmount > hit.priceAmount;
@@ -24,7 +26,7 @@ export function ProductCard({ hit }: { hit: SearchHit }) {
         ) : null}
         {!hit.inStock ? (
           <span className="absolute top-2 left-2 rounded bg-[var(--color-ink)]/80 text-white text-xs px-2 py-0.5">
-            Rupture
+            {t('outOfStock')}
           </span>
         ) : null}
       </div>

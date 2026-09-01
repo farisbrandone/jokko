@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "searchPlaceholder": "Rechercher un produit…",
+    "searchLabel": "Rechercher",
+    "whatsapp": "WhatsApp"
+  },
+  "home": {
+    "tagline": "Toute la gamme, en un lien.",
+    "productsAvailable": "{count, plural, =0 {Aucun produit disponible} one {# produit disponible} other {# produits disponibles}}"
+  },
+  "product": {
+    "inStock": "En stock",
+    "outOfStock": "Rupture de stock",
+    "onOrder": "Sur commande",
+    "report": "Signaler"
+  },
+  "contact": {
+    "heading": "Contacter la boutique",
+    "message": "Message",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS",
+    "call": "Appeler",
+    "share": "Partager",
+    "formTitle": "Envoyer un message",
+    "name": "Votre nom",
+    "phone": "Votre téléphone",
+    "yourMessage": "Votre message",
+    "send": "Envoyer",
+    "sending": "Envoi…",
+    "sent": "Message envoyé. Le vendeur vous répondra ici.",
+    "seeConversation": "Voir la conversation",
+    "error": "Envoi impossible. Réessayez."
+  },
+  "search": {
+    "title": "Résultats pour « {query} »",
+    "empty": "Aucun produit ne correspond à cette recherche.",
+    "count": "{count, plural, =0 {Aucun résultat} one {# résultat} other {# résultats}}"
+  },
+  "facets": {
+    "categories": "Catégories"
+  },
+  "thread": {
+    "title": "Conversation avec {shop}",
+    "about": "À propos de {product}",
+    "yourMessage": "Votre message…",
+    "send": "Envoyer",
+    "closed": "Conversation clôturée par le vendeur."
+  },
+  "report": {
+    "open": "Signaler",
+    "reasonLabel": "Motif du signalement",
+    "reasons": {
+      "counterfeit": "Contrefaçon",
+      "prohibited": "Produit interdit / illégal",
+      "scam": "Arnaque / fraude",
+      "offensive": "Contenu choquant",
+      "spam": "Spam / doublon",
+      "other": "Autre"
+    },
+    "detail": "Détail (facultatif)",
+    "send": "Envoyer",
+    "thanks": "Merci, votre signalement a été transmis à l’équipe Jokko.",
+    "error": "Envoi impossible. Réessayez plus tard.",
+    "cancel": "Annuler"
+  },
+  "errors": {
+    "shopUnavailableTitle": "Boutique introuvable",
+    "shopUnavailableBody": "Ce lien ne correspond à aucune boutique, ou le service est momentanément indisponible.",
+    "notFoundTitle": "Page introuvable",
+    "backToShop": "Retour à la boutique",
+    "offlineTitle": "Vous êtes hors ligne",
+    "offlineBody": "Reconnectez-vous pour voir les derniers produits.",
+    "retry": "Réessayer"
+  },
+  "footer": {
+    "poweredBy": "{shop} — propulsé par Jokko"
+  },
+  "locale": {
+    "label": "Langue",
+    "fr": "Français",
+    "en": "English"
+  },
+  "install": {
+    "text": "Installez la boutique sur votre écran d’accueil.",
+    "action": "Installer",
+    "dismiss": "Plus tard"
+  }
+}

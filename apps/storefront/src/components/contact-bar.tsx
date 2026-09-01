@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { smsLink, telLink, whatsappLink } from '@jokko/ui';
 import { track } from '@/lib/track';
 
@@ -19,13 +20,14 @@ const btnPrimary =
   'rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-4 py-2.5 text-sm font-medium';
 
 export function ContactBar({ shopName, whatsapp, productId, productName, productUrl }: Props) {
+  const t = useTranslations('contact');
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ buyerName: '', buyerPhone: '', message: '' });
   const [state, setState] = useState<
     { kind: 'idle' } | { kind: 'sending' } | { kind: 'sent'; id: string; token: string } | { kind: 'error'; msg: string }
   >({ kind: 'idle' });
 
-  const message = `Bonjour ${shopName}, je suis intéressé(e) par « ${productName} » : ${productUrl}`;
+  const message = `${shopName} — « ${productName} » : ${productUrl}`;
 
   const share = async () => {
     track('contact_click', { channel: 'share', productId });
@@ -69,11 +71,11 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
             onClick={() => track('contact_click', { channel: 'whatsapp', productId })}
             className={btnPrimary}
           >
-            Commander sur WhatsApp
+            {t('whatsapp')}
           </a>
         ) : null}
         <button type="button" onClick={() => setOpen((v) => !v)} className={whatsapp ? btn : btnPrimary}>
-          Envoyer un message
+          {t('message')}
         </button>
         {whatsapp ? (
           <a
@@ -81,7 +83,7 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
             onClick={() => track('contact_click', { channel: 'sms', productId })}
             className={btn}
           >
-            SMS
+            {t('sms')}
           </a>
         ) : null}
         {whatsapp ? (
@@ -90,11 +92,11 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
             onClick={() => track('contact_click', { channel: 'call', productId })}
             className={btn}
           >
-            Appeler
+            {t('call')}
           </a>
         ) : null}
         <button type="button" onClick={share} className={btn}>
-          Partager
+          {t('share')}
         </button>
       </div>
 
@@ -105,14 +107,14 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
         >
           <input
             required
-            placeholder="Votre nom"
+            placeholder={t('name')}
             value={form.buyerName}
             onChange={(e) => setForm({ ...form, buyerName: e.target.value })}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
           />
           <input
             required
-            placeholder="Téléphone / WhatsApp"
+            placeholder={t('phone')}
             value={form.buyerPhone}
             onChange={(e) => setForm({ ...form, buyerPhone: e.target.value })}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
@@ -120,7 +122,7 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
           <textarea
             required
             rows={3}
-            placeholder={`À propos de « ${productName} »…`}
+            placeholder={t('yourMessage')}
             value={form.message}
             onChange={(e) => setForm({ ...form, message: e.target.value })}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
@@ -129,16 +131,16 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
             <p className="text-sm text-[var(--color-danger)]">{state.msg}</p>
           ) : null}
           <button disabled={state.kind === 'sending'} className={btnPrimary}>
-            {state.kind === 'sending' ? 'Envoi…' : 'Envoyer'}
+            {state.kind === 'sending' ? t('sending') : t('send')}
           </button>
         </form>
       ) : null}
 
       {state.kind === 'sent' ? (
         <p className="text-sm text-[var(--color-good)]">
-          Message envoyé.{' '}
+          {t('sent')}{' '}
           <Link href={`/m/${state.id}?token=${state.token}`} className="underline">
-            Suivre la conversation
+            {t('seeConversation')}
           </Link>
         </p>
       ) : null}

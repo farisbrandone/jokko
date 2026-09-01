@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale } from 'next-intl/server';
 import './globals.css';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { brandThemeCss } from '@/lib/theme';
@@ -7,6 +9,7 @@ import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PageViewTracker } from '@/components/track-event';
 import { ServiceWorkerRegistrar } from '@/components/sw-register';
+import { InstallPrompt } from '@/components/install-prompt';
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
@@ -53,21 +56,24 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const shop = await currentShop();
+  const [shop, locale] = await Promise.all([currentShop(), getLocale()]);
   const themeCss = brandThemeCss(shop?.brandColor);
   return (
-    <html lang={shop?.locale ?? 'fr'} className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} className={`${display.variable} ${sans.variable}`}>
       {themeCss ? (
         <head>
           <style dangerouslySetInnerHTML={{ __html: themeCss }} />
         </head>
       ) : null}
       <body className="min-h-dvh flex flex-col">
-        <ServiceWorkerRegistrar />
-        {shop ? <PageViewTracker /> : null}
-        <SiteHeader shop={shop} />
-        <main className="flex-1 w-full mx-auto max-w-6xl px-4 py-6">{children}</main>
-        <SiteFooter shop={shop} />
+        <NextIntlClientProvider>
+          <ServiceWorkerRegistrar />
+          {shop ? <PageViewTracker /> : null}
+          <SiteHeader shop={shop} />
+          <main className="flex-1 w-full mx-auto max-w-6xl px-4 py-6">{children}</main>
+          <SiteFooter shop={shop} />
+          <InstallPrompt />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

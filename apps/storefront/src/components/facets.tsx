@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 interface Props {
   basePath: string;
@@ -6,14 +7,15 @@ interface Props {
   activeCategory?: string;
 }
 
-export function Facets({ basePath, facets, activeCategory }: Props) {
+export async function Facets({ basePath, facets, activeCategory }: Props) {
   const categories = facets.category ?? {};
   const entries = Object.entries(categories).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) return null;
+  const t = await getTranslations('facets');
 
   return (
     <nav className="text-sm">
-      <p className="font-medium mb-2">Catégories</p>
+      <p className="font-medium mb-2">{t('categories')}</p>
       <ul className="flex flex-col gap-1">
         {entries.map(([name, count]) => {
           const active = name === activeCategory;

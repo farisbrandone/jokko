@@ -1,15 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 
-const REASONS: { value: string; label: string }[] = [
-  { value: 'counterfeit', label: 'Contrefaçon' },
-  { value: 'prohibited', label: 'Produit interdit / illégal' },
-  { value: 'scam', label: 'Arnaque / fraude' },
-  { value: 'offensive', label: 'Contenu choquant' },
-  { value: 'spam', label: 'Spam / doublon' },
-  { value: 'other', label: 'Autre' },
-];
+const REASON_KEYS = ['counterfeit', 'prohibited', 'scam', 'offensive', 'spam', 'other'] as const;
 
 /** Identifiant d'appareil stable (dédoublonnage des signalements). */
 function reporterKey(): string {
@@ -33,6 +27,7 @@ export function ReportButton({
   targetType: 'product' | 'shop';
   targetId: string;
 }) {
+  const t = useTranslations('report');
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('counterfeit');
   const [note, setNote] = useState('');
@@ -60,7 +55,7 @@ export function ReportButton({
         onClick={() => setOpen(true)}
         className="text-xs text-[var(--color-faint)] underline underline-offset-2"
       >
-        Signaler
+        {t('open')}
       </button>
     );
   }
@@ -68,21 +63,19 @@ export function ReportButton({
   return (
     <div className="mt-2 rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm">
       {state === 'done' ? (
-        <p className="text-[var(--color-muted)]">
-          Merci, votre signalement a été transmis à l’équipe Jokko.
-        </p>
+        <p className="text-[var(--color-muted)]">{t('thanks')}</p>
       ) : (
         <form onSubmit={submit} className="flex flex-col gap-2">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-[var(--color-muted)]">Motif du signalement</span>
+            <span className="text-xs text-[var(--color-muted)]">{t('reasonLabel')}</span>
             <select
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5"
             >
-              {REASONS.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
+              {REASON_KEYS.map((key) => (
+                <option key={key} value={key}>
+                  {t(`reasons.${key}`)}
                 </option>
               ))}
             </select>
@@ -92,27 +85,25 @@ export function ReportButton({
             onChange={(e) => setNote(e.target.value)}
             maxLength={500}
             rows={2}
-            placeholder="Détail (facultatif)"
+            placeholder={t('detail')}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5"
           />
           {state === 'error' ? (
-            <p className="text-xs text-[var(--color-danger)]">
-              Envoi impossible. Réessayez plus tard.
-            </p>
+            <p className="text-xs text-[var(--color-danger)]">{t('error')}</p>
           ) : null}
           <div className="flex gap-2">
             <button
               disabled={state === 'sending'}
               className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-1.5 text-xs font-medium disabled:opacity-50"
             >
-              Envoyer
+              {t('send')}
             </button>
             <button
               type="button"
               onClick={() => setOpen(false)}
               className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-1.5 text-xs"
             >
-              Annuler
+              {t('cancel')}
             </button>
           </div>
         </form>

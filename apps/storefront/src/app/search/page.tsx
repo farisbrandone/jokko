@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 import { currentShop } from '@/lib/shop';
 import { searchProducts } from '@/lib/api';
 import { ProductGrid } from '@/components/product-grid';
@@ -19,26 +20,23 @@ export default async function SearchPage({ searchParams }: Search) {
 
   const sp = await searchParams;
   const q = (sp.q ?? '').trim();
-  const results = await searchProducts(shop.id, {
-    q,
-    category: sp.category,
-    minPrice: sp.minPrice,
-    maxPrice: sp.maxPrice,
-    sort: sp.sort,
-    pageSize: 48,
-  });
+  const [results, t] = await Promise.all([
+    searchProducts(shop.id, {
+      q,
+      category: sp.category,
+      minPrice: sp.minPrice,
+      maxPrice: sp.maxPrice,
+      sort: sp.sort,
+      pageSize: 48,
+    }),
+    getTranslations('search'),
+  ]);
 
   return (
     <div className="flex flex-col gap-4">
       {q ? <TrackOnMount name="search" props={{ term: q, results: results.total }} /> : null}
       <h1 className="text-lg">
-        {q ? (
-          <>
-            Résultats pour <span className="font-semibold">« {q} »</span> ({results.total})
-          </>
-        ) : (
-          `${results.total} produits`
-        )}
+        {q ? t('title', { query: q }) : t('count', { count: results.total })}
       </h1>
       <ProductGrid hits={results.items} />
     </div>

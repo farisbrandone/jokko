@@ -1,0 +1,88 @@
+{
+  "nav": {
+    "searchPlaceholder": "Search for a product…",
+    "searchLabel": "Search",
+    "whatsapp": "WhatsApp"
+  },
+  "home": {
+    "tagline": "The whole catalogue, in one link.",
+    "productsAvailable": "{count, plural, =0 {No products available} one {# product available} other {# products available}}"
+  },
+  "product": {
+    "inStock": "In stock",
+    "outOfStock": "Out of stock",
+    "onOrder": "Made to order",
+    "report": "Report"
+  },
+  "contact": {
+    "heading": "Contact the shop",
+    "message": "Message",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS",
+    "call": "Call",
+    "share": "Share",
+    "formTitle": "Send a message",
+    "name": "Your name",
+    "phone": "Your phone",
+    "yourMessage": "Your message",
+    "send": "Send",
+    "sending": "Sending…",
+    "sent": "Message sent. The seller will reply here.",
+    "seeConversation": "View conversation",
+    "error": "Could not send. Please try again."
+  },
+  "search": {
+    "title": "Results for “{query}”",
+    "empty": "No products match this search.",
+    "count": "{count, plural, =0 {No results} one {# result} other {# results}}"
+  },
+  "facets": {
+    "categories": "Categories"
+  },
+  "thread": {
+    "title": "Conversation with {shop}",
+    "about": "About {product}",
+    "yourMessage": "Your message…",
+    "send": "Send",
+    "closed": "Conversation closed by the seller."
+  },
+  "report": {
+    "open": "Report",
+    "reasonLabel": "Reason for reporting",
+    "reasons": {
+      "counterfeit": "Counterfeit",
+      "prohibited": "Prohibited / illegal item",
+      "scam": "Scam / fraud",
+      "offensive": "Offensive content",
+      "spam": "Spam / duplicate",
+      "other": "Other"
+    },
+    "detail": "Details (optional)",
+    "send": "Send",
+    "thanks": "Thanks, your report has been sent to the Jokko team.",
+    "error": "Could not send. Please try again later.",
+    "cancel": "Cancel"
+  },
+  "errors": {
+    "shopUnavailableTitle": "Shop not found",
+    "shopUnavailableBody": "This link doesn’t match any shop, or the service is temporarily unavailable.",
+    "notFoundTitle": "Page not found",
+    "backToShop": "Back to the shop",
+    "offlineTitle": "You are offline",
+    "offlineBody": "Reconnect to see the latest products.",
+    "retry": "Retry"
+  },
+  "footer": {
+    "poweredBy": "{shop} — powered by Jokko"
+  },
+  "locale": {
+    "label": "Language",
+    "fr": "Français",
+    "en": "English"
+  },
+  "install": {
+    "text": "Add the shop to your home screen.",
+    "action": "Install",
+    "dismiss": "Later"
+  }
+}

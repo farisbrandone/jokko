@@ -1,3 +1,4 @@
+import { getTranslations } from 'next-intl/server';
 import { currentShop } from '@/lib/shop';
 import { searchProducts } from '@/lib/api';
 import { ProductGrid } from '@/components/product-grid';
@@ -10,7 +11,10 @@ export default async function HomePage() {
   const shop = await currentShop();
   if (!shop) return <ShopUnavailable />;
 
-  const results = await searchProducts(shop.id, { sort: 'newest', pageSize: 24 });
+  const [results, t] = await Promise.all([
+    searchProducts(shop.id, { sort: 'newest', pageSize: 24 }),
+    getTranslations('home'),
+  ]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -19,8 +23,7 @@ export default async function HomePage() {
           {shop.name}
         </h1>
         <p className="mt-1 text-[var(--color-muted)]">
-          Toute la gamme, en un lien. {results.total} produit
-          {results.total > 1 ? 's' : ''} disponibles.
+          {t('tagline')} {t('productsAvailable', { count: results.total })}
         </p>
       </section>
 

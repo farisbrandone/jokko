@@ -3,11 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
 import type { SearchHit } from '@jokko/contracts';
 
 export function SearchBox() {
   const router = useRouter();
+  const t = useTranslations('nav');
   const [q, setQ] = useState('');
   const [hits, setHits] = useState<SearchHit[]>([]);
   const [open, setOpen] = useState(false);
@@ -62,9 +64,9 @@ export function SearchBox() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onFocus={() => hits.length && setOpen(true)}
-          placeholder="Rechercher un produit…"
+          placeholder={t('searchPlaceholder')}
           className="w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm outline-none focus:border-[var(--color-brand)]"
-          aria-label="Rechercher"
+          aria-label={t('searchLabel')}
         />
       </form>
       {open && hits.length > 0 ? (
