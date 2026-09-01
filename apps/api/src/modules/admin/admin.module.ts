@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { IdentityModule } from '../identity/identity.module';
 import { SearchModule } from '../search/search.module';
-import { adminDbProvider } from './infrastructure/admin-db';
+import { AdminDbModule } from '../../shared/admin-db/admin-db.module';
 import { AdminService } from './application/admin.service';
 import { AdminController } from './presentation/admin.controller';
 
 @Module({
-  imports: [IdentityModule, SearchModule],
+  imports: [IdentityModule, SearchModule, AdminDbModule],
   controllers: [AdminController],
-  providers: [adminDbProvider, AdminService],
+  providers: [AdminService],
 })
 export class AdminModule {}

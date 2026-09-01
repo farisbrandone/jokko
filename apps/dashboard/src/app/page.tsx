@@ -21,12 +21,17 @@ export default async function HomePage() {
         <h1 className="font-[family-name:var(--font-display)] text-xl font-bold">
           Vos boutiques
         </h1>
-        <Link
-          href="/onboarding"
-          className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
-        >
-          Nouvelle boutique
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/account" className="text-sm text-[var(--color-muted)]">
+            Mon compte
+          </Link>
+          <Link
+            href="/onboarding"
+            className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
+          >
+            Nouvelle boutique
+          </Link>
+        </div>
       </div>
       <ul className="grid sm:grid-cols-2 gap-3">
         {me.memberships.map((m) => (

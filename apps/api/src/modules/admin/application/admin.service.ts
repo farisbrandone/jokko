@@ -9,7 +9,7 @@ import type {
 } from '@jokko/contracts';
 import { ProductIndex } from '../../search/infrastructure/product-index';
 import { TokenService } from '../../identity/infrastructure/security/token.service';
-import { ADMIN_DB, type AdminDb } from '../infrastructure/admin-db';
+import { ADMIN_DB, type AdminDb } from '../../../shared/admin-db/admin-db';
 
 /** Usurpation support : jeton d'accès court, sans refresh. */
 const IMPERSONATION_TTL_SEC = 900;

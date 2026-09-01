@@ -17,6 +17,7 @@ afterAll(async () => {
 // le relais tourne toutes les 2 s ; on le déclenche à la main
 const drainOutbox = () => h.drainOutbox();
 const runBillingEnforcer = () => h.runBillingEnforcer();
+const runRetentionPurge = () => h.runRetentionPurge();
 
 /** Recherche vitrine éventuellement cohérente : on sonde jusqu'au total attendu. */
 async function expectSearchTotal(shop: string, q: string, expected: number): Promise<void> {
@@ -802,5 +803,78 @@ describe('observabilité : métriques Prometheus', () => {
     expect(res.text).toContain('nodejs_eventloop_lag_seconds');
     expect(res.text).toContain('http_request_duration_seconds_bucket');
     expect(res.text).toMatch(/http_request_duration_seconds_count\{[^}]*route="\/api\/shops"/);
+  });
+});
+
+describe('RGPD : export & effacement de compte', () => {
+  it('export : archive JSON des données personnelles', async () => {
+    const t = await newSeller('rgpd-export@ex.com');
+    await newShop(t, 'RGPD Export Shop');
+
+    const res = await http
+      .get('/api/me/export')
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(res.headers['content-disposition']).toContain('attachment');
+    expect(res.body.user.email).toBe('rgpd-export@ex.com');
+    expect(res.body.memberships).toHaveLength(1);
+    expect(res.body.memberships[0].role).toBe('owner');
+    expect(Array.isArray(res.body.sessions)).toBe(true);
+  });
+
+  it('effacement : refusé si des boutiques sont possédées, sinon supprime', async () => {
+    const owner = await newSeller('rgpd-owner@ex.com');
+    await newShop(owner, 'RGPD Owner Shop');
+    await http.delete('/api/me').set('authorization', `Bearer ${owner}`).expect(409);
+
+    const plain = await newSeller('rgpd-plain@ex.com');
+    const id = await meId(plain);
+    const del = await http.delete('/api/me').set('authorization', `Bearer ${plain}`).expect(200);
+    expect(del.body.deleted).toBe(true);
+
+    const rows = await h.query<{ n: string }>('select count(*)::int as n from users where id = $1', [
+      id,
+    ]);
+    expect(Number(rows[0].n)).toBe(0);
+  });
+});
+
+describe('rétention : purge programmée', () => {
+  it('purge OTP expirés, analytics anciens et conversations closes anciennes', async () => {
+    await h.query(
+      `insert into otp_challenges (phone, code_hash, expires_at)
+       values ('+221700000009', repeat('a', 64), now() - interval '2 days')`,
+    );
+    await h.query(
+      `insert into analytics_events (id, shop_id, name, created_at)
+       values (gen_random_uuid(), gen_random_uuid(), 'view', now() - interval '500 days')`,
+    );
+    const conv = await h.query<{ id: string }>(
+      `insert into conversations (id, shop_id, buyer_name, buyer_phone, buyer_token_hash, status, last_message_at)
+       values (gen_random_uuid(), gen_random_uuid(), 'Vieux', '+221700000010', repeat('b', 64),
+               'closed', now() - interval '400 days')
+       returning id`,
+    );
+    await h.query(
+      `insert into messages (id, conversation_id, shop_id, sender, body, created_at)
+       values (gen_random_uuid(), $1, gen_random_uuid(), 'buyer', 'salut', now() - interval '400 days')`,
+      [conv[0].id],
+    );
+
+    const summary = await runRetentionPurge();
+    expect(summary.otpChallenges).toBeGreaterThanOrEqual(1);
+    expect(summary.analyticsEvents).toBeGreaterThanOrEqual(1);
+    expect(summary.closedConversations).toBeGreaterThanOrEqual(1);
+
+    const left = await h.query<{ n: string }>(
+      'select count(*)::int as n from conversations where id = $1',
+      [conv[0].id],
+    );
+    expect(Number(left[0].n)).toBe(0);
+    const msgs = await h.query<{ n: string }>(
+      'select count(*)::int as n from messages where conversation_id = $1',
+      [conv[0].id],
+    );
+    expect(Number(msgs[0].n)).toBe(0);
   });
 });

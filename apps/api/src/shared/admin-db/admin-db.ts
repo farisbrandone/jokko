@@ -1,14 +1,15 @@
 import { Provider, type OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
-import type { AppConfig } from '../../../config/configuration';
+import type { AppConfig } from '../../config/configuration';
 
 export const ADMIN_DB = Symbol('ADMIN_DB');
 
 /**
  * Pool PostgreSQL dédié à la console plateforme, connecté avec le rôle
  * propriétaire (DATABASE_ADMIN_URL) : lecture transverse à toutes les boutiques,
- * hors Row-Level Security. Réservé aux routes /admin (PlatformAdminGuard).
+ * hors Row-Level Security. Usages transverses légitimes uniquement :
+ * console plateforme (PlatformAdminGuard) et purge RGPD.
  */
 export class AdminDb extends Pool implements OnModuleDestroy {
   async onModuleDestroy(): Promise<void> {

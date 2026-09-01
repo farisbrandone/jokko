@@ -475,9 +475,25 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Test d'intégration : jeton requis (401 ×2), format Prometheus, histogramme
   HTTP alimenté (`route="/api/shops"`) — 21 tests d'intégration verts
 
+**Incrément 28 — RGPD : purge programmée + export/effacement de compte**
+
+- [x] Module `privacy` : pool propriétaire partagé (`shared/admin-db`, extrait du
+  module admin) réutilisé pour les opérations transverses
+- [x] Cron `data-retention` (quotidien 02:00) : purge OTP expirés, sessions
+  révoquées/expirées (> 30 j), outbox traité (> 7 j), `analytics_events`,
+  `notification_dispatch_log`, `impersonation_events`, conversations closes —
+  fenêtres configurables (`RETENTION_*`), `RETENTION_ENABLED`
+- [x] API : `GET /me/export` (archive JSON : profil, appartenances, sessions,
+  push, réglages, facturation, conversations acheteur) ; `DELETE /me` (refus
+  `409` si boutiques possédées ; sinon efface + anonymise les conversations ;
+  interdit pendant une session support)
+- [x] Dashboard : page `/account` (télécharger l'archive, supprimer le compte)
+  + BFF `/api/account` & `/api/account/export`
+- [x] Tests : 3 d'intégration (export, effacement refusé/accepté, purge) — 24 verts
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] E-mails HTML + SPF/DKIM/DMARC ; purge/RGPD ; pages légales
+- [ ] E-mails HTML + SPF/DKIM/DMARC ; pages légales (CGU / confidentialité)
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

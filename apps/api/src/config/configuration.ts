@@ -73,6 +73,13 @@ export interface AppConfig {
     enabled: boolean;
     token: string | null;
   };
+  retention: {
+    enabled: boolean;
+    analyticsDays: number;
+    conversationDays: number;
+    dispatchLogDays: number;
+    impersonationDays: number;
+  };
   billing: {
     priceXof: number;
     trialDays: number;
@@ -164,6 +171,13 @@ export const buildConfig = (env: Env): AppConfig => ({
   metrics: {
     enabled: env.METRICS_ENABLED,
     token: env.METRICS_TOKEN ?? null,
+  },
+  retention: {
+    enabled: env.RETENTION_ENABLED,
+    analyticsDays: env.RETENTION_ANALYTICS_DAYS,
+    conversationDays: env.RETENTION_CONVERSATION_DAYS,
+    dispatchLogDays: env.RETENTION_DISPATCH_LOG_DAYS,
+    impersonationDays: env.RETENTION_IMPERSONATION_DAYS,
   },
   billing: {
     priceXof: env.BILLING_PRICE_XOF,

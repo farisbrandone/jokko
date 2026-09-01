@@ -47,9 +47,9 @@ Correctif :
 1. **CSP `unsafe-inline`** sur les scripts — passer en nonce (`strict-dynamic`).
 2. **Secrets de production** dans un fichier `.env` sur la VPS — migrer vers un
    gestionnaire de secrets (SOPS/age, Vault, ou secrets Docker Swarm).
-3. **RGPD** : pas encore d'export/suppression des données utilisateur ni de purge
-   programmée (journaux d'analytics, conversations closes, OTP consommés,
-   sessions expirées). Suivi : incrément « purge/RGPD ».
+3. **RGPD** : export (`GET /me/export`) + effacement (`DELETE /me`) + purge
+   programmée `data-retention` livrés (inc. 28). Reste : registre des
+   traitements, DPA sous-traitants, bandeau cookies si ajout de mesure tierce.
 4. **Pages légales** (CGU, confidentialité, mentions) absentes.
 5. **SPF/DKIM/DMARC** : à configurer côté DNS pour le domaine d'envoi.
 6. **`/metrics`** (inc. 27) : jeton porteur optionnel (`METRICS_TOKEN`) +

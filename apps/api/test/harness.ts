@@ -25,6 +25,8 @@ export interface Harness {
   drainOutbox: () => Promise<void>;
   /** Déclenche le cron de facturation (suspension des abonnements échus). */
   runBillingEnforcer: () => Promise<void>;
+  /** Déclenche la purge de rétention (RGPD) et renvoie le récapitulatif. */
+  runRetentionPurge: () => Promise<Record<string, number>>;
   /** Requête SQL brute (rôle propriétaire, hors RLS) — assertions de test. */
   query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
   stop: () => Promise<void>;
@@ -135,6 +137,9 @@ async function startHarnessInner(): Promise<Harness> {
   const { BillingEnforcer } = requireDist(
     join(API_ROOT, 'dist/modules/billing/application/billing.enforcer.js'),
   );
+  const { RetentionCron } = requireDist(
+    join(API_ROOT, 'dist/modules/privacy/application/retention.cron.js'),
+  );
   const { MeiliSearch } = requireDist('meilisearch');
   const meiliClient = new MeiliSearch({
     host: process.env.MEILI_URL as string,
@@ -187,6 +192,8 @@ async function startHarnessInner(): Promise<Harness> {
     runBillingEnforcer: async () => {
       await (app.get(BillingEnforcer) as { enforce: () => Promise<void> }).enforce();
     },
+    runRetentionPurge: async () =>
+      (app.get(RetentionCron) as { purge: () => Promise<Record<string, number>> }).purge(),
     query: async <T = Record<string, unknown>>(text: string, params?: unknown[]) =>
       (await sqlClient.query(text, params)).rows as T[],
     stop: async () => {
