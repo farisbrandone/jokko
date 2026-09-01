@@ -34,6 +34,13 @@ export interface ProductList {
   pageSize: number;
 }
 
+export interface NotificationSettings {
+  emailEnabled: boolean;
+  whatsappEnabled: boolean;
+  smsEnabled: boolean;
+  cooldownSeconds: number;
+}
+
 export const VERTICALS = [
   'electronique',
   'mode-accessoires',

@@ -48,6 +48,12 @@ export default async function ShopPage({ params }: Params) {
             Boîte de réception
           </Link>
           <Link
+            href={`/s/${shopId}/settings`}
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
+          >
+            Notifications
+          </Link>
+          <Link
             href={`/s/${shopId}/products/new`}
             className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
           >

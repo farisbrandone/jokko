@@ -1,4 +1,12 @@
-import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Inject,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Result } from '@jokko/domain-kernel';
 import type {
   Conversation as ConversationView,
@@ -7,19 +15,35 @@ import type {
   StartConversationInput,
   StartedConversation,
 } from '@jokko/contracts';
+import type { AppConfig } from '../../../config/configuration';
 import { Conversation } from '../domain/conversation.aggregate';
 import {
   CONVERSATION_REPOSITORY,
   type ConversationRepository,
 } from '../domain/ports/conversation.repository';
 
+const ONE_HOUR_MS = 3_600_000;
+
 @Injectable()
 export class MessagingService {
+  private readonly maxNewPerHour: number;
+
   constructor(
     @Inject(CONVERSATION_REPOSITORY) private readonly repo: ConversationRepository,
-  ) {}
+    config: ConfigService<AppConfig, true>,
+  ) {
+    this.maxNewPerHour = config.get('messaging', { infer: true }).maxNewConversationsPerHour;
+  }
 
   async start(shopId: string, input: StartConversationInput): Promise<Result<StartedConversation>> {
+    const recent = await this.repo.countRecentByBuyerPhone(shopId, input.buyerPhone, ONE_HOUR_MS);
+    if (recent >= this.maxNewPerHour) {
+      throw new HttpException(
+        'Trop de demandes de contact depuis ce numéro. Réessayez dans une heure.',
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+
     const started = Conversation.start({
       shopId,
       buyerName: input.buyerName,

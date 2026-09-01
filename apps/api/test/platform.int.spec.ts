@@ -200,3 +200,93 @@ describe('analytique', () => {
     expect(sum.body.contactByChannel.whatsapp).toBe(1);
   });
 });
+
+describe('notifications multi-canal & anti-spam', () => {
+  it('préférences : défauts puis mise à jour', async () => {
+    const t = await newSeller('notif-prefs@ex.com');
+    const shop = await newShop(t, 'Prefs Shop');
+
+    const s0 = await http
+      .get(`/api/shops/${shop}/settings/notifications`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(s0.body).toEqual({
+      emailEnabled: true,
+      whatsappEnabled: false,
+      smsEnabled: false,
+      cooldownSeconds: 300,
+    });
+
+    const s1 = await http
+      .patch(`/api/shops/${shop}/settings/notifications`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ whatsappEnabled: true, cooldownSeconds: 60 })
+      .expect(200);
+    expect(s1.body.whatsappEnabled).toBe(true);
+    expect(s1.body.cooldownSeconds).toBe(60);
+
+    // persistance
+    const s2 = await http
+      .get(`/api/shops/${shop}/settings/notifications`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(s2.body).toEqual({
+      emailEnabled: true,
+      whatsappEnabled: true,
+      smsEnabled: false,
+      cooldownSeconds: 60,
+    });
+  });
+
+  it('cooldown : deux messages rapprochés → une seule notification e-mail', async () => {
+    const t = await newSeller('notif-cd@ex.com');
+    const shop = await newShop(t, 'Cooldown Shop');
+    const pid = await newPublishedProduct(t, shop, 'Ampli', 15000);
+
+    const open = await http
+      .post(`/api/shops/${shop}/conversations`)
+      .send({
+        buyerName: 'Awa',
+        buyerPhone: '+221770000101',
+        productId: pid,
+        productName: 'Ampli',
+        message: 'Bonjour, dispo ?',
+      })
+      .expect(201);
+    await drainOutbox();
+
+    await http
+      .post(
+        `/api/shops/${shop}/conversations/${open.body.conversationId}/messages?token=${open.body.buyerToken}`,
+      )
+      .send({ body: 'Toujours là ?' })
+      .expect(201);
+    await drainOutbox();
+
+    const rows = await h.query<{ channel: string; c: number }>(
+      `select channel, count(*)::int c from notification_dispatch_log
+         where shop_id = $1 group by channel`,
+      [shop],
+    );
+    const byChannel = Object.fromEntries(rows.map((r) => [r.channel, r.c]));
+    expect(byChannel.email).toBe(1); // 2e notification bloquée par le cooldown
+    expect(byChannel.whatsapp ?? 0).toBe(0); // canal désactivé par défaut
+  });
+
+  it("anti-spam : 7e ouverture depuis le même numéro → 429", async () => {
+    const t = await newSeller('notif-spam@ex.com');
+    const shop = await newShop(t, 'Spam Shop');
+    const phone = '+221771112244';
+
+    for (let i = 0; i < 6; i++) {
+      await http
+        .post(`/api/shops/${shop}/conversations`)
+        .send({ buyerName: 'Bot', buyerPhone: phone, message: `message ${i}` })
+        .expect(201);
+    }
+    await http
+      .post(`/api/shops/${shop}/conversations`)
+      .send({ buyerName: 'Bot', buyerPhone: phone, message: 'encore' })
+      .expect(429);
+  });
+});

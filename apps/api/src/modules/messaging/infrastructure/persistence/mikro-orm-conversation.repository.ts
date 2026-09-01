@@ -100,6 +100,19 @@ export class MikroOrmConversationRepository implements ConversationRepository {
     });
   }
 
+  async countRecentByBuyerPhone(
+    _shopId: string,
+    buyerPhone: string,
+    sinceMs: number,
+  ): Promise<number> {
+    return this.withTenant((em) =>
+      em.count(ConversationEntity, {
+        buyerPhone: buyerPhone.trim(),
+        createdAt: { $gte: new Date(Date.now() - sinceMs) },
+      }),
+    );
+  }
+
   async findByShop(
     _shopId: string,
     filter: { status?: 'open' | 'closed'; page: number; pageSize: number },

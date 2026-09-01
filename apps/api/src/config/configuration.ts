@@ -44,6 +44,15 @@ export interface AppConfig {
     smtpUrl: string;
     from: string;
     dashboardUrl: string;
+    defaultCooldownSec: number;
+    termii: {
+      apiKey: string;
+      senderId: string;
+      baseUrl: string;
+    } | null;
+  };
+  messaging: {
+    maxNewConversationsPerHour: number;
   };
 }
 
@@ -87,5 +96,16 @@ export const buildConfig = (env: Env): AppConfig => ({
     smtpUrl: env.SMTP_URL,
     from: env.SMTP_FROM,
     dashboardUrl: env.DASHBOARD_BASE_URL,
+    defaultCooldownSec: env.NOTIFICATIONS_COOLDOWN_SEC,
+    termii: env.TERMII_API_KEY
+      ? {
+          apiKey: env.TERMII_API_KEY,
+          senderId: env.TERMII_SENDER_ID,
+          baseUrl: env.TERMII_BASE_URL,
+        }
+      : null,
+  },
+  messaging: {
+    maxNewConversationsPerHour: env.MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR,
   },
 });

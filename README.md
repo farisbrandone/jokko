@@ -245,9 +245,25 @@ presentation/    contrôleurs NestJS + validation Zod
   `detectTsNode()` qui se déclenchait à tort sous Vitest
 - [x] `pnpm --filter @jokko/api test:int` (`pretest:int` = `build`) ; job CI `integration` dédié
 
+**Incrément 12 — notifications multi-canal, préférences & anti-spam**
+
+- [x] Ports `SmsSender` / `WhatsAppSender` (hexagonal) : adaptateur **Termii** si
+  `TERMII_API_KEY`, sinon adaptateur « log » (dev / CI)
+- [x] `notification_settings` par boutique (RLS) : canaux e-mail / WhatsApp / SMS +
+  `cooldownSeconds` ; API `GET|PATCH /shops/:id/settings/notifications` (CASL `Shop`)
+- [x] `NewMessageListener` multi-canal : fan-out e-mail + WhatsApp + SMS selon les
+  préférences ; `notification_dispatch_log` (RLS) → **cooldown par conversation & canal**
+  (anti re-notification)
+- [x] Fonction pure `selectChannels()` (canal activé ∧ destinataire dispo ∧ hors cooldown)
+  couverte par tests unitaires
+- [x] Anti-spam acheteur : `MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR` par numéro → `429`
+- [x] `Mailer` : `SMTP_URL=json` → transport sans réseau (dev / CI)
+- [x] Dashboard : page `/s/:id/settings` (canaux + délai anti-spam)
+- [x] Intégration : préférences (défauts + persistance), cooldown, rate-limit `429`
+
 **Suite**
 
-- [ ] Notifications WhatsApp / push ; préférences & anti-spam
+- [ ] Notifications **push** (Web Push / PWA) ; préférences par membre ; heures calmes
 - [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : file de modération (produits / messages signalés), impersonation support

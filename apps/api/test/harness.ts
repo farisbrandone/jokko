@@ -22,6 +22,8 @@ export interface Harness {
   server: Server;
   /** Déclenche immédiatement le relais d'outbox (sinon il tourne toutes les 2 s). */
   drainOutbox: () => Promise<void>;
+  /** Requête SQL brute (rôle propriétaire, hors RLS) — assertions de test. */
+  query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
   stop: () => Promise<void>;
 }
 
@@ -95,7 +97,7 @@ async function startHarnessInner(): Promise<Harness> {
     MEILI_MASTER_KEY: 'testkey',
     AUTH_JWT_SECRET: 'test_jwt_secret_0123456789abcdef',
     TENANT_HEADER_SECRET: 'test_tenant_secret_0123456789abcd',
-    SMTP_URL: 'smtp://127.0.0.1:1',
+    SMTP_URL: 'json',
     DASHBOARD_BASE_URL: 'http://localhost:3001',
     SHOP_ROOT_DOMAIN: 'test.local',
     S3_ENDPOINT: 'http://localhost:59000',
@@ -127,16 +129,24 @@ async function startHarnessInner(): Promise<Harness> {
   // Meilisearch indexe de façon asynchrone (file de tâches). Après avoir rejoué
   // l'outbox, on attend que la file soit vide pour que les tests soient déterministes.
   const waitForMeili = async (): Promise<void> => {
-    for (let i = 0; i < 100; i++) {
-      const { results } = await meiliClient.getTasks({
-        statuses: ['enqueued', 'processing'],
-        limit: 1,
-      });
-      if (results.length === 0) return;
-      await new Promise((r) => setTimeout(r, 50));
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      try {
+        const { results } = await meiliClient.getTasks({
+          statuses: ['enqueued', 'processing'],
+          limit: 1,
+        });
+        if (results.length === 0) return;
+      } catch {
+        /* Meili momentanément indisponible : on réessaie */
+      }
+      await new Promise((r) => setTimeout(r, 100));
     }
     throw new Error('Meilisearch : la file de tâches ne se vide pas');
   };
+
+  const sqlClient = new Client({ connectionString: adminUrl });
+  await sqlClient.connect();
 
   const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
   const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
@@ -153,9 +163,12 @@ async function startHarnessInner(): Promise<Harness> {
       await (app.get(OutboxRelay) as { drain: () => Promise<void> }).drain();
       await waitForMeili();
     },
+    query: async <T = Record<string, unknown>>(text: string, params?: unknown[]) =>
+      (await sqlClient.query(text, params)).rows as T[],
     stop: async () => {
       await app.close();
       await meili.stop();
+      await sqlClient.end();
       await pg.stop();
     },
   };

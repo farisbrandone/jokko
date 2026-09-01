@@ -12,6 +12,8 @@ export interface ConversationRepository {
     shopId: string,
     filter: { status?: 'open' | 'closed'; page: number; pageSize: number },
   ): Promise<ConversationPage>;
+  /** Nombre de conversations ouvertes par ce numéro depuis `sinceMs` (anti-spam). */
+  countRecentByBuyerPhone(shopId: string, buyerPhone: string, sinceMs: number): Promise<number>;
 }
 
 export const CONVERSATION_REPOSITORY = Symbol('CONVERSATION_REPOSITORY');

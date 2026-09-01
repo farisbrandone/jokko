@@ -20,7 +20,10 @@ export class Mailer implements OnModuleDestroy {
   constructor(config: ConfigService<AppConfig, true>) {
     const n = config.get('notifications', { infer: true });
     this.from = n.from;
-    this.transporter = createTransport(n.smtpUrl);
+    // `SMTP_URL=json` : transport sans réseau (dev / CI) — les mails sont sérialisés
+    // et considérés comme envoyés, sans serveur SMTP.
+    this.transporter =
+      n.smtpUrl === 'json' ? createTransport({ jsonTransport: true }) : createTransport(n.smtpUrl);
   }
 
   async send(mail: OutgoingMail): Promise<boolean> {

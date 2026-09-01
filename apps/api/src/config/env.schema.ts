@@ -33,6 +33,16 @@ export const envSchema = z.object({
   SMTP_FROM: z.string().default('Jokko <no-reply@jokko.shop>'),
   DASHBOARD_BASE_URL: z.string().url().default('http://localhost:3001'),
 
+  // Notifications WhatsApp / SMS via Termii (marché pilote SN + CI). Sans clé API,
+  // les canaux WhatsApp / SMS retombent sur un adaptateur « log ».
+  TERMII_API_KEY: z.string().optional(),
+  TERMII_SENDER_ID: z.string().default('Jokko'),
+  TERMII_BASE_URL: z.string().url().default('https://api.ng.termii.com'),
+  NOTIFICATIONS_COOLDOWN_SEC: z.coerce.number().int().min(0).default(300),
+
+  // Anti-spam : nombre max d'ouvertures de conversation par numéro et par heure.
+  MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR: z.coerce.number().int().positive().default(6),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),
