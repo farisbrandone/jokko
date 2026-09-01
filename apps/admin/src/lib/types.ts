@@ -40,6 +40,21 @@ export interface AdminReportList {
   pageSize: number;
 }
 
+export interface AdminShopDetail {
+  id: string;
+  slug: string;
+  name: string;
+  status: 'active' | 'suspended';
+  createdAt: string;
+  owner: { id: string; email: string; name: string } | null;
+}
+
+export interface ImpersonationGrant {
+  token: string;
+  expiresAt: string;
+  target: { id: string; email: string; name: string };
+}
+
 export interface AdminShopRow {
   id: string;
   slug: string;

@@ -66,4 +66,14 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
   return res.json() as Promise<T>;
 }
 
+/** Appel avec un jeton porteur explicite (usurpation support) — pas de refresh. */
+export async function apiJsonAs<T>(path: string, token: string): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    headers: { authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new ApiError(res.status, `API ${path} → ${res.status}`);
+  return res.json() as Promise<T>;
+}
+
 export { BASE as apiBase };

@@ -10,9 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { z } from 'zod';
-import { resolveReportSchema, type ResolveReportInput } from '@jokko/contracts';
+import {
+  impersonateSchema,
+  resolveReportSchema,
+  type ImpersonateInput,
+  type ResolveReportInput,
+} from '@jokko/contracts';
 import { ZodValidationPipe } from '../../../shared/zod-validation.pipe';
 import { AuthGuard } from '../../identity/guards/auth.guard';
+import { CurrentUser } from '../../identity/decorators/current-user.decorator';
 import { PlatformAdminGuard } from '../../identity/guards/platform-admin.guard';
 import { AdminService } from '../application/admin.service';
 
@@ -48,6 +54,11 @@ export class AdminController {
     return this.admin.listShops(q.q, q.page, q.pageSize);
   }
 
+  @Get('shops/:id')
+  shopDetail(@Param('id', ParseUUIDPipe) id: string) {
+    return this.admin.shopDetail(id);
+  }
+
   @Post('shops/:id/status')
   async setStatus(
     @Param('id', ParseUUIDPipe) id: string,
@@ -55,6 +66,14 @@ export class AdminController {
   ) {
     await this.admin.setShopStatus(id, body.status);
     return { ok: true, status: body.status };
+  }
+
+  @Post('impersonate')
+  impersonate(
+    @CurrentUser() admin: { id: string },
+    @Body(new ZodValidationPipe(impersonateSchema)) body: ImpersonateInput,
+  ) {
+    return this.admin.impersonate(admin.id, body.userId);
   }
 
   @Get('reports')

@@ -7,6 +7,8 @@ import type { AppConfig } from '../../../../config/configuration';
 export interface AccessClaims {
   sub: string;
   email: string;
+  /** Usurpation : identifiant de l'administrateur agissant (RFC 8693 `act`). */
+  act?: string;
 }
 
 @Injectable()
@@ -26,19 +28,26 @@ export class TokenService {
     return this.accessTtlSec;
   }
 
-  async signAccess(claims: AccessClaims): Promise<string> {
-    return new SignJWT({ email: claims.email })
+  async signAccess(claims: AccessClaims, opts?: { ttlSec?: number }): Promise<string> {
+    const jwt = new SignJWT({
+      email: claims.email,
+      ...(claims.act ? { act: claims.act } : {}),
+    })
       .setProtectedHeader({ alg: 'HS256' })
       .setSubject(claims.sub)
       .setIssuedAt()
       .setIssuer('jokko')
-      .setExpirationTime(`${this.accessTtlSec}s`)
-      .sign(this.secret);
+      .setExpirationTime(`${opts?.ttlSec ?? this.accessTtlSec}s`);
+    return jwt.sign(this.secret);
   }
 
   async verifyAccess(token: string): Promise<AccessClaims> {
     const { payload } = await jwtVerify(token, this.secret, { issuer: 'jokko' });
-    return { sub: String(payload.sub), email: String(payload.email) };
+    return {
+      sub: String(payload.sub),
+      email: String(payload.email),
+      act: payload.act ? String(payload.act) : undefined,
+    };
   }
 
   /** Refresh token opaque + son hash (stocké en base pour révocation). */

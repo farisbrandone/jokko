@@ -1,18 +1,25 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
   AdminReportList,
+  AdminShopDetail,
   AdminShopList,
+  ImpersonationGrant,
   PlatformOverview,
   ResolveReportInput,
 } from '@jokko/contracts';
 import { ProductIndex } from '../../search/infrastructure/product-index';
+import { TokenService } from '../../identity/infrastructure/security/token.service';
 import { ADMIN_DB, type AdminDb } from '../infrastructure/admin-db';
+
+/** Usurpation support : jeton d'accès court, sans refresh. */
+const IMPERSONATION_TTL_SEC = 900;
 
 @Injectable()
 export class AdminService {
   constructor(
     @Inject(ADMIN_DB) private readonly db: AdminDb,
     private readonly index: ProductIndex,
+    private readonly tokens: TokenService,
   ) {}
 
   async overview(): Promise<PlatformOverview> {
@@ -97,6 +104,67 @@ export class AdminService {
       [shopId, status],
     );
     if (res.rowCount === 0) throw new NotFoundException('Boutique introuvable');
+  }
+
+  async shopDetail(id: string): Promise<AdminShopDetail> {
+    const { rows } = await this.db.query<{
+      id: string;
+      slug: string;
+      name: string;
+      status: 'active' | 'suspended';
+      created_at: Date;
+      owner_id: string | null;
+      owner_email: string | null;
+      owner_name: string | null;
+    }>(
+      `select s.id, s.slug, s.name, s.status, s.created_at,
+              o.owner_id, u.email owner_email, u.name owner_name
+         from shops s
+         left join lateral (
+           select m.user_id as owner_id from shop_memberships m
+            where m.shop_id = s.id and m.role = 'owner' limit 1
+         ) o on true
+         left join users u on u.id = o.owner_id
+        where s.id = $1`,
+      [id],
+    );
+    const r = rows[0];
+    if (!r) throw new NotFoundException('Boutique introuvable');
+    return {
+      id: r.id,
+      slug: r.slug,
+      name: r.name,
+      status: r.status,
+      createdAt: new Date(r.created_at).toISOString(),
+      owner: r.owner_id
+        ? { id: r.owner_id, email: r.owner_email ?? '', name: r.owner_name ?? '' }
+        : null,
+    };
+  }
+
+  /** Émet un jeton court usurpant `targetUserId`, journalisé. */
+  async impersonate(adminUserId: string, targetUserId: string): Promise<ImpersonationGrant> {
+    const { rows } = await this.db.query<{ id: string; email: string; name: string }>(
+      `select id, email, name from users where id = $1`,
+      [targetUserId],
+    );
+    const target = rows[0];
+    if (!target) throw new NotFoundException('Utilisateur introuvable');
+
+    const token = await this.tokens.signAccess(
+      { sub: target.id, email: target.email, act: adminUserId },
+      { ttlSec: IMPERSONATION_TTL_SEC },
+    );
+    await this.db.query(
+      `insert into impersonation_events (admin_user_id, target_user_id) values ($1, $2)`,
+      [adminUserId, targetUserId],
+    );
+
+    return {
+      token,
+      expiresAt: new Date(Date.now() + IMPERSONATION_TTL_SEC * 1000).toISOString(),
+      target: { id: target.id, email: target.email, name: target.name },
+    };
   }
 
   async listReports(

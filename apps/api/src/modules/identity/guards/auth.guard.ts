@@ -9,6 +9,8 @@ import { TokenService } from '../infrastructure/security/token.service';
 export interface AuthenticatedUser {
   id: string;
   email: string;
+  /** Présent si le jeton résulte d'une usurpation support (id de l'administrateur). */
+  impersonatedBy?: string;
 }
 
 interface RequestWithAuth {
@@ -30,7 +32,7 @@ export class AuthGuard implements CanActivate {
     if (!token) throw new UnauthorizedException('Authentification requise');
     try {
       const claims = await this.tokens.verifyAccess(token);
-      req.user = { id: claims.sub, email: claims.email };
+      req.user = { id: claims.sub, email: claims.email, impersonatedBy: claims.act };
       return true;
     } catch {
       throw new UnauthorizedException('Jeton invalide ou expiré');

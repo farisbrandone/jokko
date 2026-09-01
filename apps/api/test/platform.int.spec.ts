@@ -37,6 +37,17 @@ async function newSeller(email: string) {
   return res.body.tokens.accessToken as string;
 }
 
+async function meId(token: string): Promise<string> {
+  const res = await http.get('/api/auth/me').set('authorization', `Bearer ${token}`).expect(200);
+  return res.body.id as string;
+}
+
+async function makeAdmin(email: string): Promise<string> {
+  const token = await newSeller(email);
+  await h.query('update users set is_platform_admin = true where email = $1', [email]);
+  return token;
+}
+
 async function newShop(token: string, name: string) {
   const res = await http
     .post('/api/shops')
@@ -347,12 +358,6 @@ describe('profil boutique (couleur de marque)', () => {
 });
 
 describe('modération : signalements & retrait', () => {
-  async function makeAdmin(email: string) {
-    const token = await newSeller(email);
-    await h.query('update users set is_platform_admin = true where email = $1', [email]);
-    return token;
-  }
-
   it('signalement → file admin → retrait du produit → hors recherche', async () => {
     const seller = await newSeller('mod-seller@ex.com');
     const admin = await makeAdmin('mod-admin@ex.com');
@@ -502,5 +507,68 @@ describe('notifications push (Web Push / VAPID)', () => {
       ['https://push.example/seller-endpoint'],
     );
     expect(kept[0].c).toBe(1);
+  });
+});
+
+describe("support : usurpation d'identité (impersonation)", () => {
+  it('un admin obtient un jeton court agissant comme le vendeur ; audité', async () => {
+    const admin = await makeAdmin('imp-admin@ex.com');
+    const seller = await newSeller('imp-seller@ex.com');
+    const adminId = await meId(admin);
+    const sellerId = await meId(seller);
+    const shop = await newShop(seller, 'Imp Shop');
+    await newPublishedProduct(seller, shop, 'Casque', 5000);
+
+    // un non-admin ne peut pas usurper
+    await http
+      .post('/api/admin/impersonate')
+      .set('authorization', `Bearer ${seller}`)
+      .send({ userId: sellerId })
+      .expect(403);
+
+    // utilisateur inconnu → 404
+    await http
+      .post('/api/admin/impersonate')
+      .set('authorization', `Bearer ${admin}`)
+      .send({ userId: '00000000-0000-4000-8000-000000000000' })
+      .expect(404);
+
+    const grant = await http
+      .post('/api/admin/impersonate')
+      .set('authorization', `Bearer ${admin}`)
+      .send({ userId: sellerId })
+      .expect(201);
+    expect(grant.body.target.email).toBe('imp-seller@ex.com');
+    expect(typeof grant.body.token).toBe('string');
+    expect(new Date(grant.body.expiresAt).getTime()).toBeGreaterThan(Date.now());
+
+    // le jeton agit comme le vendeur
+    const asSeller = await http
+      .get('/api/auth/me')
+      .set('authorization', `Bearer ${grant.body.token}`)
+      .expect(200);
+    expect(asSeller.body.id).toBe(sellerId);
+
+    // …y compris sur une route réservée aux membres
+    const inbox = await http
+      .get(`/api/shops/${shop}/inbox`)
+      .set('authorization', `Bearer ${grant.body.token}`)
+      .expect(200);
+    expect(inbox.body.total).toBe(0);
+
+    // trace d'audit
+    const audit = await h.query<{ c: number }>(
+      `select count(*)::int c from impersonation_events where admin_user_id = $1 and target_user_id = $2`,
+      [adminId, sellerId],
+    );
+    expect(audit[0].c).toBe(1);
+
+    // vue support de la boutique
+    const detail = await http
+      .get(`/api/admin/shops/${shop}`)
+      .set('authorization', `Bearer ${admin}`)
+      .expect(200);
+    expect(detail.body.owner.email).toBe('imp-seller@ex.com');
+    expect(detail.body.slug).toBe('imp-shop');
   });
 });

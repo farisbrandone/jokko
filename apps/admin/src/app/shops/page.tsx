@@ -81,7 +81,15 @@ export default async function ShopsPage({ searchParams }: Params) {
                   </span>
                 </td>
                 <td className="py-2 px-3 text-right">
-                  <ShopStatusToggle shopId={s.id} status={s.status} />
+                  <div className="flex justify-end gap-2">
+                    <Link
+                      href={`/shops/${s.id}`}
+                      className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs"
+                    >
+                      Inspecter
+                    </Link>
+                    <ShopStatusToggle shopId={s.id} status={s.status} />
+                  </div>
                 </td>
               </tr>
             ))}

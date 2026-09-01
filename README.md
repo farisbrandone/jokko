@@ -335,10 +335,25 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Intégration : clé publique, abonnement idempotent, désabonnement, `401`
   sans jeton ; un message acheteur tente le canal sans lever d'exception
 
+**Incrément 18 — support : usurpation d'identité (impersonation)**
+
+- [x] `TokenService.signAccess(claims, { ttlSec })` + claim `act` (RFC 8693) ;
+  `AuthGuard` expose `impersonatedBy`
+- [x] `POST /admin/impersonate { userId }` (PlatformAdminGuard) → jeton d'accès
+  court (15 min, sans refresh) agissant comme la cible ; audit
+  `impersonation_events` (qui / sur qui / quand)
+- [x] `GET /admin/shops/:id` : détail boutique + propriétaire (pool admin, hors RLS)
+- [x] `apps/admin` : page `/shops/[id]` — vue support **lecture seule** (stats 7 j,
+  boîte de réception, produits) via un jeton d'usurpation obtenu côté serveur ;
+  lien « Inspecter » depuis la liste
+- [x] Intégration : non-admin `403`, utilisateur inconnu `404`, jeton agissant
+  comme le vendeur (`/auth/me`, route membre `/inbox`), ligne d'audit,
+  `GET /admin/shops/:id`
+
 **Suite**
 
 - [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
-- [ ] `admin` : signalements de messages, impersonation support
+- [ ] `admin` : signalements de messages ; bannière « session support » côté dashboard
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 ```
