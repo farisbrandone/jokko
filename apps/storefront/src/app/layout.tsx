@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
 import './globals.css';
 import { currentShop, siteUrl } from '@/lib/shop';
@@ -6,6 +6,9 @@ import { brandThemeCss } from '@/lib/theme';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PageViewTracker } from '@/components/track-event';
+import { ServiceWorkerRegistrar } from '@/components/sw-register';
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -35,6 +38,17 @@ export async function generateMetadata(): Promise<Metadata> {
       locale: (shop?.locale ?? 'fr').replace('-', '_'),
     },
     twitter: { card: 'summary_large_image', title, description },
+    appleWebApp: { capable: true, title, statusBarStyle: 'default' },
+  };
+}
+
+export async function generateViewport(): Promise<Viewport> {
+  const shop = await currentShop();
+  const brand =
+    shop?.brandColor && HEX_RE.test(shop.brandColor) ? shop.brandColor : '#c2410c';
+  return {
+    themeColor: brand,
+    colorScheme: 'light dark',
   };
 }
 
@@ -46,10 +60,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       {themeCss ? (
         <head>
           <style dangerouslySetInnerHTML={{ __html: themeCss }} />
-          <meta name="theme-color" content={shop?.brandColor ?? ''} />
         </head>
       ) : null}
       <body className="min-h-dvh flex flex-col">
+        <ServiceWorkerRegistrar />
         {shop ? <PageViewTracker /> : null}
         <SiteHeader shop={shop} />
         <main className="flex-1 w-full mx-auto max-w-6xl px-4 py-6">{children}</main>

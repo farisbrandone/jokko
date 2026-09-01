@@ -288,10 +288,24 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Intégration : édition membre (nom + thème + couleur), non-membre `403`,
   hex invalide `400`, propagation à `GET /shops/:slug`
 
+**Incrément 15 — storefront : PWA installable**
+
+- [x] `manifest.webmanifest` dynamique par boutique (`name`, `theme_color` = couleur
+  de marque, `display: standalone`)
+- [x] `icon.tsx` / `apple-icon.tsx` : icône générée (`next/og`) — monogramme sur la
+  couleur de la boutique, encre choisie par luminance
+- [x] `sw.js` : service worker minimal — navigations réseau-d'abord + repli cache /
+  page `/offline` ; assets `_next/static` + images en stale-while-revalidate ;
+  jamais `/api/` ; caches versionnés, isolés par origine (sous-domaine)
+- [x] `ServiceWorkerRegistrar` (enregistrement en production) ; `generateViewport`
+  (`theme-color`) ; `appleWebApp` ; page `/offline`
+- [x] Fumée : `/manifest.webmanifest` (JSON), `/sw.js`, `/icon` (PNG 512²),
+  `/apple-icon`, `/offline` → `200`
+
 **Suite**
 
-- [ ] Notifications **push** (Web Push / PWA) ; préférences par membre ; heures calmes
-- [ ] `storefront` : PWA (manifest + service worker), i18n (next-intl)
+- [ ] Notifications **push** (Web Push, abonnements + VAPID) ; préférences par membre
+- [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : file de modération (produits / messages signalés), impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
