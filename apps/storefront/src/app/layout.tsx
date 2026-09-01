@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
 import './globals.css';
-import { currentShop } from '@/lib/shop';
+import { currentShop, siteUrl } from '@/lib/shop';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 import { PageViewTracker } from '@/components/track-event';
@@ -14,12 +14,26 @@ const display = Bricolage_Grotesque({
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const shop = await currentShop();
+  const [shop, base] = await Promise.all([currentShop(), siteUrl()]);
+  const title = shop?.name ?? 'Jokko';
+  const description = shop
+    ? `La boutique ${shop.name} — parcourez toute la gamme et contactez le vendeur directement.`
+    : 'Boutiques sociales Jokko';
   return {
+    metadataBase: new URL(base),
     title: shop ? { default: shop.name, template: `%s · ${shop.name}` } : 'Jokko',
-    description: shop
-      ? `La boutique ${shop.name} — parcourez toute la gamme.`
-      : 'Boutiques sociales Jokko',
+    description,
+    applicationName: title,
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      siteName: title,
+      title,
+      description,
+      url: '/',
+      locale: (shop?.locale ?? 'fr').replace('-', '_'),
+    },
+    twitter: { card: 'summary_large_image', title, description },
   };
 }
 

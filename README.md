@@ -261,10 +261,24 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Dashboard : page `/s/:id/settings` (canaux + délai anti-spam)
 - [x] Intégration : préférences (défauts + persistance), cooldown, rate-limit `429`
 
+**Incrément 13 — storefront : aperçus de lien enrichis (Open Graph dynamique)**
+
+- [x] `opengraph-image.tsx` (boutique) : carte 1200×630 générée via `next/og` — nom,
+  verticales, nombre de produits, sur dégradé de marque
+- [x] `p/[slug]/opengraph-image.tsx` (produit) : nom + prix + visuel + boutique
+  (vérification `HEAD` de l'image distante → repli texte si indisponible)
+- [x] `siteUrl()` : URL publique dérivée de l'hôte de la requête (chaque boutique a
+  son sous-domaine / domaine) → `metadataBase`, `canonical`, `og:url` corrects
+- [x] `layout` : `openGraph` / `twitter` par défaut hérités par toutes les pages ;
+  page produit allégée (le visuel vient de la carte générée)
+- [x] `sitemap.xml` propre à la boutique (pages + produits publiés, paginé) et
+  `robots.txt` (avec lien sitemap)
+
 **Suite**
 
 - [ ] Notifications **push** (Web Push / PWA) ; préférences par membre ; heures calmes
-- [ ] `storefront` : PWA, i18n (next-intl), thème par boutique éditable, image OG dynamique
+- [ ] `storefront` : PWA (manifest + service worker), i18n (next-intl), thème par
+  boutique éditable (couleur de marque)
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : file de modération (produits / messages signalés), impersonation support
 - [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs

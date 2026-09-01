@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { formatMoney } from '@jokko/ui';
-import { currentShop } from '@/lib/shop';
+import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, type ProductView } from '@/lib/api';
 import { ContactBar } from '@/components/contact-bar';
 import { TrackOnMount } from '@/components/track-event';
@@ -27,20 +27,14 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const data = await load((await params).slug);
   if (!data?.product) return { title: 'Produit' };
   const { shop, product } = data;
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? '';
-  const url = `${site}/p/${product.slug}`;
+  const path = `/p/${product.slug}`;
   const desc = product.description.slice(0, 160) || `${product.name} chez ${shop.name}`;
+  // Le visuel de partage est fourni par `opengraph-image.tsx` (carte générée).
   return {
     title: product.name,
     description: desc,
-    alternates: { canonical: url },
-    openGraph: {
-      title: product.name,
-      description: desc,
-      url,
-      type: 'website',
-      images: product.images.slice(0, 1),
-    },
+    alternates: { canonical: path },
+    openGraph: { title: product.name, description: desc, url: path, type: 'website' },
     twitter: { card: 'summary_large_image', title: product.name, description: desc },
   };
 }
@@ -51,8 +45,7 @@ export default async function ProductPage({ params }: Params) {
   const { shop, product } = data;
   if (!product) notFound();
 
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? '';
-  const url = `${site}/p/${product.slug}`;
+  const url = `${await siteUrl()}/p/${product.slug}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
