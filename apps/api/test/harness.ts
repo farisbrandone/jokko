@@ -99,6 +99,11 @@ async function startHarnessInner(): Promise<Harness> {
     TENANT_HEADER_SECRET: 'test_tenant_secret_0123456789abcd',
     SMTP_URL: 'json',
     DASHBOARD_BASE_URL: 'http://localhost:3001',
+    // Paire VAPID de test (générée hors-ligne) — active le canal Web Push.
+    VAPID_PUBLIC_KEY:
+      'BNZDaBvdGo97Dn46QZttn-7fuzFth7TRSl0aZSlMmcUHeyWHtpf2fUlFWJags_lZI7j6Lsl0RpN6_w2s8Xvb_ck',
+    VAPID_PRIVATE_KEY: 'P8caKqQx3CzHXVHBM5LsPquvuESXncieQmHpa5rd130',
+    VAPID_SUBJECT: 'mailto:test@jokko.shop',
     SHOP_ROOT_DOMAIN: 'test.local',
     S3_ENDPOINT: 'http://localhost:59000',
     S3_ACCESS_KEY: 'test',

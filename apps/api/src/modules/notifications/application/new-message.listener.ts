@@ -9,6 +9,13 @@ import {
   type MembershipRepository,
 } from '../../identity/domain/ports';
 import { SHOP_REPOSITORY, type ShopRepository } from '../../shop/domain/ports/shop.repository';
+import {
+  PUSH_SENDER,
+  PUSH_SUBSCRIPTION_REPOSITORY,
+  type PushSender,
+  type PushSubscriptionRepository,
+  type StoredPushSubscription,
+} from '../../push/domain/ports';
 import { selectChannels } from '../domain/channel-policy';
 import {
   DISPATCH_LOG_REPOSITORY,
@@ -32,6 +39,7 @@ interface MessagePayload {
 
 interface DispatchContext {
   recipients: string[];
+  pushSubs: StoredPushSubscription[];
   phone: string | null;
   shopName: string;
   about: string;
@@ -43,9 +51,9 @@ interface DispatchContext {
 
 /**
  * Prévient les membres d'une boutique quand un acheteur écrit, sur les canaux
- * activés dans les préférences (e-mail / WhatsApp / SMS). Déclenché par l'Outbox
- * → EventEmitter2. Anti-spam : un canal n'est pas re-notifié pour une même
- * conversation avant `cooldownSeconds`. Les erreurs sont avalées (au mieux).
+ * activés dans les préférences (e-mail / Web Push / WhatsApp / SMS). Déclenché
+ * par l'Outbox → EventEmitter2. Anti-spam : un canal n'est pas re-notifié pour
+ * une même conversation avant `cooldownSeconds`. Erreurs avalées (au mieux).
  */
 @Injectable()
 export class NewMessageListener {
@@ -62,6 +70,8 @@ export class NewMessageListener {
     @Inject(DISPATCH_LOG_REPOSITORY) private readonly dispatchLog: DispatchLogRepository,
     @Inject(SMS_SENDER) private readonly sms: SmsSender,
     @Inject(WHATSAPP_SENDER) private readonly whatsapp: WhatsAppSender,
+    @Inject(PUSH_SENDER) private readonly push: PushSender,
+    @Inject(PUSH_SUBSCRIPTION_REPOSITORY) private readonly pushSubs: PushSubscriptionRepository,
   ) {
     this.dashboardUrl = config.get('notifications', { infer: true }).dashboardUrl;
   }
@@ -80,25 +90,25 @@ export class NewMessageListener {
       ]);
 
       const recipients = members.map((m) => m.email).filter(Boolean);
+      const pushSubs = await this.pushSubs.listForUsers(members.map((m) => m.userId));
       const phone = shop?.toSnapshot().whatsapp ?? null;
       const shopName = shop?.toSnapshot().name ?? 'votre boutique';
 
-      const lastSent = {
-        email: await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'email'),
-        whatsapp: await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'whatsapp'),
-        sms: await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'sms'),
+      const lastSent: Record<NotificationChannel, number | null> = {
+        email: (await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'email'))?.getTime() ?? null,
+        push: (await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'push'))?.getTime() ?? null,
+        whatsapp:
+          (await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'whatsapp'))?.getTime() ?? null,
+        sms: (await this.dispatchLog.lastSentAt(shopId, p.conversationId, 'sms'))?.getTime() ?? null,
       };
 
       const channels = selectChannels({
         settings,
         now: Date.now(),
-        lastSent: {
-          email: lastSent.email?.getTime() ?? null,
-          whatsapp: lastSent.whatsapp?.getTime() ?? null,
-          sms: lastSent.sms?.getTime() ?? null,
-        },
+        lastSent,
         hasEmailRecipients: recipients.length > 0,
         hasPhone: Boolean(phone),
+        hasPush: pushSubs.length > 0,
       });
       if (channels.length === 0) return;
 
@@ -111,6 +121,7 @@ export class NewMessageListener {
 
       const ctx: DispatchContext = {
         recipients,
+        pushSubs,
         phone,
         shopName,
         about,
@@ -155,6 +166,23 @@ export class NewMessageListener {
             ctx.preview,
           )}</blockquote><p><a href="${ctx.link}">Répondre dans la boîte de réception</a></p>`,
         });
+      }
+      if (channel === 'push') {
+        const results = await Promise.all(
+          ctx.pushSubs.map((s) =>
+            this.push.send(
+              s,
+              {
+                title: `${ctx.buyerName} — ${ctx.shopName}`,
+                body: ctx.preview.slice(0, 160),
+                url: ctx.link,
+                tag: `conv-${ctx.link.split('/').pop() ?? ''}`,
+              },
+              (endpoint) => void this.pushSubs.removeStale(endpoint),
+            ),
+          ),
+        );
+        return results.some(Boolean);
       }
       if (!ctx.phone) return false;
       if (channel === 'whatsapp') return this.whatsapp.send(ctx.phone, ctx.shortText);

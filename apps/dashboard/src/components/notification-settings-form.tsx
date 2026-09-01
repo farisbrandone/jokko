@@ -7,6 +7,11 @@ import type { NotificationSettings } from '@/lib/types';
 
 const CHANNELS: { key: keyof NotificationSettings; label: string; hint: string }[] = [
   { key: 'emailEnabled', label: 'E-mail', hint: 'Envoyé à tous les membres de la boutique.' },
+  {
+    key: 'pushEnabled',
+    label: 'Notifications push',
+    hint: 'Sur les appareils où vous avez activé les notifications ci-dessous.',
+  },
   { key: 'whatsappEnabled', label: 'WhatsApp', hint: 'Envoyé au numéro WhatsApp de la boutique.' },
   { key: 'smsEnabled', label: 'SMS', hint: 'Envoyé au numéro WhatsApp de la boutique.' },
 ];

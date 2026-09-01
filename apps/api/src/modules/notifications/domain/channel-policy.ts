@@ -10,6 +10,8 @@ export interface ChannelDecisionInput {
   hasEmailRecipients: boolean;
   /** La boutique a-t-elle un numéro (WhatsApp / SMS) configuré ? */
   hasPhone: boolean;
+  /** Au moins un membre a-t-il un abonnement Web Push ? */
+  hasPush: boolean;
 }
 
 /**
@@ -28,6 +30,9 @@ export function selectChannels(input: ChannelDecisionInput): NotificationChannel
   const out: NotificationChannel[] = [];
   if (input.settings.emailEnabled && input.hasEmailRecipients && !withinCooldown('email')) {
     out.push('email');
+  }
+  if (input.settings.pushEnabled && input.hasPush && !withinCooldown('push')) {
+    out.push('push');
   }
   if (input.settings.whatsappEnabled && input.hasPhone && !withinCooldown('whatsapp')) {
     out.push('whatsapp');

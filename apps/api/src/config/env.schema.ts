@@ -40,6 +40,11 @@ export const envSchema = z.object({
   TERMII_BASE_URL: z.string().url().default('https://api.ng.termii.com'),
   NOTIFICATIONS_COOLDOWN_SEC: z.coerce.number().int().min(0).default(300),
 
+  // Web Push (VAPID). Sans clés, le canal push est un no-op (adaptateur « log »).
+  VAPID_PUBLIC_KEY: z.string().optional(),
+  VAPID_PRIVATE_KEY: z.string().optional(),
+  VAPID_SUBJECT: z.string().default('mailto:support@jokko.shop'),
+
   // Anti-spam : nombre max d'ouvertures de conversation par numéro et par heure.
   MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR: z.coerce.number().int().positive().default(6),
 

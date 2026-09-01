@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import type { AppConfig } from '../../config/configuration';
 import { IdentityModule } from '../identity/identity.module';
 import { ShopModule } from '../shop/shop.module';
+import { PushModule } from '../push/push.module';
 import { NewMessageListener } from './application/new-message.listener';
 import { NotificationSettingsService } from './application/notification-settings.service';
 import {
@@ -38,7 +39,7 @@ const whatsappProvider: Provider = {
 };
 
 @Module({
-  imports: [IdentityModule, ShopModule],
+  imports: [IdentityModule, ShopModule, PushModule],
   controllers: [NotificationSettingsController],
   providers: [
     Mailer,

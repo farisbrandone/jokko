@@ -20,6 +20,9 @@ export class NotificationSettingsEntity {
   @Property({ type: 'boolean', fieldName: 'sms_enabled' })
   smsEnabled = false;
 
+  @Property({ type: 'boolean', fieldName: 'push_enabled' })
+  pushEnabled = true;
+
   @Property({ type: 'integer', fieldName: 'cooldown_seconds' })
   cooldownSeconds = 300;
 
@@ -45,7 +48,7 @@ export class NotificationDispatchLogEntity {
   conversationId!: string;
 
   @Property({ type: 'string', length: 10 })
-  channel!: 'email' | 'whatsapp' | 'sms';
+  channel!: 'email' | 'whatsapp' | 'sms' | 'push';
 
   @Property({ type: 'datetime', fieldName: 'sent_at' })
   sentAt: Date = new Date();

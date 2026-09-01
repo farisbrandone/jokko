@@ -319,9 +319,24 @@ presentation/    contrôleurs NestJS + validation Zod
   hors recherche, re-traitement `409` ; assertions de recherche rendues
   robustes (`expectSearchTotal` sonde la cohérence éventuelle de Meilisearch)
 
+**Incrément 17 — notifications Web Push (VAPID)**
+
+- [x] Contexte `push` : ports `PushSender` / `PushSubscriptionRepository` ;
+  `WebPushSender` (lib `web-push`) si clés VAPID, sinon adaptateur « log » ;
+  table `push_subscriptions` (clé = utilisateur, sans RLS)
+- [x] API `GET /push/public-key`, `POST|DELETE /push/subscriptions` (AuthGuard,
+  upsert par endpoint, purge auto sur `404/410`)
+- [x] Canal `push` intégré au fan-out : `NewMessageListener` cible les abonnements
+  des membres, `selectChannels` gère `hasPush` + cooldown ; `pushEnabled` dans
+  `notification_settings` (défaut activé)
+- [x] Dashboard : `public/sw.js` (push + `notificationclick`), `PushToggle`
+  (permission → abonnement → `applicationServerKey`) sur `/s/:id/settings` ;
+  case « Notifications push » dans le formulaire de préférences
+- [x] Intégration : clé publique, abonnement idempotent, désabonnement, `401`
+  sans jeton ; un message acheteur tente le canal sans lever d'exception
+
 **Suite**
 
-- [ ] Notifications **push** (Web Push, abonnements + VAPID) ; préférences par membre
 - [ ] `storefront` : i18n (next-intl), invite d'installation PWA
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 - [ ] `admin` : signalements de messages, impersonation support

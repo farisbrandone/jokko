@@ -38,6 +38,7 @@ export interface NotificationSettings {
   emailEnabled: boolean;
   whatsappEnabled: boolean;
   smsEnabled: boolean;
+  pushEnabled: boolean;
   cooldownSeconds: number;
 }
 

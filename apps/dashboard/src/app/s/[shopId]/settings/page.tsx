@@ -5,6 +5,7 @@ import type { NotificationSettings, SessionUser, ShopProfile } from '@/lib/types
 import { Shell } from '@/components/shell';
 import { NotificationSettingsForm } from '@/components/notification-settings-form';
 import { ShopProfileForm } from '@/components/shop-profile-form';
+import { PushToggle } from '@/components/push-toggle';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,6 +50,9 @@ export default async function SettingsPage({ params }: Params) {
         <p className="text-sm text-[var(--color-muted)] mb-4">
           Comment être prévenu quand un acheteur écrit à la boutique.
         </p>
+        <div className="mb-4 max-w-lg">
+          <PushToggle />
+        </div>
         <NotificationSettingsForm shopId={shopId} initial={settings} />
       </section>
     </Shell>

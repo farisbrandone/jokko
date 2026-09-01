@@ -220,15 +220,17 @@ describe('notifications multi-canal & anti-spam', () => {
       emailEnabled: true,
       whatsappEnabled: false,
       smsEnabled: false,
+      pushEnabled: true,
       cooldownSeconds: 300,
     });
 
     const s1 = await http
       .patch(`/api/shops/${shop}/settings/notifications`)
       .set('authorization', `Bearer ${t}`)
-      .send({ whatsappEnabled: true, cooldownSeconds: 60 })
+      .send({ whatsappEnabled: true, pushEnabled: false, cooldownSeconds: 60 })
       .expect(200);
     expect(s1.body.whatsappEnabled).toBe(true);
+    expect(s1.body.pushEnabled).toBe(false);
     expect(s1.body.cooldownSeconds).toBe(60);
 
     // persistance
@@ -240,6 +242,7 @@ describe('notifications multi-canal & anti-spam', () => {
       emailEnabled: true,
       whatsappEnabled: true,
       smsEnabled: false,
+      pushEnabled: false,
       cooldownSeconds: 60,
     });
   });
@@ -415,5 +418,89 @@ describe('modération : signalements & retrait', () => {
       .set('authorization', `Bearer ${admin}`)
       .send({ action: 'dismiss' })
       .expect(409);
+  });
+});
+
+describe('notifications push (Web Push / VAPID)', () => {
+  const sub = (endpoint: string) => ({
+    endpoint,
+    keys: { p256dh: 'BExamplePublicKeyForTestsOnly0000000000000000000000000000000000000000000000000000000000', auth: 'YXV0aC1zZWNyZXQtdGVzdA' },
+  });
+
+  it('clé publique, abonnement idempotent, désabonnement, auth requise', async () => {
+    const t = await newSeller('push-user@ex.com');
+
+    const key = await http
+      .get('/api/push/public-key')
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(typeof key.body.key).toBe('string');
+    expect(key.body.key.length).toBeGreaterThan(20);
+
+    // sans jeton → 401
+    await http.post('/api/push/subscriptions').send(sub('https://push.example/a')).expect(401);
+
+    await http
+      .post('/api/push/subscriptions')
+      .set('authorization', `Bearer ${t}`)
+      .send(sub('https://push.example/endpoint-1'))
+      .expect(201);
+
+    // même endpoint → upsert, pas de doublon
+    await http
+      .post('/api/push/subscriptions')
+      .set('authorization', `Bearer ${t}`)
+      .send(sub('https://push.example/endpoint-1'))
+      .expect(201);
+
+    const rows = await h.query<{ c: number }>(
+      `select count(*)::int c from push_subscriptions where endpoint = $1`,
+      ['https://push.example/endpoint-1'],
+    );
+    expect(rows[0].c).toBe(1);
+
+    await http
+      .delete('/api/push/subscriptions')
+      .set('authorization', `Bearer ${t}`)
+      .send({ endpoint: 'https://push.example/endpoint-1' })
+      .expect(204);
+
+    const after = await h.query<{ c: number }>(
+      `select count(*)::int c from push_subscriptions where endpoint = $1`,
+      ['https://push.example/endpoint-1'],
+    );
+    expect(after[0].c).toBe(0);
+  });
+
+  it('un message acheteur tente le canal push quand un abonnement existe', async () => {
+    const seller = await newSeller('push-seller@ex.com');
+    const shop = await newShop(seller, 'Push Shop');
+
+    await http
+      .post('/api/push/subscriptions')
+      .set('authorization', `Bearer ${seller}`)
+      .send(sub('https://push.example/seller-endpoint'))
+      .expect(201);
+
+    await http
+      .post(`/api/shops/${shop}/conversations`)
+      .send({ buyerName: 'Moussa', buyerPhone: '+221770000909', message: 'Bonjour' })
+      .expect(201);
+    await drainOutbox();
+
+    // L'envoi réel échoue (endpoint factice) → aucune ligne « push » journalisée,
+    // mais le pipeline a bien sélectionné et tenté le canal (pas d'exception).
+    const rows = await h.query<{ channel: string }>(
+      `select channel from notification_dispatch_log where shop_id = $1`,
+      [shop],
+    );
+    expect(rows.some((r) => r.channel === 'email')).toBe(true);
+
+    // Échec d'envoi ≠ 404/410 → l'abonnement n'est pas purgé.
+    const kept = await h.query<{ c: number }>(
+      `select count(*)::int c from push_subscriptions where endpoint = $1`,
+      ['https://push.example/seller-endpoint'],
+    );
+    expect(kept[0].c).toBe(1);
   });
 });

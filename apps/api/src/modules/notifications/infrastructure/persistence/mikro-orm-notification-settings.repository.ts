@@ -28,6 +28,7 @@ export class MikroOrmNotificationSettingsRepository implements NotificationSetti
       emailEnabled: row.emailEnabled,
       whatsappEnabled: row.whatsappEnabled,
       smsEnabled: row.smsEnabled,
+      pushEnabled: row.pushEnabled,
       cooldownSeconds: row.cooldownSeconds,
     };
   }
@@ -53,6 +54,7 @@ export class MikroOrmNotificationSettingsRepository implements NotificationSetti
       if (patch.emailEnabled !== undefined) row.emailEnabled = patch.emailEnabled;
       if (patch.whatsappEnabled !== undefined) row.whatsappEnabled = patch.whatsappEnabled;
       if (patch.smsEnabled !== undefined) row.smsEnabled = patch.smsEnabled;
+      if (patch.pushEnabled !== undefined) row.pushEnabled = patch.pushEnabled;
       if (patch.cooldownSeconds !== undefined) row.cooldownSeconds = patch.cooldownSeconds;
       row.updatedAt = new Date();
       await em.persistAndFlush(row);

@@ -50,6 +50,11 @@ export interface AppConfig {
       senderId: string;
       baseUrl: string;
     } | null;
+    webPush: {
+      publicKey: string;
+      privateKey: string;
+      subject: string;
+    } | null;
   };
   messaging: {
     maxNewConversationsPerHour: number;
@@ -104,6 +109,14 @@ export const buildConfig = (env: Env): AppConfig => ({
           baseUrl: env.TERMII_BASE_URL,
         }
       : null,
+    webPush:
+      env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
+        ? {
+            publicKey: env.VAPID_PUBLIC_KEY,
+            privateKey: env.VAPID_PRIVATE_KEY,
+            subject: env.VAPID_SUBJECT,
+          }
+        : null,
   },
   messaging: {
     maxNewConversationsPerHour: env.MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR,
