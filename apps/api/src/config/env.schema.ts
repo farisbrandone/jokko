@@ -48,6 +48,16 @@ export const envSchema = z.object({
   // Anti-spam : nombre max d'ouvertures de conversation par numéro et par heure.
   MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR: z.coerce.number().int().positive().default(6),
 
+  // Facturation (abonnement vendeur). Sans FLW_SECRET_KEY : passerelle « fake »
+  // qui valide automatiquement (dev / CI).
+  FLW_SECRET_KEY: z.string().optional(),
+  FLW_WEBHOOK_SECRET: z.string().optional(),
+  FLW_BASE_URL: z.string().url().default('https://api.flutterwave.com'),
+  BILLING_PRICE_XOF: z.coerce.number().int().positive().default(5000),
+  BILLING_TRIAL_DAYS: z.coerce.number().int().min(0).default(14),
+  BILLING_GRACE_DAYS: z.coerce.number().int().min(0).default(3),
+  APP_PUBLIC_URL: z.string().url().default('http://localhost:3001'),
+
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 
   SHOP_ROOT_DOMAIN: z.string().default('lvh.me'),

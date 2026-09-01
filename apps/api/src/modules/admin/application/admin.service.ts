@@ -34,6 +34,7 @@ export class AdminService {
       events_7d: string;
       new_shops_7d: string;
       pending_reports: string;
+      active_subscriptions: string;
     }>(`
       select
         (select count(*) from shops)                                   shops_total,
@@ -45,7 +46,9 @@ export class AdminService {
         (select count(*) from conversations where status = 'open')     conv_open,
         (select count(*) from analytics_events where created_at >= now() - interval '7 days') events_7d,
         (select count(*) from shops where created_at >= now() - interval '7 days')            new_shops_7d,
-        (select count(*) from content_reports where status = 'pending') pending_reports
+        (select count(*) from content_reports where status = 'pending') pending_reports,
+        (select count(*) from subscriptions
+           where status in ('active','trialing') and current_period_end > now())             active_subscriptions
     `);
     const r = rows[0];
     const n = (v: string) => Number(v);
@@ -57,6 +60,7 @@ export class AdminService {
       eventsLast7d: n(r.events_7d),
       newShops7d: n(r.new_shops_7d),
       pendingReports: n(r.pending_reports),
+      activeSubscriptions: n(r.active_subscriptions),
     };
   }
 

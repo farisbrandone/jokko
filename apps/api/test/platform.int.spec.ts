@@ -16,6 +16,7 @@ afterAll(async () => {
 
 // le relais tourne toutes les 2 s ; on le déclenche à la main
 const drainOutbox = () => h.drainOutbox();
+const runBillingEnforcer = () => h.runBillingEnforcer();
 
 /** Recherche vitrine éventuellement cohérente : on sonde jusqu'au total attendu. */
 async function expectSearchTotal(shop: string, q: string, expected: number): Promise<void> {
@@ -624,5 +625,103 @@ describe('modération : signalement de conversation', () => {
       .set('authorization', `Bearer ${seller}`)
       .expect(200);
     expect(thread.body.status).toBe('closed');
+  });
+});
+
+describe('facturation : abonnement vendeur (Flutterwave)', () => {
+  const txRefOf = (url: string) => new URL(url).searchParams.get('tx_ref')!;
+
+  it('essai → paiement (confirm) → pro ; idempotent', async () => {
+    const t = await newSeller('bill1@ex.com');
+    const shop = await newShop(t, 'Bill Shop');
+
+    const s0 = await http
+      .get(`/api/shops/${shop}/billing`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(s0.body.plan).toBe('trial');
+    expect(s0.body.status).toBe('trialing');
+    expect(s0.body.entitled).toBe(true);
+    expect(s0.body.priceXof).toBe(5000);
+
+    const co = await http
+      .post(`/api/shops/${shop}/billing/checkout`)
+      .set('authorization', `Bearer ${t}`)
+      .send({})
+      .expect(201);
+    expect(co.body.url).toContain('tx_ref=');
+    const txRef = txRefOf(co.body.url);
+
+    const c1 = await http
+      .post(`/api/shops/${shop}/billing/confirm`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ txRef })
+      .expect(201);
+    expect(c1.body.outcome).toBe('applied');
+
+    const s1 = await http
+      .get(`/api/shops/${shop}/billing`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(s1.body.plan).toBe('pro');
+    expect(s1.body.status).toBe('active');
+    expect(new Date(s1.body.currentPeriodEnd).getTime()).toBeGreaterThan(
+      Date.now() + 27 * 86_400_000,
+    );
+
+    // rejoué → sans effet
+    const c2 = await http
+      .post(`/api/shops/${shop}/billing/confirm`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ txRef })
+      .expect(201);
+    expect(c2.body.outcome).toBe('ignored');
+  });
+
+  it('webhook Flutterwave applique le paiement', async () => {
+    const t = await newSeller('bill2@ex.com');
+    const shop = await newShop(t, 'Bill Shop 2');
+    const co = await http
+      .post(`/api/shops/${shop}/billing/checkout`)
+      .set('authorization', `Bearer ${t}`)
+      .send({})
+      .expect(201);
+    const txRef = txRefOf(co.body.url);
+
+    const wh = await http
+      .post('/api/billing/webhook/flutterwave')
+      .send({ event: 'charge.completed', data: { tx_ref: txRef, status: 'successful' } })
+      .expect(200);
+    expect(wh.body.status).toBe('applied');
+
+    const s = await http
+      .get(`/api/shops/${shop}/billing`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(s.body.status).toBe('active');
+  });
+
+  it('le cron suspend une boutique dont l’abonnement est échu', async () => {
+    const t = await newSeller('bill3@ex.com');
+    const shop = await newShop(t, 'Bill Shop 3');
+    const slug = 'bill-shop-3';
+
+    // amorce l'abonnement (essai) puis le force loin dans le passé
+    await http.get(`/api/shops/${shop}/billing`).set('authorization', `Bearer ${t}`).expect(200);
+    await h.query(
+      `update subscriptions set current_period_end = now() - interval '30 days' where shop_id = $1`,
+      [shop],
+    );
+
+    await http.get(`/api/shops/${slug}`).expect(200); // encore servie
+
+    await runBillingEnforcer();
+
+    await http.get(`/api/shops/${slug}`).expect(404); // suspendue → 404 public
+    const sub = await h.query<{ status: string }>(
+      `select status from subscriptions where shop_id = $1`,
+      [shop],
+    );
+    expect(sub[0].status).toBe('past_due');
   });
 });

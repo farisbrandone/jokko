@@ -15,6 +15,7 @@ export interface PlatformOverview {
   eventsLast7d: number;
   newShops7d: number;
   pendingReports: number;
+  activeSubscriptions: number;
 }
 
 export type ReportStatus = 'pending' | 'actioned' | 'dismissed';

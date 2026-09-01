@@ -138,6 +138,22 @@ export class Shop extends AggregateRoot {
     return Result.ok(undefined);
   }
 
+  suspend(): void {
+    if (this._status === 'suspended') return;
+    this._status = 'suspended';
+    this._updatedAt = new Date();
+  }
+
+  activate(): void {
+    if (this._status === 'active') return;
+    this._status = 'active';
+    this._updatedAt = new Date();
+  }
+
+  get status(): ShopStatus {
+    return this._status;
+  }
+
   toSnapshot(): ShopSnapshot {
     return {
       id: this.id.value,

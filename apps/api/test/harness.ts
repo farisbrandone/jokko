@@ -22,6 +22,8 @@ export interface Harness {
   server: Server;
   /** Déclenche immédiatement le relais d'outbox (sinon il tourne toutes les 2 s). */
   drainOutbox: () => Promise<void>;
+  /** Déclenche le cron de facturation (suspension des abonnements échus). */
+  runBillingEnforcer: () => Promise<void>;
   /** Requête SQL brute (rôle propriétaire, hors RLS) — assertions de test. */
   query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
   stop: () => Promise<void>;
@@ -125,6 +127,9 @@ async function startHarnessInner(): Promise<Harness> {
   const { OutboxRelay } = requireDist(
     join(API_ROOT, 'dist/modules/catalog/infrastructure/outbox/outbox.relay.js'),
   );
+  const { BillingEnforcer } = requireDist(
+    join(API_ROOT, 'dist/modules/billing/application/billing.enforcer.js'),
+  );
   const { MeiliSearch } = requireDist('meilisearch');
   const meiliClient = new MeiliSearch({
     host: process.env.MEILI_URL as string,
@@ -168,6 +173,9 @@ async function startHarnessInner(): Promise<Harness> {
     drainOutbox: async () => {
       await (app.get(OutboxRelay) as { drain: () => Promise<void> }).drain();
       await waitForMeili();
+    },
+    runBillingEnforcer: async () => {
+      await (app.get(BillingEnforcer) as { enforce: () => Promise<void> }).enforce();
     },
     query: async <T = Record<string, unknown>>(text: string, params?: unknown[]) =>
       (await sqlClient.query(text, params)).rows as T[],

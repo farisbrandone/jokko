@@ -381,8 +381,26 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Fumée : cookie `NEXT_LOCALE=en` → « Shop not found » + `<html lang="en">` ;
   défaut → « Boutique introuvable » + `lang="fr"`
 
+**Incrément 21 — facturation : abonnement vendeur (Flutterwave)**
+
+- [x] Contexte `billing` : agrégat `Subscription` (essai → `pro`, `renew` cumulatif,
+  `isEntitled` avec fenêtre de grâce) ; tables `subscriptions` + `billing_payments`
+- [x] Passerelle `PaymentGateway` : adaptateur **Flutterwave** (flux Standard :
+  lien hébergé + `verify_by_reference`) si `FLW_SECRET_KEY`, sinon **fake** (auto-OK)
+- [x] API : `GET /shops/:id/billing` (résumé + `entitled`), `POST …/checkout`
+  (→ URL de paiement), `POST …/confirm` (retour), `POST /billing/webhook/flutterwave`
+  (signé `verif-hash`) → `ApplyPaymentUseCase` **idempotent** par `tx_ref`
+- [x] `BillingEnforcer` (`@Cron` horaire) : suspend les boutiques dont l'abonnement
+  est échu au-delà de la grâce ; réactivation sur paiement
+- [x] `Shop.suspend()` / `activate()` ; essai créé à la volée à la 1ʳᵉ consultation
+- [x] Dashboard : page `/s/:id/billing` (formule, statut, renouvellement, paiement) ;
+  admin : KPI « Abonnements actifs »
+- [x] Intégration : essai → confirm → `pro` (idempotent), webhook, cron qui suspend
+
 **Suite**
 
+- [ ] OTP téléphone (Termii) + adaptateurs OAuth / SuperTokens
+- [ ] Durcissement prod : rate-limit global, observabilité OTEL, en-têtes sécurité, backups
+- [ ] Tests E2E Playwright ; `/security-review`
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
-- [ ] Adaptateur SuperTokens ; OAuth ; OTP acheteurs
 ```

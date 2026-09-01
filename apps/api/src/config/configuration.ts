@@ -59,6 +59,17 @@ export interface AppConfig {
   messaging: {
     maxNewConversationsPerHour: number;
   };
+  billing: {
+    priceXof: number;
+    trialDays: number;
+    graceDays: number;
+    appPublicUrl: string;
+    flutterwave: {
+      secretKey: string;
+      webhookSecret: string;
+      baseUrl: string;
+    } | null;
+  };
 }
 
 export const buildConfig = (env: Env): AppConfig => ({
@@ -120,5 +131,19 @@ export const buildConfig = (env: Env): AppConfig => ({
   },
   messaging: {
     maxNewConversationsPerHour: env.MESSAGING_MAX_NEW_CONVERSATIONS_PER_HOUR,
+  },
+  billing: {
+    priceXof: env.BILLING_PRICE_XOF,
+    trialDays: env.BILLING_TRIAL_DAYS,
+    graceDays: env.BILLING_GRACE_DAYS,
+    appPublicUrl: env.APP_PUBLIC_URL,
+    flutterwave:
+      env.FLW_SECRET_KEY && env.FLW_WEBHOOK_SECRET
+        ? {
+            secretKey: env.FLW_SECRET_KEY,
+            webhookSecret: env.FLW_WEBHOOK_SECRET,
+            baseUrl: env.FLW_BASE_URL,
+          }
+        : null,
   },
 });

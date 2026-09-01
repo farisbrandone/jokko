@@ -21,6 +21,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { PushModule } from './modules/push/push.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
+import { BillingModule } from './modules/billing/billing.module';
 import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
@@ -55,6 +56,7 @@ import { AdminModule } from './modules/admin/admin.module';
     PushModule,
     AnalyticsModule,
     ModerationModule,
+    BillingModule,
     AdminModule,
   ],
 })

@@ -9,6 +9,7 @@ export const PlatformOverviewSchema = z.object({
   eventsLast7d: z.number().int(),
   newShops7d: z.number().int(),
   pendingReports: z.number().int(),
+  activeSubscriptions: z.number().int(),
 });
 export type PlatformOverview = z.infer<typeof PlatformOverviewSchema>;
 

@@ -43,6 +43,15 @@ export interface NotificationSettings {
   cooldownSeconds: number;
 }
 
+export interface BillingSummary {
+  plan: 'trial' | 'pro';
+  status: 'trialing' | 'active' | 'past_due' | 'canceled';
+  currentPeriodEnd: string;
+  entitled: boolean;
+  priceXof: number;
+  currency: 'XOF';
+}
+
 export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
 
 export interface ShopProfile {
