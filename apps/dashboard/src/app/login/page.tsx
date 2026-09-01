@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { post } from '@/lib/client';
+import { LegalLinks } from '@/components/legal-links';
 
 const inputCls =
   'rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm';
@@ -196,9 +197,12 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="min-h-dvh grid place-items-center bg-[var(--color-bg)] text-[var(--color-ink)] p-4">
-      <Suspense>
-        <LoginForm />
-      </Suspense>
+      <div className="flex flex-col items-center gap-4">
+        <Suspense>
+          <LoginForm />
+        </Suspense>
+        <LegalLinks />
+      </div>
     </div>
   );
 }

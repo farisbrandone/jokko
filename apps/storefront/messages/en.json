@@ -73,7 +73,10 @@
     "retry": "Retry"
   },
   "footer": {
-    "poweredBy": "{shop} — powered by Jokko"
+    "poweredBy": "{shop} — powered by Jokko",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "legal": "Legal notice"
   },
   "locale": {
     "label": "Language",

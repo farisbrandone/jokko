@@ -503,9 +503,21 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Tests : 3 unitaires (`renderEmail` : structure, échappement, repli texte) —
   36 unitaires, 24 d'intégration verts
 
+**Incrément 30 — pages légales (CGU / confidentialité / mentions)**
+
+- [x] `@jokko/ui` : `LEGAL_DOCUMENTS` — contenu structuré FR partagé (données
+  sans JSX), placeholders `[À COMPLÉTER : …]` pour l'identité de l'éditeur
+- [x] Vitrine : `/cgu`, `/confidentialite`, `/mentions-legales` + liens de pied
+  de page (i18n `footer.terms/privacy/legal`)
+- [x] Dashboard : `/legal/[slug]` (prérendu, `generateStaticParams`), liens sur
+  l'écran de connexion et dans le pied de page du `Shell` ; middleware :
+  `/legal/*` accessible sans authentification
+- [x] Contenu : rôle d'hébergeur technique de Jokko, boutiques éditées par des
+  vendeurs indépendants, durées de rétention alignées sur le cron `data-retention`,
+  droits RGPD (page « Mon compte » / support), cookies strictement nécessaires
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] Pages légales (CGU / confidentialité / mentions) — vitrine + dashboard
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

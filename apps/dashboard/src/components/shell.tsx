@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { post } from '@/lib/client';
+import { LegalLinks } from './legal-links';
 
 export function Shell({
   email,
@@ -36,6 +37,11 @@ export function Shell({
         </div>
       </header>
       <main className="flex-1 mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
+      <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)]">
+        <div className="mx-auto max-w-5xl px-4 py-4">
+          <LegalLinks />
+        </div>
+      </footer>
     </div>
   );
 }

@@ -39,3 +39,12 @@ export function smsLink(phone: string, body: string): string {
 export function telLink(phone: string): string {
   return `tel:${phone}`;
 }
+
+export {
+  LEGAL_DOCUMENTS,
+  LEGAL_SLUGS,
+  LEGAL_UPDATED,
+  type LegalDocument,
+  type LegalSection,
+  type LegalSlug,
+} from './legal';
