@@ -412,9 +412,24 @@ presentation/    contrôleurs NestJS + validation Zod
   service compose `pg-backup` (profil `tools`) ; commande de restauration documentée
 - [x] Intégration : présence des en-têtes de sécurité sur les réponses
 
+**Incrément 23 — connexion par SMS (OTP)**
+
+- [x] `users.phone` (index unique partiel) + `password_hash` nullable ; table
+  `otp_challenges` ; `User.createWithPhone` (e-mail synthétique, sans mot de passe)
+- [x] `OtpService` : demande (rate-limit `OTP_MAX_PER_HOUR`, code haché + TTL,
+  envoi SMS Termii ou « log »), vérification (5 tentatives max, consommation) →
+  compte créé/retrouvé par numéro
+- [x] API : `POST /auth/otp/request` (202), `POST /auth/otp/verify` → session
+  (cookies + tokens, même forme que `login`) ; `OTP_DEV_CODE` pour tests/démo
+- [x] `AuthService.sessionFor()` ; `login` refuse un compte sans mot de passe
+- [x] Dashboard : page `/login` à deux onglets (E-mail / Téléphone) + BFF
+  `/api/auth/otp/{request,verify}`
+- [x] Tests : 3 unitaires (`User`), intégration (demande → vérif → session,
+  code faux `401`, re-connexion même compte, login e-mail impossible)
+
 **Suite**
 
-- [ ] OTP téléphone (Termii) + adaptateurs OAuth / SuperTokens
+- [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
 - [ ] Tests E2E Playwright ; `/security-review`
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

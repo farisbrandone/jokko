@@ -10,11 +10,15 @@ export class UserEntity {
   @Property({ type: 'string', length: 320 })
   email!: string;
 
+  // Index unique partiel géré en migration (users_phone_uniq).
+  @Property({ type: 'string', length: 20, nullable: true })
+  phone: string | null = null;
+
   @Property({ type: 'string', length: 80 })
   name!: string;
 
-  @Property({ type: 'string', length: 255, fieldName: 'password_hash' })
-  passwordHash!: string;
+  @Property({ type: 'string', length: 255, fieldName: 'password_hash', nullable: true })
+  passwordHash: string | null = null;
 
   @Property({ type: 'boolean', fieldName: 'is_platform_admin' })
   isPlatformAdmin = false;
@@ -71,4 +75,26 @@ export class AuthSessionEntity {
 
   @Property({ type: 'datetime', fieldName: 'revoked_at', nullable: true })
   revokedAt: Date | null = null;
+}
+
+@Entity({ tableName: 'otp_challenges' })
+export class OtpChallengeEntity {
+  @PrimaryKey({ type: 'uuid' })
+  id!: string;
+
+  @Index()
+  @Property({ type: 'string', length: 20 })
+  phone!: string;
+
+  @Property({ type: 'string', length: 64, fieldName: 'code_hash' })
+  codeHash!: string;
+
+  @Property({ type: 'datetime', fieldName: 'expires_at' })
+  expiresAt!: Date;
+
+  @Property({ type: 'integer' })
+  attempts = 0;
+
+  @Property({ type: 'datetime', fieldName: 'created_at' })
+  createdAt: Date = new Date();
 }

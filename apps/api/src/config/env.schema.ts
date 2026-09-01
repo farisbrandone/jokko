@@ -82,6 +82,12 @@ export const envSchema = z.object({
   AUTH_ACCESS_TTL_MIN: z.coerce.number().int().positive().default(30),
   AUTH_REFRESH_TTL_DAYS: z.coerce.number().int().positive().default(30),
   AUTH_COOKIE_DOMAIN: z.string().optional(),
+
+  // Connexion par SMS (OTP). Envoi via Termii (mêmes clés que les notifications).
+  OTP_TTL_SEC: z.coerce.number().int().positive().default(300),
+  OTP_MAX_PER_HOUR: z.coerce.number().int().positive().default(5),
+  // Code fixe pour les tests / démos (jamais en production).
+  OTP_DEV_CODE: z.string().regex(/^\d{4,8}$/).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -3,19 +3,25 @@ import { AggregateRoot, Guard, Result, UniqueId } from '@jokko/domain-kernel';
 export interface UserSnapshot {
   id: string;
   email: string;
+  phone: string | null;
   name: string;
-  passwordHash: string;
+  passwordHash: string | null;
   isPlatformAdmin: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
+/** E-mail synthétique pour un compte créé par téléphone (garde la contrainte NOT NULL UNIQUE). */
+export const syntheticEmailForPhone = (phone: string): string =>
+  `${phone.replace(/[^\d]/g, '')}@phone.jokko.local`;
+
 export class User extends AggregateRoot {
   private constructor(
     id: UniqueId,
     private _email: string,
+    private _phone: string | null,
     private _name: string,
-    private _passwordHash: string,
+    private _passwordHash: string | null,
     private readonly _isPlatformAdmin: boolean,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -35,8 +41,28 @@ export class User extends AggregateRoot {
       new User(
         UniqueId.create(),
         props.email.trim().toLowerCase(),
+        null,
         props.name.trim(),
         props.passwordHash,
+        false,
+        now,
+        now,
+      ),
+    );
+  }
+
+  /** Compte créé par vérification de numéro (OTP) — sans mot de passe. */
+  static createWithPhone(props: { phone: string; name: string }): Result<User> {
+    const phone = props.phone.trim();
+    if (!/^\+[1-9]\d{6,14}$/.test(phone)) return Result.err('Numéro E.164 attendu');
+    const now = new Date();
+    return Result.ok(
+      new User(
+        UniqueId.create(),
+        syntheticEmailForPhone(phone),
+        phone,
+        props.name.trim() || 'Client',
+        null,
         false,
         now,
         now,
@@ -48,6 +74,7 @@ export class User extends AggregateRoot {
     return new User(
       UniqueId.create(snap.id),
       snap.email,
+      snap.phone,
       snap.name,
       snap.passwordHash,
       snap.isPlatformAdmin,
@@ -59,10 +86,13 @@ export class User extends AggregateRoot {
   get email(): string {
     return this._email;
   }
+  get phone(): string | null {
+    return this._phone;
+  }
   get name(): string {
     return this._name;
   }
-  get passwordHash(): string {
+  get passwordHash(): string | null {
     return this._passwordHash;
   }
   get isPlatformAdmin(): boolean {
@@ -73,6 +103,7 @@ export class User extends AggregateRoot {
     return {
       id: this.id.value,
       email: this._email,
+      phone: this._phone,
       name: this._name,
       passwordHash: this._passwordHash,
       isPlatformAdmin: this._isPlatformAdmin,

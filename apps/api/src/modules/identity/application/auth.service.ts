@@ -47,10 +47,19 @@ export class AuthService {
 
   async login(input: LoginInput, userAgent?: string): Promise<AuthResult> {
     const user = await this.users.findByEmail(input.email);
-    if (!user || !(await this.passwords.verify(input.password, user.passwordHash))) {
+    if (
+      !user ||
+      !user.passwordHash ||
+      !(await this.passwords.verify(input.password, user.passwordHash))
+    ) {
       throw new UnauthorizedException('E-mail ou mot de passe invalide');
     }
     return this.issueSession(user.id.value, userAgent);
+  }
+
+  /** Ouvre une session pour un utilisateur déjà authentifié (OTP, OAuth…). */
+  sessionFor(userId: string, userAgent?: string): Promise<AuthResult> {
+    return this.issueSession(userId, userAgent);
   }
 
   async refresh(refreshToken: string, userAgent?: string): Promise<AuthResult> {

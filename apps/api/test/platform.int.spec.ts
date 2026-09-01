@@ -733,3 +733,46 @@ describe('durcissement', () => {
     expect(res.headers['x-frame-options']).toBeDefined();
   });
 });
+
+describe('connexion par SMS (OTP)', () => {
+  it('demande → vérification → session ; code faux refusé', async () => {
+    const phone = '+221770123456';
+
+    await http.post('/api/auth/otp/request').send({ phone }).expect(202);
+
+    // mauvais code → 401
+    await http
+      .post('/api/auth/otp/verify')
+      .send({ phone, code: '000000' })
+      .expect(401);
+
+    // bon code (OTP_DEV_CODE du harness) → session + compte créé
+    const ok = await http
+      .post('/api/auth/otp/verify')
+      .send({ phone, code: '123456', name: 'Awa' })
+      .expect(201);
+    expect(ok.body.tokens.accessToken).toBeTruthy();
+    const token = ok.body.tokens.accessToken as string;
+
+    const me = await http
+      .get('/api/auth/me')
+      .set('authorization', `Bearer ${token}`)
+      .expect(200);
+    expect(me.body.name).toBe('Awa');
+    expect(me.body.id).toBe(ok.body.user.id);
+
+    // re-connexion même numéro → même compte
+    await http.post('/api/auth/otp/request').send({ phone }).expect(202);
+    const again = await http
+      .post('/api/auth/otp/verify')
+      .send({ phone, code: '123456' })
+      .expect(201);
+    expect(again.body.user.id).toBe(ok.body.user.id);
+
+    // le compte téléphone n'a pas de mot de passe : login e-mail impossible
+    await http
+      .post('/api/auth/login')
+      .send({ email: me.body.email, password: 'nimportequoi' })
+      .expect(401);
+  });
+});

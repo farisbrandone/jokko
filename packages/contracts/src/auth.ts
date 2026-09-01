@@ -15,6 +15,19 @@ export const LoginSchema = z.object({
 });
 export type LoginInput = z.infer<typeof LoginSchema>;
 
+const PhoneSchema = z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro international attendu (E.164)');
+
+/** Connexion par SMS : demande d'un code puis vérification. */
+export const OtpRequestSchema = z.object({ phone: PhoneSchema });
+export type OtpRequestInput = z.infer<typeof OtpRequestSchema>;
+
+export const OtpVerifySchema = z.object({
+  phone: PhoneSchema,
+  code: z.string().regex(/^\d{4,8}$/),
+  name: z.string().trim().min(1).max(80).optional(),
+});
+export type OtpVerifyInput = z.infer<typeof OtpVerifySchema>;
+
 export const SessionUserSchema = z.object({
   id: IdSchema,
   email: z.string().email(),

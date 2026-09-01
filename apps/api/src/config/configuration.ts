@@ -27,6 +27,11 @@ export interface AppConfig {
     refreshTtlDays: number;
     cookieDomain?: string;
   };
+  otp: {
+    ttlSec: number;
+    maxPerHour: number;
+    devCode?: string;
+  };
   search: {
     url: string;
     apiKey: string;
@@ -99,6 +104,11 @@ export const buildConfig = (env: Env): AppConfig => ({
     accessTtlMin: env.AUTH_ACCESS_TTL_MIN,
     refreshTtlDays: env.AUTH_REFRESH_TTL_DAYS,
     cookieDomain: env.AUTH_COOKIE_DOMAIN,
+  },
+  otp: {
+    ttlSec: env.OTP_TTL_SEC,
+    maxPerHour: env.OTP_MAX_PER_HOUR,
+    devCode: env.OTP_DEV_CODE,
   },
   search: {
     url: env.MEILI_URL,

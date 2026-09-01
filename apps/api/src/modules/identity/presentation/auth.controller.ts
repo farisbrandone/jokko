@@ -1,15 +1,29 @@
-import { Body, Controller, Get, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import {
   LoginSchema,
+  OtpRequestSchema,
+  OtpVerifySchema,
   RegisterSchema,
   type LoginInput,
+  type OtpRequestInput,
+  type OtpVerifyInput,
   type RegisterInput,
 } from '@jokko/contracts';
 import { ZodValidationPipe } from '../../../shared/zod-validation.pipe';
 import { AuthService, type AuthResult } from '../application/auth.service';
+import { OtpService } from '../application/otp.service';
 import { AuthGuard, ACCESS_COOKIE, REFRESH_COOKIE } from '../guards/auth.guard';
 import { CurrentUser } from '../decorators/current-user.decorator';
 import { TokenService } from '../infrastructure/security/token.service';
@@ -21,8 +35,30 @@ import { TokenService } from '../infrastructure/security/token.service';
 export class AuthController {
   constructor(
     private readonly auth: AuthService,
+    private readonly otp: OtpService,
     private readonly tokens: TokenService,
   ) {}
+
+  @Post('otp/request')
+  @HttpCode(202)
+  async otpRequest(
+    @Body(new ZodValidationPipe(OtpRequestSchema)) body: OtpRequestInput,
+  ) {
+    await this.otp.request(body.phone);
+    return { sent: true };
+  }
+
+  @Post('otp/verify')
+  async otpVerify(
+    @Body(new ZodValidationPipe(OtpVerifySchema)) body: OtpVerifyInput,
+    @Req() req: FastifyRequest,
+    @Res({ passthrough: true }) res: FastifyReply,
+  ) {
+    const userId = await this.otp.verify(body.phone, body.code, body.name);
+    const result = await this.auth.sessionFor(userId, req.headers['user-agent']);
+    this.setCookies(res, result);
+    return result;
+  }
 
   @Post('register')
   async register(

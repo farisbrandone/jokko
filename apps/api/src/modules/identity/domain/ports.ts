@@ -18,6 +18,29 @@ export interface UserRepository {
   save(user: User): Promise<void>;
   findById(id: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
+  findByPhone(phone: string): Promise<User | null>;
+}
+
+export interface OtpChallenge {
+  id: string;
+  codeHash: string;
+  expiresAt: Date;
+  attempts: number;
+}
+
+export const OTP_CHALLENGE_REPOSITORY = Symbol('OTP_CHALLENGE_REPOSITORY');
+export interface OtpChallengeRepository {
+  create(phone: string, codeHash: string, expiresAt: Date): Promise<void>;
+  latest(phone: string): Promise<OtpChallenge | null>;
+  incrementAttempts(id: string): Promise<void>;
+  consume(id: string): Promise<void>;
+  /** Nombre de codes demandés pour ce numéro depuis `sinceMs` (anti-abus). */
+  countSince(phone: string, sinceMs: number): Promise<number>;
+}
+
+export const OTP_SMS_SENDER = Symbol('OTP_SMS_SENDER');
+export interface OtpSmsSender {
+  send(phone: string, code: string): Promise<boolean>;
 }
 
 export interface ShopMemberContact {

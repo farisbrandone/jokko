@@ -6,6 +6,8 @@ import { User } from '../../domain/user.aggregate';
 import type {
   MembershipRecord,
   MembershipRepository,
+  OtpChallenge,
+  OtpChallengeRepository,
   SessionRecord,
   SessionRepository,
   ShopMemberContact,
@@ -14,6 +16,7 @@ import type {
 import { ShopEntity } from '../../../shop/infrastructure/persistence/shop.entity';
 import {
   AuthSessionEntity,
+  OtpChallengeEntity,
   ShopMembershipEntity,
   UserEntity,
 } from './identity.entity';
@@ -28,6 +31,7 @@ export class MikroOrmUserRepository implements UserRepository {
     const entity = (await em.findOne(UserEntity, { id: s.id })) ?? new UserEntity();
     entity.id = s.id;
     entity.email = s.email;
+    entity.phone = s.phone;
     entity.name = s.name;
     entity.passwordHash = s.passwordHash;
     entity.createdAt = new Date(s.createdAt);
@@ -46,15 +50,66 @@ export class MikroOrmUserRepository implements UserRepository {
     return e ? this.toDomain(e) : null;
   }
 
+  async findByPhone(phone: string): Promise<User | null> {
+    const e = await this.em.fork().findOne(UserEntity, { phone: phone.trim() });
+    return e ? this.toDomain(e) : null;
+  }
+
   private toDomain(e: UserEntity): User {
     return User.restore({
       id: e.id,
       email: e.email,
+      phone: e.phone,
       name: e.name,
       passwordHash: e.passwordHash,
       isPlatformAdmin: e.isPlatformAdmin,
       createdAt: e.createdAt.toISOString(),
       updatedAt: e.updatedAt.toISOString(),
+    });
+  }
+}
+
+@Injectable()
+export class MikroOrmOtpChallengeRepository implements OtpChallengeRepository {
+  constructor(private readonly em: EntityManager) {}
+
+  async create(phone: string, codeHash: string, expiresAt: Date): Promise<void> {
+    const em = this.em.fork();
+    const row = new OtpChallengeEntity();
+    row.id = randomUUID();
+    row.phone = phone.trim();
+    row.codeHash = codeHash;
+    row.expiresAt = expiresAt;
+    em.persist(row);
+    await em.flush();
+  }
+
+  async latest(phone: string): Promise<OtpChallenge | null> {
+    const e = await this.em
+      .fork()
+      .findOne(OtpChallengeEntity, { phone: phone.trim() }, { orderBy: { createdAt: 'desc' } });
+    return e
+      ? { id: e.id, codeHash: e.codeHash, expiresAt: e.expiresAt, attempts: e.attempts }
+      : null;
+  }
+
+  async incrementAttempts(id: string): Promise<void> {
+    const em = this.em.fork();
+    const e = await em.findOne(OtpChallengeEntity, { id });
+    if (e) {
+      e.attempts += 1;
+      await em.flush();
+    }
+  }
+
+  async consume(id: string): Promise<void> {
+    await this.em.fork().nativeDelete(OtpChallengeEntity, { id });
+  }
+
+  async countSince(phone: string, sinceMs: number): Promise<number> {
+    return this.em.fork().count(OtpChallengeEntity, {
+      phone: phone.trim(),
+      createdAt: { $gte: new Date(Date.now() - sinceMs) },
     });
   }
 }
