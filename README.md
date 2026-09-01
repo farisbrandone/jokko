@@ -427,9 +427,21 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Tests : 3 unitaires (`User`), intégration (demande → vérif → session,
   code faux `401`, re-connexion même compte, login e-mail impossible)
 
+**Incrément 24 — tests E2E (Playwright)**
+
+- [x] Paquet `e2e/` : Playwright pilote la pile réelle (API compilée + dashboard +
+  vitrine) contre l'infra Docker locale ; `webServer` lance et arrête les 3 serveurs
+- [x] Scénarios : inscription e-mail → boutique en un clic → boutique listée ;
+  connexion par SMS (code de dev) ; vitrine par sous-domaine (`*.lvh.me`) →
+  boutique + fiche produit + barre de contact (après attente de l'indexation Meili)
+- [x] Job CI `e2e` (compose dev + migrations + `playwright install` + `test`)
+- [x] Correctif : `NextIntlClientProvider` reçoit désormais `messages`/`locale`
+  explicites (`getMessages()`) — les composants clients de la vitrine levaient
+  `MISSING_MESSAGE`
+
 **Suite**
 
 - [ ] Adaptateurs OAuth (Google/Facebook) / SuperTokens
-- [ ] Tests E2E Playwright ; `/security-review`
+- [ ] `/security-review` avant ouverture ; observabilité (dashboards, alerting)
 - [ ] `dashboard` : TanStack Query, Storybook pour `packages/ui`
 ```

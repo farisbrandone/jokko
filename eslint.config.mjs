@@ -17,6 +17,7 @@ export default tseslint.config(
       'apps/dashboard/**',
       'apps/admin/**',
       'packages/ui/**',
+      'e2e/**',
     ],
   },
   ...tseslint.configs.recommended,

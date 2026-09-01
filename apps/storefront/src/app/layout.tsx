@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Bricolage_Grotesque, Inter } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
-import { getLocale } from 'next-intl/server';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { brandThemeCss } from '@/lib/theme';
@@ -56,7 +56,11 @@ export async function generateViewport(): Promise<Viewport> {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [shop, locale] = await Promise.all([currentShop(), getLocale()]);
+  const [shop, locale, messages] = await Promise.all([
+    currentShop(),
+    getLocale(),
+    getMessages(),
+  ]);
   const themeCss = brandThemeCss(shop?.brandColor);
   return (
     <html lang={locale} className={`${display.variable} ${sans.variable}`}>
@@ -66,7 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </head>
       ) : null}
       <body className="min-h-dvh flex flex-col">
-        <NextIntlClientProvider>
+        <NextIntlClientProvider locale={locale} messages={messages}>
           <ServiceWorkerRegistrar />
           {shop ? <PageViewTracker /> : null}
           <SiteHeader shop={shop} />

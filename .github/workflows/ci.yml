@@ -66,3 +66,40 @@ jobs:
         run: pnpm --filter @jokko/api run test:int
         env:
           TESTCONTAINERS_RYUK_DISABLED: 'true'
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Infra locale (postgres, meilisearch, minio)
+        run: docker compose -f infra/docker/compose.yaml up -d --wait postgres meilisearch minio minio-setup
+
+      - run: pnpm run build:packages
+      - run: pnpm -r run build
+        env:
+          NEXT_TELEMETRY_DISABLED: '1'
+
+      - name: Migrations
+        run: pnpm --filter @jokko/api run db:migrate
+        env:
+          DATABASE_ADMIN_URL: postgres://jokko:jokko_dev_pwd@localhost:55432/jokko
+
+      - name: Playwright browsers
+        run: pnpm --filter @jokko/e2e run install:browsers
+
+      - name: E2E (Playwright)
+        run: pnpm --filter @jokko/e2e run test
+        env:
+          CI: 'true'
