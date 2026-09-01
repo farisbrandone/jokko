@@ -51,8 +51,9 @@ Correctif :
 3. **RGPD** : export (`GET /me/export`) + effacement (`DELETE /me`) + purge
    programmée `data-retention` livrés (inc. 28). Reste : registre des
    traitements, DPA sous-traitants, bandeau cookies si ajout de mesure tierce.
-4. **Pages légales** livrées (inc. 30) — reste à renseigner les placeholders
-   `[À COMPLÉTER]` (identité de l'éditeur, hébergeur, droit applicable).
+4. **Pages légales** livrées (inc. 30) et renseignées (inc. 34 : éditeur
+   Jokko SARL, siège Douala, hébergeur OVH, droit camerounais / OHADA).
+   Revue par un juriste recommandée avant ouverture commerciale.
 5. **SPF/DKIM/DMARC** : à configurer côté DNS pour le domaine d'envoi.
 6. **`/metrics`** (inc. 27) : jeton porteur optionnel (`METRICS_TOKEN`) +
    `METRICS_ENABLED`. En production, le restreindre en plus au réseau

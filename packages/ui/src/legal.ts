@@ -1,7 +1,9 @@
 /**
  * Contenu légal partagé (vitrine + dashboard). Données structurées, sans JSX,
- * pour rester dans un paquet TS pur. Les crochets `[À COMPLÉTER : …]` marquent
- * les informations à renseigner avant mise en production.
+ * pour rester dans un paquet TS pur.
+ *
+ * Identité de l'éditeur regroupée dans les constantes ci-dessous : les ajuster
+ * en cas de changement (raison sociale, siège, immatriculation, direction).
  */
 
 export interface LegalSection {
@@ -21,13 +23,20 @@ export interface LegalDocument {
 
 export const LEGAL_UPDATED = '2026-09-01';
 
-const OPERATOR = '[À COMPLÉTER : raison sociale de l’éditeur de Jokko]';
-const OPERATOR_ADDRESS = '[À COMPLÉTER : adresse du siège]';
-const OPERATOR_REG = '[À COMPLÉTER : n° d’immatriculation / RCCM / SIREN]';
-const PUBLICATION_DIRECTOR = '[À COMPLÉTER : nom du directeur de la publication]';
-const CONTACT_EMAIL = 'legal@jokko.shop';
-const PRIVACY_EMAIL = 'privacy@jokko.shop';
-const HOST = '[À COMPLÉTER : hébergeur — nom, adresse, téléphone]';
+const OPERATOR = 'Jokko SARL';
+const OPERATOR_FORM = 'société à responsabilité limitée (SARL) de droit camerounais';
+const OPERATOR_ADDRESS = 'Bonabéri, Douala, Cameroun';
+const OPERATOR_REG = 'immatriculée sous le numéro M062416873293M (RCCM / identifiant unique)';
+const PUBLICATION_DIRECTOR = 'Faris Kouetessa';
+const CONTACT_EMAIL = 'farisbrandone0@gmail.com';
+const PRIVACY_EMAIL = 'farisbrandone0@gmail.com';
+const HOST =
+  'OVH SAS — 2 rue Kellermann, 59100 Roubaix, France — www.ovhcloud.com. ' +
+  'La distribution des contenus statiques et la protection réseau sont assurées par un prestataire de CDN.';
+const APPLICABLE_LAW =
+  'Les présentes conditions sont régies par le droit camerounais et, le cas échéant, ' +
+  'par les Actes uniformes de l’OHADA. À défaut de résolution amiable, tout litige ' +
+  'relève de la compétence des tribunaux de Douala.';
 
 export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
   'mentions-legales': {
@@ -38,15 +47,13 @@ export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
       {
         heading: 'Éditeur',
         paragraphs: [
-          `Le service Jokko est édité par ${OPERATOR}, dont le siège est situé ${OPERATOR_ADDRESS} (${OPERATOR_REG}).`,
+          `Le service Jokko est édité par ${OPERATOR}, ${OPERATOR_FORM}, dont le siège est situé à ${OPERATOR_ADDRESS}, ${OPERATOR_REG}.`,
           `Directeur de la publication : ${PUBLICATION_DIRECTOR}. Contact : ${CONTACT_EMAIL}.`,
         ],
       },
       {
         heading: 'Hébergement',
-        paragraphs: [
-          `Le service est hébergé par ${HOST}. La distribution des contenus statiques et la protection réseau peuvent être assurées par un prestataire de CDN.`,
-        ],
+        paragraphs: [`Le service est hébergé par ${HOST}`],
       },
       {
         heading: 'Boutiques',
@@ -67,6 +74,10 @@ export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
           `Tout contenu illicite peut être signalé depuis la fiche produit (bouton « Signaler ») ou à l’adresse ${CONTACT_EMAIL}.`,
         ],
       },
+      {
+        heading: 'Droit applicable',
+        paragraphs: [APPLICABLE_LAW],
+      },
     ],
   },
 
@@ -80,7 +91,7 @@ export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
       {
         heading: 'Responsable de traitement',
         paragraphs: [
-          `${OPERATOR} pour la plateforme. Pour les données saisies au sein d’une boutique (messages, coordonnées communiquées au vendeur), le vendeur de cette boutique est responsable conjoint pour la relation commerciale. Contact : ${PRIVACY_EMAIL}.`,
+          `${OPERATOR} (${OPERATOR_ADDRESS}) pour la plateforme. Pour les données saisies au sein d’une boutique (messages, coordonnées communiquées au vendeur), le vendeur de cette boutique est responsable pour la relation commerciale. Contact : ${PRIVACY_EMAIL}.`,
         ],
       },
       {
@@ -128,9 +139,10 @@ export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
         ],
       },
       {
-        heading: 'Transferts hors UE',
+        heading: 'Localisation et transferts des données',
         paragraphs: [
-          '[À COMPLÉTER : préciser si un sous-traitant est situé hors UE et les garanties applicables — clauses contractuelles types, etc.]',
+          'Les données sont hébergées chez OVH, dans des centres de données situés en Union européenne. Certains sous-traitants (envoi d’e-mails / SMS, paiement) peuvent traiter des données depuis d’autres pays ; dans ce cas, Jokko s’assure de garanties contractuelles appropriées.',
+          'Aucune donnée n’est vendue ni cédée à des fins publicitaires.',
         ],
       },
     ],
@@ -188,9 +200,7 @@ export const LEGAL_DOCUMENTS: Record<LegalSlug, LegalDocument> = {
       },
       {
         heading: 'Droit applicable',
-        paragraphs: [
-          '[À COMPLÉTER : droit applicable et juridiction compétente].',
-        ],
+        paragraphs: [APPLICABLE_LAW],
       },
     ],
   },

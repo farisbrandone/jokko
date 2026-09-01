@@ -559,6 +559,19 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] `packages/ui` : `react`/`react-dom` en `peerDependencies`, tsconfig
   `jsx: react-jsx` (stories exclues du `tsc`, compilées par Storybook)
 
+**Incrément 34 — identité de l'éditeur (pages légales)**
+
+- [x] `packages/ui/src/legal.ts` : constantes renseignées — éditeur **Jokko SARL**
+  (SARL de droit camerounais), siège Bonabéri / Douala, immatriculation
+  M062416873293M, directeur de la publication Faris Kouetessa, hébergeur **OVH**,
+  contact `farisbrandone0@gmail.com`
+- [x] Droit applicable : droit camerounais / OHADA, tribunaux de Douala
+  (section ajoutée aux mentions légales et aux CGU) ; « Transferts hors UE » →
+  « Localisation et transferts des données » (hébergement UE, garanties
+  contractuelles pour les sous-traitants)
+- [x] Plus aucun placeholder `[À COMPLÉTER]` ; revue par un juriste recommandée
+  avant ouverture commerciale
+
 **Suite**
 
 - [ ] SuperTokens / passkeys (WebAuthn)
