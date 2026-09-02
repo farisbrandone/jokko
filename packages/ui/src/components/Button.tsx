@@ -11,9 +11,9 @@ const base: CSSProperties = {
   borderRadius: 'var(--radius-btn, 0.625rem)',
   fontWeight: 600,
   lineHeight: 1.2,
-  cursor: 'pointer',
   border: '1px solid transparent',
   fontFamily: 'inherit',
+  textDecoration: 'none',
   transition: 'opacity .15s ease',
 };
 
@@ -36,6 +36,22 @@ const variants: Record<ButtonVariant, CSSProperties> = {
   danger: { background: 'var(--color-danger, hsl(2 68% 48%))', color: '#fff' },
 };
 
+/** Styles du bouton du design system — réutilisable sur un `<a>`/`<Link>`. */
+export function buttonStyles(opts: {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
+} = {}): CSSProperties {
+  const { variant = 'primary', size = 'md', disabled = false } = opts;
+  return {
+    ...base,
+    ...sizes[size],
+    ...variants[variant],
+    opacity: disabled ? 0.5 : 1,
+    cursor: disabled ? 'not-allowed' : 'pointer',
+  };
+}
+
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
@@ -53,14 +69,7 @@ export function Button({
     <button
       {...rest}
       disabled={disabled}
-      style={{
-        ...base,
-        ...sizes[size],
-        ...variants[variant],
-        opacity: disabled ? 0.5 : 1,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        ...style,
-      }}
+      style={{ ...buttonStyles({ variant, size, disabled: !!disabled }), ...style }}
     />
   );
 }

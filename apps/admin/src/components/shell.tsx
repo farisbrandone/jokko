@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { Button } from '@jokko/ui';
 import { post } from '@/lib/client';
 
 const nav = [
@@ -35,17 +36,18 @@ export function Shell({ email, children }: { email?: string; children: React.Rea
           </nav>
           <div className="ml-auto flex items-center gap-3 text-sm">
             {email ? <span className="text-[var(--color-muted)]">{email}</span> : null}
-            <button
+            <Button
               type="button"
+              variant="secondary"
+              size="sm"
               onClick={async () => {
                 await post('/api/auth/logout');
                 router.push('/login');
                 router.refresh();
               }}
-              className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-1.5"
             >
               Se déconnecter
-            </button>
+            </Button>
           </div>
         </div>
       </header>

@@ -3,6 +3,7 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
+import { buttonStyles } from '@jokko/ui';
 import { post } from '@/lib/client';
 import { bffGet } from '@/lib/bff';
 import { LegalLinks } from '@/components/legal-links';
@@ -34,7 +35,7 @@ function SocialButtons() {
         <a
           key={p}
           href={`/api/auth/oauth/${p}`}
-          className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 py-2 text-center text-sm font-medium"
+          style={{ ...buttonStyles({ variant: 'secondary' }), width: '100%' }}
         >
           {PROVIDER_LABELS[p] ?? `Continuer avec ${p}`}
         </a>

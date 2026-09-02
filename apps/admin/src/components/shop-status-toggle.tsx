@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@jokko/ui';
 import { post } from '@/lib/client';
 
 export function ShopStatusToggle({
@@ -30,16 +31,13 @@ export function ShopStatusToggle({
   };
 
   return (
-    <button
+    <Button
       onClick={toggle}
       disabled={busy}
-      className={`rounded-[var(--radius-btn)] border px-2.5 py-1 text-xs disabled:opacity-60 ${
-        status === 'active'
-          ? 'border-[var(--color-border)]'
-          : 'border-[var(--color-brand)] bg-[var(--color-brand-soft)] text-[var(--color-brand)]'
-      }`}
+      size="sm"
+      variant={status === 'active' ? 'secondary' : 'primary'}
     >
       {status === 'active' ? 'Suspendre' : 'Réactiver'}
-    </button>
+    </Button>
   );
 }

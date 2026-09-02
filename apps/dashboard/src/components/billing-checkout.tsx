@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Button } from '@jokko/ui';
 import { post } from '@/lib/client';
 
 export function BillingCheckout({ shopId, priceXof }: { shopId: string; priceXof: number }) {
@@ -44,13 +45,9 @@ export function BillingCheckout({ shopId, priceXof }: { shopId: string; priceXof
 
   return (
     <div className="flex flex-col gap-2">
-      <button
-        onClick={pay}
-        disabled={busy}
-        className="self-start rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-4 py-2 text-sm font-medium disabled:opacity-50"
-      >
+      <Button onClick={pay} disabled={busy} style={{ alignSelf: 'flex-start' }}>
         Payer {priceXof.toLocaleString('fr')} XOF / mois
-      </button>
+      </Button>
       {msg ? <p className="text-xs text-[var(--color-muted)]">{msg}</p> : null}
     </div>
   );

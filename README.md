@@ -572,8 +572,18 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Plus aucun placeholder `[À COMPLÉTER]` ; revue par un juriste recommandée
   avant ouverture commerciale
 
+**Incrément 35 — adoption de `@jokko/ui` (dashboard & admin)**
+
+- [x] `@jokko/ui` : `buttonStyles()` exporté (mêmes styles que `<Button>`, posables
+  sur un `<a>` / `<Link>`)
+- [x] Dashboard : `Button` (déconnexion, paiement, suppression de compte,
+  onboarding), `buttonStyles` (boutons OAuth, lien d'export), `Badge` (rôle
+  d'appartenance sur l'accueil)
+- [x] Admin : `Button` (déconnexion, `ShopStatusToggle`, `ReportActions`),
+  `Badge` (statut de boutique dans la liste)
+- [x] Builds dashboard + admin verts
+
 **Suite**
 
 - [ ] SuperTokens / passkeys (WebAuthn)
-- [ ] Adopter `@jokko/ui` (`Button`/`Badge`/`Card`) dans dashboard & admin
 ```

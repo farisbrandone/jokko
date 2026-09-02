@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@jokko/ui';
 import { post } from '@/lib/client';
 
 export function ReportActions({
@@ -38,20 +39,12 @@ export function ReportActions({
 
   return (
     <div className="flex gap-2">
-      <button
-        onClick={() => act('takedown')}
-        disabled={busy}
-        className="rounded-[var(--radius-btn)] border border-[var(--color-danger)] text-[var(--color-danger)] px-2.5 py-1 text-xs disabled:opacity-60"
-      >
+      <Button onClick={() => act('takedown')} disabled={busy} size="sm" variant="danger">
         {targetType === 'product' ? 'Retirer le produit' : 'Suspendre la boutique'}
-      </button>
-      <button
-        onClick={() => act('dismiss')}
-        disabled={busy}
-        className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-60"
-      >
+      </Button>
+      <Button onClick={() => act('dismiss')} disabled={busy} size="sm" variant="secondary">
         Rejeter
-      </button>
+      </Button>
     </div>
   );
 }

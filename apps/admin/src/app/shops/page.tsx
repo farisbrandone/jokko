@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Badge } from '@jokko/ui';
 import { apiJson } from '@/lib/api';
 import type { AdminShopList, SessionUser } from '@/lib/types';
 import { Shell } from '@/components/shell';
@@ -70,15 +71,7 @@ export default async function ShopsPage({ searchParams }: Params) {
                 <td className="py-2 pr-3 tabular-nums">{s.conversations}</td>
                 <td className="py-2 pr-3">{s.createdAt.slice(0, 10)}</td>
                 <td className="py-2 pr-3">
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs ${
-                      s.status === 'active'
-                        ? 'bg-[var(--color-brand-soft)] text-[var(--color-brand)]'
-                        : 'bg-[var(--color-surface-2)] text-[var(--color-faint)]'
-                    }`}
-                  >
-                    {s.status}
-                  </span>
+                  <Badge tone={s.status === 'active' ? 'good' : 'neutral'}>{s.status}</Badge>
                 </td>
                 <td className="py-2 px-3 text-right">
                   <div className="flex justify-end gap-2">

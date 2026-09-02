@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { Badge, buttonStyles } from '@jokko/ui';
 import { apiJson } from '@/lib/api';
 import type { SessionUser } from '@/lib/types';
 import { Shell } from '@/components/shell';
@@ -25,10 +26,7 @@ export default async function HomePage() {
           <Link href="/account" className="text-sm text-[var(--color-muted)]">
             Mon compte
           </Link>
-          <Link
-            href="/onboarding"
-            className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
-          >
+          <Link href="/onboarding" style={buttonStyles({ size: 'sm' })}>
             Nouvelle boutique
           </Link>
         </div>
@@ -41,7 +39,9 @@ export default async function HomePage() {
               className="block rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
             >
               <p className="font-medium">{m.slug}</p>
-              <p className="text-sm text-[var(--color-muted)] capitalize">{m.role}</p>
+              <span className="mt-1 inline-block">
+                <Badge tone={m.role === 'owner' ? 'brand' : 'neutral'}>{m.role}</Badge>
+              </span>
             </Link>
           </li>
         ))}

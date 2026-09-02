@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
+import { Button, buttonStyles } from '@jokko/ui';
 import { bffSend } from '@/lib/bff';
 
 export function AccountPrivacy() {
@@ -27,10 +28,7 @@ export function AccountPrivacy() {
           Archive JSON de votre profil, vos boutiques, vos sessions et vos échanges
           en tant qu&apos;acheteur.
         </p>
-        <a
-          href="/api/account/export"
-          className="inline-block rounded-[var(--radius-btn)] border border-[var(--color-border)] px-4 py-2 text-sm font-medium"
-        >
+        <a href="/api/account/export" style={buttonStyles({ variant: 'secondary' })}>
           Télécharger l&apos;archive
         </a>
       </section>
@@ -50,14 +48,14 @@ export function AccountPrivacy() {
           className="mb-2 w-full rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
           placeholder="SUPPRIMER"
         />
-        <button
+        <Button
           type="button"
+          variant="danger"
           onClick={() => remove.mutate()}
           disabled={busy || confirm !== 'SUPPRIMER'}
-          className="rounded-[var(--radius-btn)] bg-[var(--color-danger,#b91c1c)] px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
         >
           Supprimer définitivement
-        </button>
+        </Button>
         {msg ? <p className="mt-2 text-xs text-[var(--color-danger,#b91c1c)]">{msg}</p> : null}
       </section>
     </div>
