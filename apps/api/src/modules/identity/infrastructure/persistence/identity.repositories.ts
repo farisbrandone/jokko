@@ -276,6 +276,11 @@ export class MikroOrmMembershipRepository implements MembershipRepository {
       role: r.role,
     };
   }
+
+  async remove(userId: string, shopId: string): Promise<boolean> {
+    const n = await this.em.fork().nativeDelete(ShopMembershipEntity, { userId, shopId });
+    return n > 0;
+  }
 }
 
 @Injectable()

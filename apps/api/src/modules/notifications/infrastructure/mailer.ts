@@ -10,6 +10,12 @@ export interface OutgoingMail {
   html?: string;
 }
 
+/**
+ * Boîte d'envoi en mémoire — alimentée uniquement quand `NODE_ENV=test`.
+ * Sert aux tests d'intégration à inspecter le contenu d'un e-mail.
+ */
+export const __testMailbox: OutgoingMail[] = [];
+
 /** Envoi d'e-mails transactionnels via SMTP (dev : Mailpit ; prod : SES/Postmark…). */
 @Injectable()
 export class Mailer implements OnModuleDestroy {
@@ -29,6 +35,7 @@ export class Mailer implements OnModuleDestroy {
   async send(mail: OutgoingMail): Promise<boolean> {
     try {
       await this.transporter.sendMail({ from: this.from, ...mail });
+      if (process.env.NODE_ENV === 'test') __testMailbox.push(mail);
       return true;
     } catch (err) {
       this.logger.warn(`e-mail non envoyé (${mail.subject}) : ${(err as Error).message}`);

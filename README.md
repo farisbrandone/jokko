@@ -601,6 +601,24 @@ presentation/    contrôleurs NestJS + validation Zod
   Playwright** avec authentificateur virtuel CDP (enregistrement → déconnexion →
   connexion par passkey)
 
+**Incrément 37 — équipe : membres & invitations**
+
+- [x] Contexte `team` (hexagonal) : table `shop_invitations` (jeton haché,
+  expiration 7 j, une seule invitation en attente par boutique+e-mail) ;
+  `TeamService` (invitation, acceptation, changement de rôle, retrait) avec
+  garde-fous « au moins un propriétaire »
+- [x] API `shops/:id/members` (garde `manage Member` = owner/admin) : liste,
+  `PATCH :userId` (rôle), `DELETE :userId`, `POST`/`GET`/`DELETE invitations` ;
+  `GET /invitations/:token` (aperçu public) + `POST /invitations/accept`
+  (connecté, e-mail doit correspondre)
+- [x] E-mail d'invitation via `renderEmail()` ; `Mailer` expose une boîte
+  d'envoi en mémoire (`NODE_ENV=test`) pour les assertions
+- [x] Dashboard : page `/s/:id/team` (React Query — inviter, changer les rôles,
+  retirer, annuler une invitation) ; page publique `/invite/:token` (aperçu +
+  acceptation) ; lien « Équipe »
+- [x] Tests : 1 d'intégration couvrant tout le cycle + garde-fous (31 au total) ;
+  E2E « inviter un membre »
+
 **Suite**
 
 - [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur

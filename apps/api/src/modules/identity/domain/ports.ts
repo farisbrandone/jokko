@@ -122,6 +122,7 @@ export interface MembershipRepository {
   listByUser(userId: string): Promise<MembershipRecord[]>;
   listMembers(shopId: string): Promise<ShopMemberContact[]>;
   find(userId: string, shopId: string): Promise<MembershipRecord | null>;
+  remove(userId: string, shopId: string): Promise<boolean>;
 }
 
 export interface SessionRepository {

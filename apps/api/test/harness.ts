@@ -29,6 +29,8 @@ export interface Harness {
   runRetentionPurge: () => Promise<Record<string, number>>;
   /** Requête SQL brute (rôle propriétaire, hors RLS) — assertions de test. */
   query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
+  /** Boîte d'envoi en mémoire (e-mails « envoyés » par le Mailer en test). */
+  mails: () => { to: string | string[]; subject: string; text: string; html?: string }[];
   stop: () => Promise<void>;
 }
 
@@ -139,6 +141,9 @@ async function startHarnessInner(): Promise<Harness> {
   const { BillingEnforcer } = requireDist(
     join(API_ROOT, 'dist/modules/billing/application/billing.enforcer.js'),
   );
+  const { __testMailbox } = requireDist(
+    join(API_ROOT, 'dist/modules/notifications/infrastructure/mailer.js'),
+  );
   const { RetentionCron } = requireDist(
     join(API_ROOT, 'dist/modules/privacy/application/retention.cron.js'),
   );
@@ -198,6 +203,8 @@ async function startHarnessInner(): Promise<Harness> {
       (app.get(RetentionCron) as { purge: () => Promise<Record<string, number>> }).purge(),
     query: async <T = Record<string, unknown>>(text: string, params?: unknown[]) =>
       (await sqlClient.query(text, params)).rows as T[],
+    mails: () =>
+      __testMailbox as { to: string | string[]; subject: string; text: string; html?: string }[],
     stop: async () => {
       await app.close();
       await meili.stop();

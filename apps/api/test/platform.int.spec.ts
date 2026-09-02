@@ -971,3 +971,108 @@ describe('passkeys (WebAuthn)', () => {
       .expect(400);
   });
 });
+
+describe('équipe : membres & invitations', () => {
+  const tokenFromMail = (to: string): string => {
+    const mail = h.mails().find((m) => m.to === to);
+    expect(mail, `e-mail d'invitation pour ${to}`).toBeTruthy();
+    const m = /\/invite\/([A-Za-z0-9_-]+)/.exec(mail!.text);
+    expect(m).toBeTruthy();
+    return m![1];
+  };
+
+  it('inviter → accepter → membre ; garde-fous de rôle', async () => {
+    const owner = await newSeller('team-owner@ex.com');
+    const shop = await newShop(owner, 'Team Shop');
+    const ownerId = await meId(owner);
+
+    const m0 = await http
+      .get(`/api/shops/${shop}/members`)
+      .set('authorization', `Bearer ${owner}`)
+      .expect(200);
+    expect(m0.body).toHaveLength(1);
+    expect(m0.body[0]).toMatchObject({ role: 'owner', isSelf: true });
+
+    const inv = await http
+      .post(`/api/shops/${shop}/members/invitations`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ email: 'team-mate@ex.com', role: 'staff' })
+      .expect(201);
+    expect(inv.body.role).toBe('staff');
+
+    const pending = await http
+      .get(`/api/shops/${shop}/members/invitations`)
+      .set('authorization', `Bearer ${owner}`)
+      .expect(200);
+    expect(pending.body).toHaveLength(1);
+
+    const token = tokenFromMail('team-mate@ex.com');
+
+    // aperçu public (avant connexion)
+    const preview = await http.get(`/api/invitations/${token}`).expect(200);
+    expect(preview.body).toMatchObject({ role: 'staff', email: 'team-mate@ex.com', expired: false });
+
+    // mauvaise adresse → 403
+    const stranger = await newSeller('stranger@ex.com');
+    await http
+      .post('/api/invitations/accept')
+      .set('authorization', `Bearer ${stranger}`)
+      .send({ token })
+      .expect(403);
+
+    // le bon compte accepte
+    const mate = await newSeller('team-mate@ex.com');
+    const mateId = await meId(mate);
+    const accepted = await http
+      .post('/api/invitations/accept')
+      .set('authorization', `Bearer ${mate}`)
+      .send({ token })
+      .expect(201);
+    expect(accepted.body).toMatchObject({ shopId: shop, role: 'staff' });
+
+    // rejoué → 409
+    await http
+      .post('/api/invitations/accept')
+      .set('authorization', `Bearer ${mate}`)
+      .send({ token })
+      .expect(409);
+
+    const members = await http
+      .get(`/api/shops/${shop}/members`)
+      .set('authorization', `Bearer ${owner}`)
+      .expect(200);
+    expect(members.body).toHaveLength(2);
+
+    // un staff ne peut pas inviter
+    await http
+      .post(`/api/shops/${shop}/members/invitations`)
+      .set('authorization', `Bearer ${mate}`)
+      .send({ email: 'x@ex.com', role: 'viewer' })
+      .expect(403);
+
+    // promotion puis rétrogradation
+    await http
+      .patch(`/api/shops/${shop}/members/${mateId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ role: 'admin' })
+      .expect(200);
+
+    // le dernier propriétaire ne peut pas être rétrogradé
+    await http
+      .patch(`/api/shops/${shop}/members/${ownerId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ role: 'admin' })
+      .expect(409);
+
+    // retrait d'un membre
+    await http
+      .delete(`/api/shops/${shop}/members/${mateId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .expect(200);
+    const after = await http
+      .get(`/api/shops/${shop}/members`)
+      .set('authorization', `Bearer ${owner}`)
+      .expect(200);
+    expect(after.body).toHaveLength(1);
+  });
+});

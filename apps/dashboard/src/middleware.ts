@@ -8,7 +8,8 @@ export function middleware(req: NextRequest) {
   const isPublic =
     pathname === '/login' ||
     pathname === '/oauth/callback' ||
-    pathname.startsWith('/legal/');
+    pathname.startsWith('/legal/') ||
+    pathname.startsWith('/invite/');
   if (!authed && !isPublic) {
     const url = req.nextUrl.clone();
     url.pathname = '/login';

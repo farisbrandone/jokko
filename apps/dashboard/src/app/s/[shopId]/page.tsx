@@ -60,6 +60,12 @@ export default async function ShopPage({ params }: Params) {
             Abonnement
           </Link>
           <Link
+            href={`/s/${shopId}/team`}
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
+          >
+            Équipe
+          </Link>
+          <Link
             href={`/s/${shopId}/products/new`}
             className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] text-[var(--color-brand-ink)] px-3 py-2 text-sm font-medium"
           >
