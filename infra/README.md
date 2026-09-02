@@ -66,7 +66,16 @@ Secrets requis (repo GitHub) : `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_PATH=
 
 ## Domaines personnalisés d'une boutique
 
-1. Le vendeur ajoute son domaine dans le dashboard (`shops.custom_domain`).
-2. Il crée un `CNAME <son-domaine> → cname.jokko.shop`.
-3. À la première visite, Caddy demande à l'API (`/api/internal/tls-authorize`) ;
-   comme le domaine correspond à une boutique, un certificat est émis.
+1. Le vendeur saisit son domaine dans **Réglages → Domaine personnalisé** du
+   dashboard. L'API renvoie deux enregistrements DNS à créer.
+2. Chez son hébergeur DNS, il crée :
+   - `CNAME <son-domaine> → cname.jokko.shop`
+   - `TXT _jokko-challenge.<son-domaine> → jokko-verify=<jeton>`
+3. Il clique sur **Vérifier** : l'API résout le TXT ; s'il correspond, le domaine
+   passe `custom_domain_verified_at`.
+4. Seuls les domaines **vérifiés** résolvent une boutique et sont autorisés par
+   `/api/internal/tls-authorize` ; Caddy émet alors le certificat à la première
+   visite.
+
+> `DNS_STUB_ENABLED=1` remplace la résolution TXT par une table en mémoire
+> (tests / CI) ; laisser vide en production.

@@ -619,6 +619,23 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Tests : 1 d'intégration couvrant tout le cycle + garde-fous (31 au total) ;
   E2E « inviter un membre »
 
+**Incrément 38 — domaine personnalisé : configuration & vérification DNS**
+
+- [x] Agrégat `Shop` : `requestCustomDomain` / `confirmCustomDomain` /
+  `clearCustomDomain` ; colonnes `custom_domain_verified_at` + `custom_domain_token`
+- [x] Port `DnsVerifier` (`NodeDnsVerifier` via `dns/promises`, `StubDnsVerifier`
+  en mémoire si `DNS_STUB_ENABLED=1`) ; `CustomDomainService` (demande → jeton +
+  instructions CNAME/TXT → vérification `_jokko-challenge.<domaine>` → activation)
+- [x] Seuls les domaines **vérifiés** résolvent une boutique (`findByCustomDomain`
+  filtre) et sont autorisés par `/internal/tls-authorize`
+- [x] API `shops/:id/domain` : `GET` (état), `POST` (demande), `POST verify`,
+  `DELETE` (garde `update Shop`)
+- [x] Dashboard : section « Domaine personnalisé » dans les réglages (React
+  Query — saisie, instructions DNS, bouton Vérifier, retrait)
+- [x] Tests : 1 d'intégration (domaine invalide/racine → 400, demande → jeton,
+  vérif sans TXT → 400, TLS refusé, puis TXT publié → vérif OK → TLS autorisé,
+  retrait) — 32 au total
+
 **Suite**
 
 - [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur

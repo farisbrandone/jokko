@@ -36,6 +36,12 @@ export class ShopEntity {
   @Property({ type: 'string', length: 255, fieldName: 'custom_domain', nullable: true })
   customDomain: string | null = null;
 
+  @Property({ type: 'datetime', fieldName: 'custom_domain_verified_at', nullable: true })
+  customDomainVerifiedAt: Date | null = null;
+
+  @Property({ type: 'string', length: 64, fieldName: 'custom_domain_token', nullable: true })
+  customDomainToken: string | null = null;
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 

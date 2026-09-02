@@ -14,6 +14,10 @@ export const ShopMapper = {
       locale: entity.locale,
       currency: entity.currency,
       customDomain: entity.customDomain,
+      customDomainVerifiedAt: entity.customDomainVerifiedAt
+        ? entity.customDomainVerifiedAt.toISOString()
+        : null,
+      customDomainToken: entity.customDomainToken,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -32,6 +36,10 @@ export const ShopMapper = {
     entity.locale = s.locale;
     entity.currency = s.currency;
     entity.customDomain = s.customDomain;
+    entity.customDomainVerifiedAt = s.customDomainVerifiedAt
+      ? new Date(s.customDomainVerifiedAt)
+      : null;
+    entity.customDomainToken = s.customDomainToken;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

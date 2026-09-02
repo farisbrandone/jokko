@@ -7,6 +7,8 @@ export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
 export type ShopStatus = 'active' | 'suspended';
 
 const BRAND_COLOR_RE = /^#[0-9a-f]{6}$/i;
+// Nom d'hôte : 4–253 car., labels 1–63, pas de tiret en bordure, TLD alphabétique ≥ 2.
+const HOSTNAME_RE = /^(?=.{4,253}$)(?!-)([a-z0-9-]{1,63}(?<!-)\.)+[a-z]{2,63}$/;
 
 export interface ShopSnapshot {
   id: string;
@@ -19,6 +21,8 @@ export interface ShopSnapshot {
   locale: string;
   currency: string;
   customDomain: string | null;
+  customDomainVerifiedAt: string | null;
+  customDomainToken: string | null;
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +57,8 @@ export class Shop extends AggregateRoot {
     private _locale: string,
     private _currency: string,
     private _customDomain: string | null,
+    private _customDomainVerifiedAt: Date | null,
+    private _customDomainToken: string | null,
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -86,6 +92,8 @@ export class Shop extends AggregateRoot {
       'fr',
       'XOF',
       null,
+      null,
+      null,
       'active',
       now,
       now,
@@ -106,6 +114,8 @@ export class Shop extends AggregateRoot {
       snap.locale,
       snap.currency,
       snap.customDomain,
+      snap.customDomainVerifiedAt ? new Date(snap.customDomainVerifiedAt) : null,
+      snap.customDomainToken,
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -138,6 +148,47 @@ export class Shop extends AggregateRoot {
     return Result.ok(undefined);
   }
 
+  get customDomain(): string | null {
+    return this._customDomain;
+  }
+
+  get customDomainToken(): string | null {
+    return this._customDomainToken;
+  }
+
+  isCustomDomainVerified(): boolean {
+    return this._customDomainVerifiedAt != null;
+  }
+
+  /** Enregistre un domaine personnalisé à vérifier (état : non vérifié). */
+  requestCustomDomain(domainRaw: string, token: string): Result<void> {
+    const domain = domainRaw.trim().toLowerCase().replace(/\.$/, '');
+    if (!HOSTNAME_RE.test(domain)) {
+      return Result.err('Nom de domaine invalide (ex. boutique.exemple.com)');
+    }
+    this._customDomain = domain;
+    this._customDomainToken = token;
+    this._customDomainVerifiedAt = null;
+    this._updatedAt = new Date();
+    return Result.ok(undefined);
+  }
+
+  /** Marque le domaine comme vérifié (après contrôle DNS côté application). */
+  confirmCustomDomain(now: Date): Result<void> {
+    if (!this._customDomain) return Result.err('Aucun domaine personnalisé en attente');
+    this._customDomainVerifiedAt = now;
+    this._customDomainToken = null;
+    this._updatedAt = new Date();
+    return Result.ok(undefined);
+  }
+
+  clearCustomDomain(): void {
+    this._customDomain = null;
+    this._customDomainVerifiedAt = null;
+    this._customDomainToken = null;
+    this._updatedAt = new Date();
+  }
+
   suspend(): void {
     if (this._status === 'suspended') return;
     this._status = 'suspended';
@@ -166,6 +217,10 @@ export class Shop extends AggregateRoot {
       locale: this._locale,
       currency: this._currency,
       customDomain: this._customDomain,
+      customDomainVerifiedAt: this._customDomainVerifiedAt
+        ? this._customDomainVerifiedAt.toISOString()
+        : null,
+      customDomainToken: this._customDomainToken,
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

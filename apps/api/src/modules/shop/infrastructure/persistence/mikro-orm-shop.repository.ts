@@ -30,8 +30,12 @@ export class MikroOrmShopRepository implements ShopRepository {
     return entity ? ShopMapper.toDomain(entity) : null;
   }
 
+  /** Seuls les domaines personnalisés VÉRIFIÉS résolvent une boutique. */
   async findByCustomDomain(domain: string): Promise<Shop | null> {
-    const entity = await this.em.fork().findOne(ShopEntity, { customDomain: domain });
+    const entity = await this.em.fork().findOne(ShopEntity, {
+      customDomain: domain.toLowerCase(),
+      customDomainVerifiedAt: { $ne: null },
+    });
     return entity ? ShopMapper.toDomain(entity) : null;
   }
 }

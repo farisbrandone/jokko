@@ -1076,3 +1076,52 @@ describe('équipe : membres & invitations', () => {
     expect(after.body).toHaveLength(1);
   });
 });
+
+describe('domaine personnalisé : configuration & vérification DNS', () => {
+  it('demande → vérification TXT → résolution + autorisation TLS', async () => {
+    const t = await newSeller('domain@ex.com');
+    const shop = await newShop(t, 'Domain Shop');
+    const auth = { authorization: `Bearer ${t}` };
+    const domain = `boutique-${Date.now()}.exemple.com`;
+
+    // état initial : aucun domaine
+    const s0 = await http.get(`/api/shops/${shop}/domain`).set(auth).expect(200);
+    expect(s0.body).toMatchObject({ domain: null, verified: false, verification: null });
+
+    // domaine invalide → 400
+    await http.post(`/api/shops/${shop}/domain`).set(auth).send({ domain: 'pas-un-domaine' }).expect(400);
+    // sous-domaine de la racine → 400
+    await http
+      .post(`/api/shops/${shop}/domain`)
+      .set(auth)
+      .send({ domain: 'x.test.local' })
+      .expect(400);
+
+    // demande valide → jeton + instructions
+    const req = await http.post(`/api/shops/${shop}/domain`).set(auth).send({ domain }).expect(200);
+    expect(req.body.domain).toBe(domain);
+    expect(req.body.verified).toBe(false);
+    const { recordName, recordValue } = req.body.verification;
+    expect(recordName).toBe(`_jokko-challenge.${domain}`);
+
+    // vérification sans TXT → 400
+    await http.post(`/api/shops/${shop}/domain/verify`).set(auth).expect(400);
+
+    // le domaine non vérifié ne résout pas (TLS refusé)
+    await http.get(`/api/internal/tls-authorize?domain=${domain}`).expect(403);
+
+    // on publie l'enregistrement TXT attendu, puis on vérifie
+    h.dnsStub().set(recordName, ['autre-valeur', recordValue]);
+    const ok = await http.post(`/api/shops/${shop}/domain/verify`).set(auth).expect(201);
+    expect(ok.body).toMatchObject({ domain, verified: true, verification: null });
+
+    // désormais : TLS autorisé
+    await http.get(`/api/internal/tls-authorize?domain=${domain}`).expect(200);
+
+    // retrait
+    await http.delete(`/api/shops/${shop}/domain`).set(auth).expect(200);
+    const s1 = await http.get(`/api/shops/${shop}/domain`).set(auth).expect(200);
+    expect(s1.body.domain).toBeNull();
+    await http.get(`/api/internal/tls-authorize?domain=${domain}`).expect(403);
+  });
+});

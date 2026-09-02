@@ -6,6 +6,7 @@ import { Shell } from '@/components/shell';
 import { NotificationSettingsForm } from '@/components/notification-settings-form';
 import { ShopProfileForm } from '@/components/shop-profile-form';
 import { PushToggle } from '@/components/push-toggle';
+import { CustomDomainForm } from '@/components/custom-domain-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,6 +44,15 @@ export default async function SettingsPage({ params }: Params) {
           Nom, contact et apparence de la vitrine partagée sur les réseaux.
         </p>
         <ShopProfileForm initial={shop} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Domaine personnalisé</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Servez la vitrine sur votre propre nom de domaine (certificat TLS
+          automatique après vérification).
+        </p>
+        <CustomDomainForm shopId={shopId} />
       </section>
 
       <section>

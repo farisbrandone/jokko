@@ -31,6 +31,8 @@ export interface Harness {
   query: <T = Record<string, unknown>>(text: string, params?: unknown[]) => Promise<T[]>;
   /** Boîte d'envoi en mémoire (e-mails « envoyés » par le Mailer en test). */
   mails: () => { to: string | string[]; subject: string; text: string; html?: string }[];
+  /** Table de résolution TXT simulée (vérification de domaine personnalisé). */
+  dnsStub: () => Map<string, string[]>;
   stop: () => Promise<void>;
 }
 
@@ -104,6 +106,7 @@ async function startHarnessInner(): Promise<Harness> {
     METRICS_TOKEN: 'metrics_test_token', // /metrics exige ce porteur en test
     WEBAUTHN_RP_ID: 'localhost',
     WEBAUTHN_ORIGINS: 'http://localhost:3000,http://localhost:3001',
+    DNS_STUB_ENABLED: '1', // vérification de domaine : résolveur TXT simulé
     DATABASE_URL: appUrl,
     DATABASE_ADMIN_URL: adminUrl,
     MEILI_URL: `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,
@@ -143,6 +146,9 @@ async function startHarnessInner(): Promise<Harness> {
   );
   const { __testMailbox } = requireDist(
     join(API_ROOT, 'dist/modules/notifications/infrastructure/mailer.js'),
+  );
+  const { __dnsStubTable } = requireDist(
+    join(API_ROOT, 'dist/modules/shop/infrastructure/dns/dns-verifier.js'),
   );
   const { RetentionCron } = requireDist(
     join(API_ROOT, 'dist/modules/privacy/application/retention.cron.js'),
@@ -205,6 +211,7 @@ async function startHarnessInner(): Promise<Harness> {
       (await sqlClient.query(text, params)).rows as T[],
     mails: () =>
       __testMailbox as { to: string | string[]; subject: string; text: string; html?: string }[],
+    dnsStub: () => __dnsStubTable as Map<string, string[]>,
     stop: async () => {
       await app.close();
       await meili.stop();
