@@ -100,6 +100,39 @@ export class OAuthIdentityEntity {
   createdAt: Date = new Date();
 }
 
+@Entity({ tableName: 'webauthn_credentials' })
+export class WebAuthnCredentialEntity {
+  @PrimaryKey({ type: 'uuid' })
+  id!: string;
+
+  @Index()
+  @Property({ type: 'uuid', fieldName: 'user_id' })
+  userId!: string;
+
+  @Unique()
+  @Property({ type: 'text', fieldName: 'credential_id' })
+  credentialId!: string;
+
+  @Property({ type: 'text', fieldName: 'public_key' })
+  publicKey!: string;
+
+  // Compteur anti-rejeu : stocké en bigint, manipulé comme chaîne par MikroORM.
+  @Property({ type: 'bigint' })
+  counter = '0';
+
+  @Property({ type: 'json' })
+  transports: string[] = [];
+
+  @Property({ type: 'string', length: 120, fieldName: 'device_name', nullable: true })
+  deviceName: string | null = null;
+
+  @Property({ type: 'datetime', fieldName: 'created_at' })
+  createdAt: Date = new Date();
+
+  @Property({ type: 'datetime', fieldName: 'last_used_at', nullable: true })
+  lastUsedAt: Date | null = null;
+}
+
 @Entity({ tableName: 'otp_challenges' })
 export class OtpChallengeEntity {
   @PrimaryKey({ type: 'uuid' })

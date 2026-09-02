@@ -583,7 +583,25 @@ presentation/    contrôleurs NestJS + validation Zod
   `Badge` (statut de boutique dans la liste)
 - [x] Builds dashboard + admin verts
 
+**Incrément 36 — passkeys (WebAuthn)**
+
+- [x] API : `@simplewebauthn/server`, table `webauthn_credentials`,
+  `WebAuthnService` (options / vérification, enregistrement + assertion) ;
+  défi porté par un **jeton signé court** (JWT 5 min, `purpose` + `sub`) au lieu
+  d'un cookie → transparent pour le BFF
+- [x] Routes `POST /auth/webauthn/{register,login}/{options,verify}`,
+  `GET`/`DELETE /auth/webauthn/credentials` ; `login/verify` ouvre la session
+  (mêmes cookies que `login`)
+- [x] Config `WEBAUTHN_RP_ID` / `WEBAUTHN_RP_NAME` / `WEBAUTHN_ORIGINS`
+  (liste blanche d'origines) ; compteur anti-rejeu persisté
+- [x] Dashboard : `@simplewebauthn/browser`, bouton « Se connecter avec une
+  passkey » sur `/login`, section « Passkeys » sur `/account` (ajout / retrait,
+  React Query) ; BFF `login/{options,verify}` + proxy authentifié pour le reste
+- [x] Tests : 3 d'intégration (options + gardes + assertion bidon) ; **E2E
+  Playwright** avec authentificateur virtuel CDP (enregistrement → déconnexion →
+  connexion par passkey)
+
 **Suite**
 
-- [ ] SuperTokens / passkeys (WebAuthn)
+- [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur
 ```

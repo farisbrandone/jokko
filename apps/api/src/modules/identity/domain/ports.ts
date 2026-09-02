@@ -82,6 +82,34 @@ export interface OAuthProviderRegistry {
   available(): string[];
 }
 
+export interface WebAuthnCredentialRecord {
+  id: string;
+  userId: string;
+  credentialId: string;
+  publicKey: string;
+  counter: number;
+  transports: string[];
+  deviceName: string | null;
+  createdAt: Date;
+  lastUsedAt: Date | null;
+}
+
+export const WEBAUTHN_CREDENTIAL_REPOSITORY = Symbol('WEBAUTHN_CREDENTIAL_REPOSITORY');
+export interface WebAuthnCredentialRepository {
+  create(input: {
+    userId: string;
+    credentialId: string;
+    publicKey: string;
+    counter: number;
+    transports: string[];
+    deviceName: string | null;
+  }): Promise<WebAuthnCredentialRecord>;
+  findByCredentialId(credentialId: string): Promise<WebAuthnCredentialRecord | null>;
+  listByUser(userId: string): Promise<WebAuthnCredentialRecord[]>;
+  updateOnUse(credentialId: string, counter: number): Promise<void>;
+  deleteForUser(userId: string, id: string): Promise<boolean>;
+}
+
 export interface ShopMemberContact {
   userId: string;
   email: string;

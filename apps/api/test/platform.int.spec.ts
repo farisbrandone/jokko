@@ -930,3 +930,44 @@ describe('connexion sociale (OAuth)', () => {
     await http.post('/api/auth/oauth/exchange').send({ ticket: 'pas-un-jwt' }).expect(401);
   });
 });
+
+describe('passkeys (WebAuthn)', () => {
+  it('options de connexion : défi + rpId, sans authentification', async () => {
+    const res = await http.post('/api/auth/webauthn/login/options').expect(200);
+    expect(typeof res.body.options.challenge).toBe('string');
+    expect(res.body.options.rpId).toBe('localhost');
+    expect(typeof res.body.challengeToken).toBe('string');
+  });
+
+  it('options d’enregistrement : jeton requis, puis défi lié au compte', async () => {
+    await http.post('/api/auth/webauthn/register/options').expect(401);
+
+    const t = await newSeller('passkey@ex.com');
+    const res = await http
+      .post('/api/auth/webauthn/register/options')
+      .set('authorization', `Bearer ${t}`)
+      .expect(201);
+    expect(res.body.options.rp.id).toBe('localhost');
+    expect(res.body.options.user.name).toBe('passkey@ex.com');
+    expect(res.body.options.authenticatorSelection.residentKey).toBe('required');
+    expect(typeof res.body.challengeToken).toBe('string');
+
+    const list = await http
+      .get('/api/auth/webauthn/credentials')
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(list.body).toEqual([]);
+  });
+
+  it('vérification de connexion avec une assertion bidon → 400/401', async () => {
+    const opt = await http.post('/api/auth/webauthn/login/options').expect(200);
+    await http
+      .post('/api/auth/webauthn/login/verify')
+      .send({ response: { id: 'inconnue', rawId: 'inconnue', response: {}, type: 'public-key' }, challengeToken: opt.body.challengeToken })
+      .expect(401);
+    await http
+      .post('/api/auth/webauthn/login/verify')
+      .send({ response: { id: 'x' }, challengeToken: 'jeton-bidon' })
+      .expect(400);
+  });
+});

@@ -105,6 +105,12 @@ export const envSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
 
+  // Passkeys (WebAuthn). RP ID = domaine enregistrable (sans schéma ni port) ;
+  // ORIGINS = origines complètes autorisées (CSV), dont celle du dashboard.
+  WEBAUTHN_RP_ID: z.string().default('localhost'),
+  WEBAUTHN_RP_NAME: z.string().default('Jokko'),
+  WEBAUTHN_ORIGINS: z.string().default('http://localhost:3001').transform(csv),
+
   // RGPD / rétention : purge quotidienne des données périmées (cron `data-retention`).
   RETENTION_ENABLED: z
     .enum(['true', 'false'])

@@ -71,6 +71,39 @@ export class TokenService {
     return String(payload.sub);
   }
 
+  /**
+   * Jeton de défi WebAuthn (5 min) : porte le `challenge` d'une cérémonie
+   * d'enregistrement ou d'authentification. Renvoyé au client dans la réponse et
+   * redonné à la vérification — pas de cookie à traverser côté BFF.
+   */
+  async signChallenge(input: {
+    challenge: string;
+    kind: 'webauthn_reg' | 'webauthn_auth';
+    sub?: string;
+  }): Promise<string> {
+    const jwt = new SignJWT({ purpose: input.kind, challenge: input.challenge })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setIssuedAt()
+      .setIssuer('jokko')
+      .setExpirationTime('5m');
+    if (input.sub) jwt.setSubject(input.sub);
+    return jwt.sign(this.secret);
+  }
+
+  async verifyChallenge(
+    token: string,
+    kind: 'webauthn_reg' | 'webauthn_auth',
+  ): Promise<{ challenge: string; sub?: string }> {
+    const { payload } = await jwtVerify(token, this.secret, { issuer: 'jokko' });
+    if (payload.purpose !== kind || typeof payload.challenge !== 'string') {
+      throw new Error('jeton de défi invalide');
+    }
+    return {
+      challenge: payload.challenge,
+      sub: payload.sub ? String(payload.sub) : undefined,
+    };
+  }
+
   /** Refresh token opaque + son hash (stocké en base pour révocation). */
   newRefreshToken(): { token: string; hash: string; expiresAt: Date } {
     const token = randomBytes(32).toString('base64url');

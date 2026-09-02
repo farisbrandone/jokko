@@ -4,8 +4,10 @@ import type { AppConfig } from '../../config/configuration';
 import { AuthService } from './application/auth.service';
 import { OtpService } from './application/otp.service';
 import { SocialAuthService } from './application/social-auth.service';
+import { WebAuthnService } from './application/webauthn.service';
 import { AuthController } from './presentation/auth.controller';
 import { OAuthController } from './presentation/oauth.controller';
+import { WebAuthnController } from './presentation/webauthn.controller';
 import { PasswordService } from './infrastructure/security/password.service';
 import { TokenService } from './infrastructure/security/token.service';
 import {
@@ -29,6 +31,7 @@ import {
   OTP_SMS_SENDER,
   SESSION_REPOSITORY,
   USER_REPOSITORY,
+  WEBAUTHN_CREDENTIAL_REPOSITORY,
   type OAuthProvider,
 } from './domain/ports';
 import {
@@ -37,6 +40,7 @@ import {
   MikroOrmOtpChallengeRepository,
   MikroOrmSessionRepository,
   MikroOrmUserRepository,
+  MikroOrmWebAuthnCredentialRepository,
 } from './infrastructure/persistence/identity.repositories';
 
 const otpSmsProvider: Provider = {
@@ -62,11 +66,12 @@ const oauthRegistryProvider: Provider = {
 };
 
 @Module({
-  controllers: [AuthController, OAuthController],
+  controllers: [AuthController, OAuthController, WebAuthnController],
   providers: [
     AuthService,
     OtpService,
     SocialAuthService,
+    WebAuthnService,
     PasswordService,
     TokenService,
     AuthGuard,
@@ -79,6 +84,10 @@ const oauthRegistryProvider: Provider = {
     { provide: SESSION_REPOSITORY, useClass: MikroOrmSessionRepository },
     { provide: OTP_CHALLENGE_REPOSITORY, useClass: MikroOrmOtpChallengeRepository },
     { provide: OAUTH_IDENTITY_REPOSITORY, useClass: MikroOrmOAuthIdentityRepository },
+    {
+      provide: WEBAUTHN_CREDENTIAL_REPOSITORY,
+      useClass: MikroOrmWebAuthnCredentialRepository,
+    },
   ],
   exports: [
     AuthService,

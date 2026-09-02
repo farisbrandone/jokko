@@ -27,6 +27,8 @@ const shared = {
   SHOP_ROOT_DOMAIN: 'lvh.me',
   DASHBOARD_BASE_URL: `http://localhost:${DASHBOARD_PORT}`,
   APP_PUBLIC_URL: `http://localhost:${DASHBOARD_PORT}`,
+  WEBAUTHN_RP_ID: 'localhost',
+  WEBAUTHN_ORIGINS: `http://localhost:${DASHBOARD_PORT}`,
 } as Record<string, string>;
 
 const nextEnv = {

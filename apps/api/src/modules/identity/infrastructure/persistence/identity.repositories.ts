@@ -14,6 +14,8 @@ import type {
   SessionRepository,
   ShopMemberContact,
   UserRepository,
+  WebAuthnCredentialRecord,
+  WebAuthnCredentialRepository,
 } from '../../domain/ports';
 import { ShopEntity } from '../../../shop/infrastructure/persistence/shop.entity';
 import {
@@ -22,6 +24,7 @@ import {
   OtpChallengeEntity,
   ShopMembershipEntity,
   UserEntity,
+  WebAuthnCredentialEntity,
 } from './identity.entity';
 
 @Injectable()
@@ -144,6 +147,74 @@ export class MikroOrmOAuthIdentityRepository implements OAuthIdentityRepository 
     entity.email = email;
     em.persist(entity);
     await em.flush();
+  }
+}
+
+@Injectable()
+export class MikroOrmWebAuthnCredentialRepository implements WebAuthnCredentialRepository {
+  constructor(private readonly em: EntityManager) {}
+
+  private toRecord(e: WebAuthnCredentialEntity): WebAuthnCredentialRecord {
+    return {
+      id: e.id,
+      userId: e.userId,
+      credentialId: e.credentialId,
+      publicKey: e.publicKey,
+      counter: Number(e.counter),
+      transports: e.transports ?? [],
+      deviceName: e.deviceName,
+      createdAt: e.createdAt,
+      lastUsedAt: e.lastUsedAt,
+    };
+  }
+
+  async create(input: {
+    userId: string;
+    credentialId: string;
+    publicKey: string;
+    counter: number;
+    transports: string[];
+    deviceName: string | null;
+  }): Promise<WebAuthnCredentialRecord> {
+    const em = this.em.fork();
+    const row = new WebAuthnCredentialEntity();
+    row.id = randomUUID();
+    row.userId = input.userId;
+    row.credentialId = input.credentialId;
+    row.publicKey = input.publicKey;
+    row.counter = String(input.counter);
+    row.transports = input.transports;
+    row.deviceName = input.deviceName;
+    em.persist(row);
+    await em.flush();
+    return this.toRecord(row);
+  }
+
+  async findByCredentialId(credentialId: string): Promise<WebAuthnCredentialRecord | null> {
+    const e = await this.em.fork().findOne(WebAuthnCredentialEntity, { credentialId });
+    return e ? this.toRecord(e) : null;
+  }
+
+  async listByUser(userId: string): Promise<WebAuthnCredentialRecord[]> {
+    const rows = await this.em
+      .fork()
+      .find(WebAuthnCredentialEntity, { userId }, { orderBy: { createdAt: 'asc' } });
+    return rows.map((r) => this.toRecord(r));
+  }
+
+  async updateOnUse(credentialId: string, counter: number): Promise<void> {
+    const em = this.em.fork();
+    const e = await em.findOne(WebAuthnCredentialEntity, { credentialId });
+    if (e) {
+      e.counter = String(counter);
+      e.lastUsedAt = new Date();
+      await em.flush();
+    }
+  }
+
+  async deleteForUser(userId: string, id: string): Promise<boolean> {
+    const n = await this.em.fork().nativeDelete(WebAuthnCredentialEntity, { id, userId });
+    return n > 0;
   }
 }
 

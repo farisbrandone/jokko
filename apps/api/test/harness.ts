@@ -100,6 +100,8 @@ async function startHarnessInner(): Promise<Harness> {
     OTP_DEV_CODE: '123456', // code OTP fixe en test (voir incrément OTP)
     FLW_WEBHOOK_SECRET: 'whsec_test', // secret du webhook facturation (passerelle fake)
     METRICS_TOKEN: 'metrics_test_token', // /metrics exige ce porteur en test
+    WEBAUTHN_RP_ID: 'localhost',
+    WEBAUTHN_ORIGINS: 'http://localhost:3000,http://localhost:3001',
     DATABASE_URL: appUrl,
     DATABASE_ADMIN_URL: adminUrl,
     MEILI_URL: `http://${meili.getHost()}:${meili.getMappedPort(7700)}`,

@@ -4,6 +4,7 @@ import { apiJson } from '@/lib/api';
 import type { SessionUser } from '@/lib/types';
 import { Shell } from '@/components/shell';
 import { AccountPrivacy } from '@/components/account-privacy';
+import { PasskeyManager } from '@/components/passkey-manager';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,10 @@ export default async function AccountPage() {
         <h1 className="font-[family-name:var(--font-display)] text-xl font-bold">Mon compte</h1>
         <p className="text-sm text-[var(--color-muted)]">{me.email}</p>
       </div>
-      <AccountPrivacy />
+      <div className="flex flex-col gap-8 max-w-lg">
+        <PasskeyManager />
+        <AccountPrivacy />
+      </div>
     </Shell>
   );
 }

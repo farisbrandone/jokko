@@ -7,6 +7,7 @@ import { buttonStyles } from '@jokko/ui';
 import { post } from '@/lib/client';
 import { bffGet } from '@/lib/bff';
 import { LegalLinks } from '@/components/legal-links';
+import { PasskeyLogin } from '@/components/passkey-login';
 
 const PROVIDER_LABELS: Record<string, string> = {
   google: 'Continuer avec Google',
@@ -236,6 +237,7 @@ function LoginForm() {
         ))}
       </div>
       {channel === 'email' ? <EmailForm onDone={done} /> : <PhoneForm onDone={done} />}
+      <PasskeyLogin />
       <SocialButtons />
     </div>
   );

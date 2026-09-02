@@ -39,6 +39,11 @@ export interface AppConfig {
     google: { clientId: string; clientSecret: string } | null;
     facebook: { clientId: string; clientSecret: string } | null;
   };
+  webauthn: {
+    rpId: string;
+    rpName: string;
+    origins: string[];
+  };
   search: {
     url: string;
     apiKey: string;
@@ -151,6 +156,11 @@ export const buildConfig = (env: Env): AppConfig => ({
             clientSecret: env.FACEBOOK_OAUTH_CLIENT_SECRET,
           }
         : null,
+  },
+  webauthn: {
+    rpId: env.WEBAUTHN_RP_ID,
+    rpName: env.WEBAUTHN_RP_NAME,
+    origins: env.WEBAUTHN_ORIGINS,
   },
   search: {
     url: env.MEILI_URL,
