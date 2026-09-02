@@ -18,6 +18,8 @@ export const ShopMapper = {
         ? entity.customDomainVerifiedAt.toISOString()
         : null,
       customDomainToken: entity.customDomainToken,
+      listed: entity.listed,
+      tagline: entity.tagline,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -40,6 +42,8 @@ export const ShopMapper = {
       ? new Date(s.customDomainVerifiedAt)
       : null;
     entity.customDomainToken = s.customDomainToken;
+    entity.listed = s.listed;
+    entity.tagline = s.tagline;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

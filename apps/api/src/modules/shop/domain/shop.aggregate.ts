@@ -23,6 +23,8 @@ export interface ShopSnapshot {
   customDomain: string | null;
   customDomainVerifiedAt: string | null;
   customDomainToken: string | null;
+  listed: boolean;
+  tagline: string | null;
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -43,6 +45,8 @@ export interface UpdateShopProfileProps {
   whatsapp?: string | null;
   themePreset?: ThemePreset;
   brandColor?: string | null;
+  listed?: boolean;
+  tagline?: string | null;
 }
 
 export class Shop extends AggregateRoot {
@@ -59,6 +63,8 @@ export class Shop extends AggregateRoot {
     private _customDomain: string | null,
     private _customDomainVerifiedAt: Date | null,
     private _customDomainToken: string | null,
+    private _listed: boolean,
+    private _tagline: string | null,
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -94,6 +100,8 @@ export class Shop extends AggregateRoot {
       null,
       null,
       null,
+      false,
+      null,
       'active',
       now,
       now,
@@ -116,6 +124,8 @@ export class Shop extends AggregateRoot {
       snap.customDomain,
       snap.customDomainVerifiedAt ? new Date(snap.customDomainVerifiedAt) : null,
       snap.customDomainToken,
+      snap.listed,
+      snap.tagline,
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -143,6 +153,12 @@ export class Shop extends AggregateRoot {
       const color = normalizeBrandColor(patch.brandColor);
       if (color.isErr) return Result.err(color.getError());
       this._brandColor = color.unwrap();
+    }
+    if (patch.listed !== undefined) {
+      this._listed = patch.listed;
+    }
+    if (patch.tagline !== undefined) {
+      this._tagline = patch.tagline?.trim() || null;
     }
     this._updatedAt = new Date();
     return Result.ok(undefined);
@@ -221,6 +237,8 @@ export class Shop extends AggregateRoot {
         ? this._customDomainVerifiedAt.toISOString()
         : null,
       customDomainToken: this._customDomainToken,
+      listed: this._listed,
+      tagline: this._tagline,
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

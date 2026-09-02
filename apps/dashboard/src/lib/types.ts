@@ -61,6 +61,8 @@ export interface ShopProfile {
   whatsapp: string | null;
   themePreset: ThemePreset;
   brandColor: string | null;
+  listed: boolean;
+  tagline: string | null;
 }
 
 export const VERTICALS = [

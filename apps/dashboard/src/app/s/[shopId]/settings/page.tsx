@@ -7,6 +7,7 @@ import { NotificationSettingsForm } from '@/components/notification-settings-for
 import { ShopProfileForm } from '@/components/shop-profile-form';
 import { PushToggle } from '@/components/push-toggle';
 import { CustomDomainForm } from '@/components/custom-domain-form';
+import { DirectoryOptInForm } from '@/components/directory-optin-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,6 +45,14 @@ export default async function SettingsPage({ params }: Params) {
           Nom, contact et apparence de la vitrine partagée sur les réseaux.
         </p>
         <ShopProfileForm initial={shop} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Annuaire Jokko</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Rendez votre boutique visible sur la page d&apos;accueil publique de Jokko.
+        </p>
+        <DirectoryOptInForm initial={shop} />
       </section>
 
       <section className="mb-10">

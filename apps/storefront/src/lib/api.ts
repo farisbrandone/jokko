@@ -1,4 +1,4 @@
-import type { ProductSearchResult, PublicReviews } from '@jokko/contracts';
+import type { DirectoryResult, ProductSearchResult, PublicReviews } from '@jokko/contracts';
 
 const BASE = process.env.JOKKO_API_URL ?? 'http://localhost:3333/api';
 
@@ -67,6 +67,17 @@ export function getProduct(shopId: string, idOrSlug: string): Promise<ProductVie
 
 export function getReviews(shopId: string, productId: string): Promise<PublicReviews> {
   return apiGet<PublicReviews>(`/shops/${shopId}/products/${productId}/reviews`, 60);
+}
+
+export function getDirectory(
+  params: { q?: string; vertical?: string; page?: number } = {},
+): Promise<DirectoryResult> {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== '') qs.set(k, String(v));
+  }
+  const suffix = qs.toString();
+  return apiGet<DirectoryResult>(`/directory${suffix ? `?${suffix}` : ''}`, 120);
 }
 
 export const apiBase = BASE;

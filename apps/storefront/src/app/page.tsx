@@ -1,15 +1,27 @@
 import { getTranslations } from 'next-intl/server';
 import { currentShop } from '@/lib/shop';
-import { searchProducts } from '@/lib/api';
+import { getDirectory, searchProducts } from '@/lib/api';
 import { ProductGrid } from '@/components/product-grid';
 import { Facets } from '@/components/facets';
-import { ShopUnavailable } from '@/components/shop-unavailable';
+import { ShopDirectory } from '@/components/shop-directory';
 
 export const revalidate = 60;
 
-export default async function HomePage() {
+type Params = { searchParams: Promise<{ q?: string; vertical?: string; page?: string }> };
+
+export default async function HomePage({ searchParams }: Params) {
   const shop = await currentShop();
-  if (!shop) return <ShopUnavailable />;
+
+  // Hors d'une boutique (domaine apex) : annuaire public des boutiques inscrites.
+  if (!shop) {
+    const sp = await searchParams;
+    const query = { q: sp.q, vertical: sp.vertical };
+    const data = await getDirectory({
+      ...query,
+      page: sp.page ? Number(sp.page) : undefined,
+    }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 24 }));
+    return <ShopDirectory data={data} query={query} />;
+  }
 
   const [results, t] = await Promise.all([
     searchProducts(shop.id, { sort: 'newest', pageSize: 24 }),

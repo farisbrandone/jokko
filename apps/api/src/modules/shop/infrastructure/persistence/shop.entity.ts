@@ -42,6 +42,12 @@ export class ShopEntity {
   @Property({ type: 'string', length: 64, fieldName: 'custom_domain_token', nullable: true })
   customDomainToken: string | null = null;
 
+  @Property({ type: 'boolean' })
+  listed = false;
+
+  @Property({ type: 'string', length: 140, nullable: true })
+  tagline: string | null = null;
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 

@@ -1204,3 +1204,58 @@ describe('avis produits : dépôt, modération vendeur, agrégat', () => {
       .expect(404);
   });
 });
+
+describe('annuaire des boutiques (opt-in)', () => {
+  const slugs = (res: { body: { items: { slug: string }[] } }) =>
+    res.body.items.map((i) => i.slug);
+
+  it('seules les boutiques inscrites apparaissent ; recherche & filtre', async () => {
+    const t1 = await newSeller('dir-1@ex.com');
+    const t2 = await newSeller('dir-2@ex.com');
+    const t3 = await newSeller('dir-3@ex.com');
+    const s1 = await newShop(t1, 'Boutique Alpha');
+    const s2 = await newShop(t2, 'Boutique Beta');
+    await newShop(t3, 'Boutique Gamma'); // jamais inscrite
+
+    // Alpha : inscrite + 1 produit publié ; Beta : inscrite sans produit
+    await newPublishedProduct(t1, s1, 'Casque Alpha', 9000);
+    await http
+      .patch(`/api/shops/${s1}`)
+      .set('authorization', `Bearer ${t1}`)
+      .send({ listed: true, tagline: 'La boutique Alpha' })
+      .expect(200);
+    await http
+      .patch(`/api/shops/${s2}`)
+      .set('authorization', `Bearer ${t2}`)
+      .send({ listed: true })
+      .expect(200);
+
+    const all = await http.get('/api/directory').expect(200);
+    expect(slugs(all)).toEqual(['boutique-alpha', 'boutique-beta']); // tri par nb de produits
+    expect(all.body.items[0]).toMatchObject({
+      name: 'Boutique Alpha',
+      tagline: 'La boutique Alpha',
+      products: 1,
+    });
+    expect(slugs(all)).not.toContain('boutique-gamma');
+
+    // recherche plein-texte
+    const q = await http.get('/api/directory?q=beta').expect(200);
+    expect(slugs(q)).toEqual(['boutique-beta']);
+
+    // filtre par verticale
+    const v = await http.get('/api/directory?vertical=electronique').expect(200);
+    expect(slugs(v).sort()).toEqual(['boutique-alpha', 'boutique-beta']);
+    const vNone = await http.get('/api/directory?vertical=sport').expect(200);
+    expect(vNone.body.total).toBe(0);
+
+    // retrait de l'annuaire
+    await http
+      .patch(`/api/shops/${s2}`)
+      .set('authorization', `Bearer ${t2}`)
+      .send({ listed: false })
+      .expect(200);
+    const after = await http.get('/api/directory').expect(200);
+    expect(slugs(after)).toEqual(['boutique-alpha']);
+  });
+});

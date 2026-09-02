@@ -36,6 +36,8 @@ export const ShopSchema = z.object({
   locale: z.string().default('fr'),
   currency: z.string().length(3).default('XOF'),
   customDomain: z.string().optional(),
+  listed: z.boolean().default(false),
+  tagline: z.string().max(140).nullable().optional(),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
@@ -58,7 +60,35 @@ export const UpdateShopSchema = z
     whatsapp: z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro E.164 attendu').nullable(),
     themePreset: ThemePresetSchema,
     brandColor: BrandColorSchema.nullable(),
+    listed: z.boolean(),
+    tagline: z.string().trim().max(140).nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });
 export type UpdateShopInput = z.infer<typeof UpdateShopSchema>;
+
+/** Annuaire public des boutiques (page apex). */
+export const DirectoryQuerySchema = z.object({
+  q: z.string().trim().max(80).optional(),
+  vertical: VerticalSchema.optional(),
+  page: z.coerce.number().int().min(1).default(1),
+});
+export type DirectoryQuery = z.infer<typeof DirectoryQuerySchema>;
+
+export const DirectoryShopSchema = z.object({
+  slug: SlugSchema,
+  name: z.string(),
+  tagline: z.string().nullable(),
+  verticals: z.array(VerticalSchema),
+  brandColor: z.string().nullable(),
+  products: z.number(),
+});
+export type DirectoryShop = z.infer<typeof DirectoryShopSchema>;
+
+export const DirectoryResultSchema = z.object({
+  items: z.array(DirectoryShopSchema),
+  total: z.number(),
+  page: z.number(),
+  pageSize: z.number(),
+});
+export type DirectoryResult = z.infer<typeof DirectoryResultSchema>;

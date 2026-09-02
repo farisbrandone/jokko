@@ -652,6 +652,21 @@ presentation/    contrôleurs NestJS + validation Zod
   → moyenne, rejet sans effet, produit non publié → 404, note invalide → 400) —
   33 au total
 
+**Incrément 40 — annuaire des boutiques (opt-in)**
+
+- [x] `shops` += `listed` (défaut `false`) + `tagline` ; `updateProfile` accepte
+  ces champs ; `PATCH /shops/:id { listed, tagline }`
+- [x] API publique `GET /directory?q=&vertical=&page=` (pool propriétaire :
+  lecture transverse aux boutiques ; boutiques `listed=true` + `active`,
+  tri par nombre de produits publiés) → `{ items, total, page, pageSize }`
+- [x] Vitrine : la page d'accueil du **domaine apex** (hors boutique) affiche
+  l'annuaire (recherche plein-texte + filtre par catégorie, cartes cliquables
+  vers `<slug>.<domaine>`) au lieu de « boutique introuvable »
+- [x] Dashboard : section « Annuaire Jokko » dans les réglages (case à cocher +
+  phrase d'accroche)
+- [x] Tests : 1 d'intégration (opt-in, tri, recherche, filtre verticale, opt-out)
+  — 34 au total
+
 **Suite**
 
 - [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur

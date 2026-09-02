@@ -8,6 +8,15 @@
     "tagline": "The whole catalogue, in one link.",
     "productsAvailable": "{count, plural, =0 {No products available} one {# product available} other {# products available}}"
   },
+  "directory": {
+    "title": "Jokko shops",
+    "subtitle": "Discover the shops selling near you.",
+    "searchPlaceholder": "Shop name…",
+    "allVerticals": "All categories",
+    "search": "Search",
+    "empty": "No shop matches.",
+    "productsCount": "{count, plural, =0 {no products} one {# product} other {# products}}"
+  },
   "product": {
     "inStock": "In stock",
     "outOfStock": "Out of stock",

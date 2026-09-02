@@ -8,6 +8,15 @@
     "tagline": "Toute la gamme, en un lien.",
     "productsAvailable": "{count, plural, =0 {Aucun produit disponible} one {# produit disponible} other {# produits disponibles}}"
   },
+  "directory": {
+    "title": "Les boutiques Jokko",
+    "subtitle": "Découvrez les boutiques qui vendent près de chez vous.",
+    "searchPlaceholder": "Nom de boutique…",
+    "allVerticals": "Toutes les catégories",
+    "search": "Rechercher",
+    "empty": "Aucune boutique ne correspond.",
+    "productsCount": "{count, plural, =0 {aucun produit} one {# produit} other {# produits}}"
+  },
   "product": {
     "inStock": "En stock",
     "outOfStock": "Rupture de stock",
