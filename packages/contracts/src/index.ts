@@ -2,6 +2,7 @@ export * from './common';
 export * from './shop';
 export * from './domain';
 export * from './catalog';
+export * from './reviews';
 export * from './membership';
 export * from './team';
 export * from './auth';

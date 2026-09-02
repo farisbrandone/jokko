@@ -46,6 +46,18 @@
     "send": "Envoyer",
     "closed": "Conversation clôturée par le vendeur."
   },
+  "reviews": {
+    "title": "Avis",
+    "count": "{count, plural, one {# avis} other {# avis}}",
+    "empty": "Aucun avis pour le moment.",
+    "formTitle": "Donnez votre avis",
+    "rating": "Note",
+    "name": "Votre nom",
+    "body": "Votre avis…",
+    "send": "Publier",
+    "thanks": "Merci ! Votre avis sera visible après validation par le vendeur.",
+    "error": "Envoi impossible. Réessayez."
+  },
   "report": {
     "open": "Signaler",
     "reasonLabel": "Motif du signalement",

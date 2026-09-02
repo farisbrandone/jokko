@@ -4,8 +4,9 @@ import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
-import { getProduct, type ProductView } from '@/lib/api';
+import { getProduct, getReviews, type ProductView } from '@/lib/api';
 import { ContactBar } from '@/components/contact-bar';
+import { ProductReviews } from '@/components/product-reviews';
 import { ReportButton } from '@/components/report-button';
 import { TrackOnMount } from '@/components/track-event';
 import { ShopUnavailable } from '@/components/shop-unavailable';
@@ -71,7 +72,20 @@ export default async function ProductPage({ params }: Params) {
   const hasPromo =
     product.compareAtPrice && product.compareAtPrice.amount > product.price.amount;
 
+  const reviews = await getReviews(shop.id, product.id).catch(() => ({
+    summary: { average: 0, count: 0, distribution: [0, 0, 0, 0, 0] as [number, number, number, number, number] },
+    items: [],
+  }));
+  if (reviews.summary.count > 0) {
+    (jsonLd as Record<string, unknown>).aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: reviews.summary.average,
+      reviewCount: reviews.summary.count,
+    };
+  }
+
   return (
+    <>
     <article className="grid md:grid-cols-2 gap-8">
       <script
         type="application/ld+json"
@@ -138,5 +152,7 @@ export default async function ProductPage({ params }: Params) {
         </div>
       </div>
     </article>
+    <ProductReviews productId={product.id} initial={reviews} />
+    </>
   );
 }

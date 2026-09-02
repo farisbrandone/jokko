@@ -1125,3 +1125,82 @@ describe('domaine personnalisé : configuration & vérification DNS', () => {
     await http.get(`/api/internal/tls-authorize?domain=${domain}`).expect(403);
   });
 });
+
+describe('avis produits : dépôt, modération vendeur, agrégat', () => {
+  it('acheteur dépose → vendeur publie → moyenne visible ; garde-fous', async () => {
+    const t = await newSeller('review-seller@ex.com');
+    const shop = await newShop(t, 'Review Shop');
+    const pid = await newPublishedProduct(t, shop, 'Enceinte Review', 15000);
+    const rBase = `/api/shops/${shop}/products/${pid}/reviews`;
+
+    // agrégat initial : vide
+    const a0 = await http.get(rBase).expect(200);
+    expect(a0.body.summary).toMatchObject({ average: 0, count: 0 });
+
+    // note invalide → 400
+    await http.post(rBase).send({ rating: 6, body: 'top', authorName: 'Awa' }).expect(400);
+
+    // dépôt public → en attente
+    const sub = await http
+      .post(rBase)
+      .send({ rating: 5, title: 'Parfait', body: 'Son excellent', authorName: 'Awa' })
+      .expect(201);
+    expect(sub.body.status).toBe('pending');
+
+    // non encore visible publiquement
+    const a1 = await http.get(rBase).expect(200);
+    expect(a1.body.summary.count).toBe(0);
+
+    // file de modération du vendeur
+    const pending = await http
+      .get(`/api/shops/${shop}/reviews?status=pending`)
+      .set('authorization', `Bearer ${t}`)
+      .expect(200);
+    expect(pending.body).toHaveLength(1);
+    const reviewId = pending.body[0].id;
+
+    // un tiers ne peut pas modérer
+    const stranger = await newSeller('review-stranger@ex.com');
+    await http
+      .post(`/api/shops/${shop}/reviews/${reviewId}/moderate`)
+      .set('authorization', `Bearer ${stranger}`)
+      .send({ action: 'publish' })
+      .expect(403);
+
+    // le vendeur publie
+    await http
+      .post(`/api/shops/${shop}/reviews/${reviewId}/moderate`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ action: 'publish' })
+      .expect(201);
+
+    const a2 = await http.get(rBase).expect(200);
+    expect(a2.body.summary).toMatchObject({ average: 5, count: 1 });
+    expect(a2.body.summary.distribution).toEqual([0, 0, 0, 0, 1]);
+    expect(a2.body.items).toHaveLength(1);
+
+    // second avis rejeté → n'affecte pas la moyenne
+    const sub2 = await http
+      .post(rBase)
+      .send({ rating: 1, body: 'bof', authorName: 'Bob' })
+      .expect(201);
+    await http
+      .post(`/api/shops/${shop}/reviews/${sub2.body.id}/moderate`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ action: 'reject' })
+      .expect(201);
+    const a3 = await http.get(rBase).expect(200);
+    expect(a3.body.summary).toMatchObject({ average: 5, count: 1 });
+
+    // avis sur un produit non publié → 404
+    const draft = await http
+      .post(`/api/shops/${shop}/products`)
+      .set('authorization', `Bearer ${t}`)
+      .send({ name: 'Brouillon', category: 'electronique', price: { amount: 1 } })
+      .expect(201);
+    await http
+      .post(`/api/shops/${shop}/products/${draft.body.id}/reviews`)
+      .send({ rating: 4, body: 'test essai', authorName: 'Xavier' })
+      .expect(404);
+  });
+});

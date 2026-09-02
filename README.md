@@ -636,6 +636,22 @@ presentation/    contrôleurs NestJS + validation Zod
   vérif sans TXT → 400, TLS refusé, puis TXT publié → vérif OK → TLS autorisé,
   retrait) — 32 au total
 
+**Incrément 39 — avis produits (notation & modération vendeur)**
+
+- [x] Contexte `reviews` : table `product_reviews` (RLS, note 1–5, statut
+  `pending`/`published`/`rejected`) ; dépôt public modéré (`pending` par défaut,
+  `@Throttle` 5/min) uniquement sur un produit publié
+- [x] API : `GET`/`POST /shops/:id/products/:pid/reviews` (public),
+  `GET /shops/:id/reviews?status=` + `POST /shops/:id/reviews/:rid/moderate`
+  (membre — `read`/`manage Product`) ; agrégat `{ average, count, distribution }`
+- [x] Vitrine : bloc « Avis » sur la fiche produit (étoiles, moyenne, liste,
+  formulaire) + `aggregateRating` dans le JSON-LD ; BFF `/api/reviews`
+- [x] Dashboard : page `/s/:id/reviews` (onglets En attente / Publiés / Rejetés,
+  boutons Publier / Rejeter — React Query) ; lien « Avis »
+- [x] Tests : 1 d'intégration (dépôt → file → modération tiers refusée → publier
+  → moyenne, rejet sans effet, produit non publié → 404, note invalide → 400) —
+  33 au total
+
 **Suite**
 
 - [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur

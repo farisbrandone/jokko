@@ -46,6 +46,18 @@
     "send": "Send",
     "closed": "Conversation closed by the seller."
   },
+  "reviews": {
+    "title": "Reviews",
+    "count": "{count, plural, one {# review} other {# reviews}}",
+    "empty": "No reviews yet.",
+    "formTitle": "Leave a review",
+    "rating": "Rating",
+    "name": "Your name",
+    "body": "Your review…",
+    "send": "Post",
+    "thanks": "Thanks! Your review will appear once the seller approves it.",
+    "error": "Could not send. Please try again."
+  },
   "report": {
     "open": "Report",
     "reasonLabel": "Reason for reporting",

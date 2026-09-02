@@ -1,4 +1,4 @@
-import type { ProductSearchResult } from '@jokko/contracts';
+import type { ProductSearchResult, PublicReviews } from '@jokko/contracts';
 
 const BASE = process.env.JOKKO_API_URL ?? 'http://localhost:3333/api';
 
@@ -63,6 +63,10 @@ export function getProduct(shopId: string, idOrSlug: string): Promise<ProductVie
     `/shops/${shopId}/products/${encodeURIComponent(idOrSlug)}`,
     60,
   );
+}
+
+export function getReviews(shopId: string, productId: string): Promise<PublicReviews> {
+  return apiGet<PublicReviews>(`/shops/${shopId}/products/${productId}/reviews`, 60);
 }
 
 export const apiBase = BASE;

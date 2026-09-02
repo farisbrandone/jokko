@@ -30,5 +30,6 @@ import { OutboxRelay } from './infrastructure/outbox/outbox.relay';
     OutboxRelay,
     { provide: PRODUCT_REPOSITORY, useClass: MikroOrmProductRepository },
   ],
+  exports: [PRODUCT_REPOSITORY],
 })
 export class CatalogModule {}
