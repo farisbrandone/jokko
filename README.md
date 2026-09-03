@@ -667,7 +667,26 @@ presentation/    contrôleurs NestJS + validation Zod
 - [x] Tests : 1 d'intégration (opt-in, tri, recherche, filtre verticale, opt-out)
   — 34 au total
 
+**Incrément 41 — import de produits (URL & CSV)**
+
+- [x] `ImportService` (dans `catalog`) : `previewUrl` (récupère une page produit,
+  extrait JSON-LD `Product` ou balises OpenGraph — aucun appel d'API fournisseur
+  payante), `importCsv` (analyse CSV maison, alias de colonnes FR/EN, prix en
+  centimes) → produits créés en **brouillon** via `CreateProductUseCase`
+- [x] `fetchDraftFromUrl` : garde anti-SSRF (https seul, résolution DNS + blocage
+  des plages privées/loopback/link-local/CGNAT, `redirect: 'error'`, timeout 8 s,
+  plafond 2 Mo)
+- [x] API `POST /shops/:id/import/url` (aperçu, throttlé 10/min) et
+  `POST /shops/:id/import/csv` → `{ created, skipped: [{ line, error }] }`
+  (garde CASL `create Product`)
+- [x] Dashboard : page `/s/:id/products/import` (onglets URL / CSV, aperçu
+  éditable avant création) + lien « Importer »
+- [x] Tests : 5 unitaires (parseurs JSON-LD / OG / CSV) + 1 d'intégration
+  (CSV → brouillons + lignes fautives, SSRF `http`/`127.0.0.1` → 400, non-membre
+  → 403) — 42 unitaires, 35 d'intégration
+
 **Suite**
 
-- [ ] SuperTokens (fédération d'identité gérée) si besoin ultérieur
+- [ ] SuperTokens : rendu obsolète par OAuth (inc. 31) + OTP (inc. 23) +
+  passkeys (inc. 36) — non prévu
 ```

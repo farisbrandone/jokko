@@ -3,7 +3,9 @@ import { MikroOrmModule } from '@mikro-orm/nestjs';
 import { IdentityModule } from '../identity/identity.module';
 import { ShopModule } from '../shop/shop.module';
 import { CatalogController } from './presentation/catalog.controller';
+import { ImportController } from './presentation/import.controller';
 import { CreateProductUseCase } from './application/use-cases/create-product.usecase';
+import { ImportService } from './application/import.service';
 import { ListProductsUseCase } from './application/use-cases/list-products.usecase';
 import { PublishProductUseCase } from './application/use-cases/publish-product.usecase';
 import { UpdateProductUseCase } from './application/use-cases/update-product.usecase';
@@ -20,9 +22,10 @@ import { OutboxRelay } from './infrastructure/outbox/outbox.relay';
     IdentityModule,
     ShopModule,
   ],
-  controllers: [CatalogController],
+  controllers: [CatalogController, ImportController],
   providers: [
     CreateProductUseCase,
+    ImportService,
     ListProductsUseCase,
     PublishProductUseCase,
     UpdateProductUseCase,

@@ -1259,3 +1259,53 @@ describe('annuaire des boutiques (opt-in)', () => {
     expect(slugs(after)).toEqual(['boutique-alpha']);
   });
 });
+
+describe('import de produits (CSV / URL)', () => {
+  it('CSV : crée des brouillons, signale les lignes fautives ; garde-fous', async () => {
+    const t = await newSeller('import@ex.com');
+    const shop = await newShop(t, 'Import Shop');
+    const auth = { authorization: `Bearer ${t}` };
+
+    const csv = [
+      'nom,prix,stock,catégorie,image',
+      'Lampe LED,"9500",6,Maison,https://picsum.photos/seed/lamp/600',
+      'Coussin,4000,3,Maison,',
+      ',1000,1,Maison,', // nom manquant
+    ].join('\n');
+
+    const res = await http
+      .post(`/api/shops/${shop}/import/csv`)
+      .set(auth)
+      .send({ csv })
+      .expect(200);
+    expect(res.body.created).toBe(2);
+    expect(res.body.skipped).toHaveLength(1);
+    expect(res.body.skipped[0]).toMatchObject({ line: 4, error: 'nom manquant' });
+
+    const list = await http
+      .get(`/api/shops/${shop}/products`)
+      .set(auth)
+      .expect(200);
+    expect(list.body.total).toBe(2);
+    expect(list.body.items.every((p: { status: string }) => p.status === 'draft')).toBe(true);
+
+    // URL : http et hôte privé refusés (anti-SSRF), et non-membre → 403
+    await http
+      .post(`/api/shops/${shop}/import/url`)
+      .set(auth)
+      .send({ url: 'http://example.com/p' })
+      .expect(400);
+    await http
+      .post(`/api/shops/${shop}/import/url`)
+      .set(auth)
+      .send({ url: 'https://127.0.0.1/p' })
+      .expect(400);
+
+    const stranger = await newSeller('import-stranger@ex.com');
+    await http
+      .post(`/api/shops/${shop}/import/csv`)
+      .set('authorization', `Bearer ${stranger}`)
+      .send({ csv: 'name,price\nX,1' })
+      .expect(403);
+  });
+});
