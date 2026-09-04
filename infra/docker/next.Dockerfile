@@ -5,7 +5,7 @@
 
 ARG APP=storefront
 
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 ENV PNPM_HOME=/pnpm PATH=/pnpm:$PATH
 RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
 WORKDIR /repo
@@ -19,7 +19,7 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 RUN pnpm run build:packages && pnpm --filter "@jokko/${APP}" run build
 
 # ---- runtime : sortie « standalone » de Next --------------------------
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 ARG APP
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 RUN apk add --no-cache curl && addgroup -S app && adduser -S app -G app
