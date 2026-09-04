@@ -22,16 +22,21 @@ Le plan directeur complet (architecture, pile technique, feuille de route) :
 ## Démarrage
 
 ```bash
-nvm use                       # Node 22
-corepack enable               # active pnpm
+nvm use && corepack enable
 pnpm install
 
-cp .env.example .env          # ajuster si besoin
+cp .env.example .env          # valeurs de dev prêtes à l'emploi
 pnpm infra:up                 # postgres, redis, meilisearch, minio, imgproxy, mailpit
+pnpm db:migrate               # applique les migrations SQL
 
-pnpm --filter @jokko/api db:migrate   # applique les migrations SQL
-pnpm dev:api                          # API sur http://localhost:3333/api  (docs: /docs)
+pnpm dev                      # API + vitrine + dashboard + admin (4 process)
+pnpm seed                     # (autre terminal) données de démo
 ```
+
+Vitrine `http://<slug>.lvh.me:3000` · Dashboard `:3001` · Admin `:3002` ·
+API `:3333/api` (docs `/docs`) · Mailpit `:58025`.
+
+**Parcours de test complet : [docs/guide-test.md](docs/guide-test.md).**
 
 ### Base de données
 

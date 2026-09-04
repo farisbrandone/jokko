@@ -19,6 +19,7 @@
     "search:reindex": "tsx src/cli/reindex.ts",
     "search:reindex:prod": "node dist/cli/reindex.js",
     "make-admin": "tsx src/cli/make-admin.ts",
+    "seed": "tsx src/cli/seed.ts",
     "db:migrate:make": "mikro-orm migration:create",
     "db:fresh": "mikro-orm schema:drop --run --drop-migrations-table && tsx src/cli/migrate.ts"
   },
