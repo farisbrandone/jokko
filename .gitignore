@@ -18,6 +18,8 @@ out/
 .env.*
 !.env.example
 !.env.prod.example
+!.env.prod.pm2.example
+!.env.production.example
 
 # logs
 *.log
