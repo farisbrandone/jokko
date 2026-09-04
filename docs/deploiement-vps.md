@@ -9,38 +9,38 @@ build localement.
 
 **Cohabitation avec l'app déjà déployée sur ce VPS via nginx** : ce guide
 n'ajoute qu'un **nouveau fichier** de config nginx (`jokko.conf`), avec ses
-propres noms d'hôtes (`VOTREDOMAINE.TLD`, `api.VOTREDOMAINE.TLD`, etc.). Il ne
+propres noms d'hôtes (`scoliaa.com`, `api.scoliaa.com`, etc.). Il ne
 modifie, ne remplace et ne recharge aucun fichier de l'app existante — un même
 process nginx sert plusieurs sites en parallèle en les distinguant par nom
 d'hôte (`server_name`), exactement comme il le fait déjà pour votre app
 actuelle. **Aucun changement pour l'autre application.**
 
 **Garantie demandée — persistance de l'URL de boutique** : chaque boutique
-obtient son URL par sous-domaine (`ma-boutique.VOTREDOMAINE.TLD`), généré par
+obtient son URL par sous-domaine (`ma-boutique.scoliaa.com`), généré par
 l'appli elle-même à la création — nginx n'a besoin d'aucune config par
 boutique. Le bloc « Vitrine » ci-dessous (§6) répond pour
-`*.VOTREDOMAINE.TLD`, donc pour n'importe quel nom de boutique, présent ou
+`*.scoliaa.com`, donc pour n'importe quel nom de boutique, présent ou
 futur, sans jamais toucher à nginx. Le certificat TLS utilisé (§5) est un
 certificat **wildcard** qui couvre lui aussi tous les sous-domaines d'un
-coup. Une fois sur `ma-boutique.VOTREDOMAINE.TLD`, l'acheteur y reste : toutes
+coup. Une fois sur `ma-boutique.scoliaa.com`, l'acheteur y reste : toutes
 les pages et tous les appels internes de la vitrine sont construits par
 Next.js à partir de ce même hôte (transmis par nginx via l'en-tête
 `X-Forwarded-Host`, §7) — il n'y a aucune redirection vers un autre domaine.
 
-Ce guide est écrit pour être exécuté **tel quel, dans l'ordre**, en
-remplaçant uniquement `VOTREDOMAINE.TLD` par votre domaine réel (une seule
-commande `sed` le fait pour vous à chaque étape).
+Ce guide est écrit pour être exécuté **tel quel, dans l'ordre** : tous les
+fichiers référencés sont déjà renseignés pour le domaine **scoliaa.com**,
+rien à remplacer vous-même.
 
 ## 0. Vue d'ensemble
 
 | Hôte public (HTTPS, nginx) | → | Process | Port local |
 | --- | --- | --- | --- |
-| `VOTREDOMAINE.TLD`, `*.VOTREDOMAINE.TLD` | → | `jokko-storefront` (pm2) | 127.0.0.1:3000 |
-| `api.VOTREDOMAINE.TLD` | → | `jokko-api` (pm2) | 127.0.0.1:3333 |
-| `dashboard.VOTREDOMAINE.TLD` | → | `jokko-dashboard` (pm2) | 127.0.0.1:3001 |
-| `console.VOTREDOMAINE.TLD` | → | `jokko-admin` (pm2) | 127.0.0.1:3002 |
-| `media.VOTREDOMAINE.TLD` | → | MinIO (Docker) | 127.0.0.1:9000 |
-| `img.VOTREDOMAINE.TLD` | → | imgproxy (Docker) | 127.0.0.1:8080 |
+| `scoliaa.com`, `*.scoliaa.com` | → | `jokko-storefront` (pm2) | 127.0.0.1:3000 |
+| `api.scoliaa.com` | → | `jokko-api` (pm2) | 127.0.0.1:3333 |
+| `dashboard.scoliaa.com` | → | `jokko-dashboard` (pm2) | 127.0.0.1:3001 |
+| `console.scoliaa.com` | → | `jokko-admin` (pm2) | 127.0.0.1:3002 |
+| `media.scoliaa.com` | → | MinIO (Docker) | 127.0.0.1:9000 |
+| `img.scoliaa.com` | → | imgproxy (Docker) | 127.0.0.1:8080 |
 
 Budget RAM (4 Go total, partagé avec l'app déjà en place) : Postgres ~200 Mo,
 Meilisearch ~150 Mo, MinIO ~100 Mo, imgproxy ~50 Mo, API ~250-450 Mo, 3× Next
@@ -62,12 +62,12 @@ parallèle.
 
 Un enregistrement `A *` couvre déjà tous les sous-domaines
 (`api.`, `dashboard.`, `console.`, `media.`, `img.`, et tout
-`<slug-boutique>.VOTREDOMAINE.TLD`) : les lignes dédiées sont facultatives si
+`<slug-boutique>.scoliaa.com`) : les lignes dédiées sont facultatives si
 le wildcard est en place.
 
 ## 2. Certificat TLS wildcard (une seule fois)
 
-Un certificat classique ne couvre pas `*.VOTREDOMAINE.TLD` : il faut soit du
+Un certificat classique ne couvre pas `*.scoliaa.com` : il faut soit du
 DNS-01, soit passer par Cloudflare. **Option la plus simple** (recommandée,
 gratuite, sans renouvellement à automatiser) : mettre la zone DNS derrière
 Cloudflare et utiliser son certificat d'origine.
@@ -81,7 +81,7 @@ Cloudflare et utiliser son certificat d'origine.
    chacun.
 3. **SSL/TLS → Vue d'ensemble** → mode **Full (strict)**.
 4. **SSL/TLS → Origine → Créer un certificat** :
-   - Hôtes : `VOTREDOMAINE.TLD`, `*.VOTREDOMAINE.TLD`
+   - Hôtes : `scoliaa.com`, `*.scoliaa.com`
    - Validité : 15 ans
    - Cliquer **Créer** → **copier le certificat ET la clé privée affichés**
      (ils ne seront plus jamais réaffichés ensuite).
@@ -140,16 +140,15 @@ cd /srv/jokko
 mkdir -p /etc/nginx/snippets
 cp infra/nginx/snippets/jokko-proxy.conf /etc/nginx/snippets/jokko-proxy.conf
 
-sed 's/VOTREDOMAINE\.TLD/votredomaine.tld/g' infra/nginx/jokko.conf > /etc/nginx/sites-available/jokko.conf
+cp infra/nginx/jokko.conf /etc/nginx/sites-available/jokko.conf
 ln -s /etc/nginx/sites-available/jokko.conf /etc/nginx/sites-enabled/jokko.conf
 
 nginx -t                        # doit afficher "syntax is ok" / "test is successful"
 systemctl reload nginx
 ```
 
-> Remplacer `votredomaine.tld` dans la commande `sed` ci-dessus par votre
-> vrai domaine (en minuscules). Cette commande ne touche à aucun fichier
-> existant : elle ne fait que créer `jokko.conf` puis le lier dans
+> Cette étape ne touche à aucun fichier existant : elle ne fait que créer
+> `jokko.conf` (déjà réglé pour `scoliaa.com`) puis le lier dans
 > `sites-enabled`, à côté de ce qui y est déjà pour l'autre app.
 
 ## 7. Services de données (Docker)
@@ -158,7 +157,7 @@ systemctl reload nginx
 cd /srv/jokko
 cp infra/docker/.env.prod.pm2.example .env
 nano .env
-# → remplacer VOTREDOMAINE.TLD partout (Ctrl+\ dans nano : rechercher/remplacer)
+# → domaine déjà réglé sur scoliaa.com, rien à changer sur ce point
 # → renseigner tous les CHANGE_ME_* (générer chaque secret avec la commande
 #   indiquée en commentaire au-dessus de chaque ligne, ou voir §8)
 
@@ -220,7 +219,7 @@ pnpm run build:packages
 cp apps/storefront/.env.production.example apps/storefront/.env
 cp apps/dashboard/.env.production.example  apps/dashboard/.env
 cp apps/admin/.env.production.example      apps/admin/.env
-sed -i 's/VOTREDOMAINE\.TLD/votredomaine.tld/g' apps/storefront/.env apps/dashboard/.env apps/admin/.env
+# déjà réglés sur scoliaa.com, rien à éditer
 
 pnpm --filter @jokko/api run build
 pnpm --filter @jokko/storefront run build
@@ -248,18 +247,18 @@ pm2 startup   # copier-coller la commande qu'elle affiche, puis l'exécuter
 ## 11. Vérification
 
 ```bash
-curl -I https://VOTREDOMAINE.TLD
-curl -I https://api.VOTREDOMAINE.TLD/api
-curl -I https://dashboard.VOTREDOMAINE.TLD
-curl -I https://console.VOTREDOMAINE.TLD
+curl -I https://scoliaa.com
+curl -I https://api.scoliaa.com/api
+curl -I https://dashboard.scoliaa.com
+curl -I https://console.scoliaa.com
 pm2 status               # les 4 process "online"
 pm2 logs --lines 50
 nginx -t                  # toujours "ok" — confirme que rien n'a cassé pour l'autre app
 ```
 
-Dans un navigateur : créer un compte sur `dashboard.VOTREDOMAINE.TLD`, créer
+Dans un navigateur : créer un compte sur `dashboard.scoliaa.com`, créer
 une boutique, publier un produit, vérifier son apparition sur
-`https://<slug>.VOTREDOMAINE.TLD` — c'est cette URL, générée automatiquement,
+`https://<slug>.scoliaa.com` — c'est cette URL, générée automatiquement,
 que le créateur de boutique donne à ses clients, et sur laquelle ils restent
 en naviguant.
 
@@ -298,7 +297,7 @@ disque.
   ce déploiement nginx n'automatise pas l'émission d'un certificat par
   domaine — à traiter au cas par cas (`certbot --nginx -d
   <domaine-du-vendeur>`) le jour où un vendeur l'utilise réellement. Le
-  sous-domaine Jokko (`<slug>.VOTREDOMAINE.TLD`, §0/§11), lui, fonctionne
+  sous-domaine Jokko (`<slug>.scoliaa.com`, §0/§11), lui, fonctionne
   pour toutes les boutiques dès le premier déploiement, sans limite.
 - Un seul VPS = pas de haute disponibilité ; 1 instance pm2 par app (pas de
   cluster mode), cohérent avec 2 vCores/4 Go.
