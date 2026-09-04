@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, getReviews, type ProductView } from '@/lib/api';
+import { AddToCart } from '@/components/add-to-cart';
 import { ContactBar } from '@/components/contact-bar';
 import { ProductReviews } from '@/components/product-reviews';
 import { ReportButton } from '@/components/report-button';
@@ -138,6 +139,18 @@ export default async function ProductPage({ params }: Params) {
           {product.stock > 0 ? t('inStock') : t('outOfStock')} · {product.category}
         </p>
         <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
+
+        <AddToCart
+          item={{
+            productId: product.id,
+            slug: product.slug,
+            name: product.name,
+            unitAmount: product.price.amount,
+            currency: product.price.currency,
+            image: product.images[0] ?? null,
+          }}
+          stock={product.stock}
+        />
 
         <ContactBar
           shopName={shop.name}

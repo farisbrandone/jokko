@@ -66,6 +66,13 @@ export class RetentionCron {
           where status = 'closed' and last_message_at < now() - ($1 || ' days')::interval`,
         [this.cfg.conversationDays],
       ),
+      finishedOrders: await del(
+        'orders',
+        `delete from orders
+          where status in ('fulfilled', 'canceled')
+            and created_at < now() - ($1 || ' days')::interval`,
+        [this.cfg.orderDays],
+      ),
     };
     return summary;
   }

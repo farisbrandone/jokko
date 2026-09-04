@@ -120,6 +120,7 @@ export const envSchema = z.object({
   RETENTION_CONVERSATION_DAYS: z.coerce.number().int().positive().default(365),
   RETENTION_DISPATCH_LOG_DAYS: z.coerce.number().int().positive().default(90),
   RETENTION_IMPERSONATION_DAYS: z.coerce.number().int().positive().default(365),
+  RETENTION_ORDER_DAYS: z.coerce.number().int().positive().default(365),
 
   // Connexion par SMS (OTP). Envoi via Termii (mêmes clés que les notifications).
   OTP_TTL_SEC: z.coerce.number().int().positive().default(300),

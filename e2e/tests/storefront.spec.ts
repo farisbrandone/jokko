@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { API, seedShop } from './helpers';
+import { API, rnd, seedShop } from './helpers';
 
 // La vitrine résout la boutique par sous-domaine (comme en production).
 // `*.lvh.me` pointe sur 127.0.0.1.
@@ -32,19 +32,47 @@ test('la vitrine affiche la boutique et sa fiche produit', async ({ page, reques
 
 test("l'annuaire du domaine apex liste une boutique inscrite", async ({ page, request }) => {
   const { slug, shopId, token } = await seedShop(request);
+  const marker = `annuaire${rnd()}`;
+  const tagline = `Boutique test ${marker}`;
 
   const patch = await request.patch(`${API}/shops/${shopId}`, {
     headers: { authorization: `Bearer ${token}` },
-    data: { listed: true, tagline: 'Boutique E2E annuaire' },
+    data: { listed: true, tagline },
   });
   expect(patch.ok()).toBeTruthy();
 
+  // Recherche par marqueur unique → l'annuaire ne renvoie que cette boutique.
   await expect(async () => {
-    await page.goto('http://lvh.me:3000/');
+    await page.goto(`http://lvh.me:3000/?q=${marker}`);
     await expect(page.getByRole('heading', { name: /boutiques Jokko/i })).toBeVisible();
-    await expect(page.getByText('Boutique E2E annuaire')).toBeVisible({ timeout: 3_000 });
+    await expect(page.getByText(tagline)).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 20_000 });
 
   await page.getByRole('link', { name: /e2e boutique/i }).first().click();
   await expect(page).toHaveURL(new RegExp(`${slug}\\.lvh\\.me`));
+});
+
+test('achat : panier → paiement (fake) → commande payée', async ({ page, request }) => {
+  test.slow();
+  const { slug, productName } = await seedShop(request, { stock: 5 });
+
+  const card = page.getByRole('link', { name: new RegExp(productName, 'i') });
+  await expect(async () => {
+    await page.goto(shopUrl(slug));
+    await expect(card).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+  await card.click();
+  await expect(page).toHaveURL(/\/p\//);
+
+  await page.getByRole('button', { name: 'Ajouter au panier' }).click();
+  await page.getByRole('link', { name: 'Voir le panier' }).click();
+  await expect(page).toHaveURL(/\/panier/);
+
+  await page.getByPlaceholder('Votre nom').fill('Awa Cliente');
+  await page.getByPlaceholder('Téléphone (+221…)').fill('+221771234567');
+  await page.getByRole('button', { name: /Payer/ }).click();
+
+  // Passerelle fake → retour immédiat → confirmation → page commande
+  await expect(page).toHaveURL(/\/commande\/[0-9a-f-]{36}/, { timeout: 15_000 });
+  await expect(page.getByText(/Statut :/)).toContainText('Payée');
 });

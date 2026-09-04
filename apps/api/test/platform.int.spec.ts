@@ -8,7 +8,7 @@ let http: ReturnType<typeof request>;
 beforeAll(async () => {
   h = await startHarness();
   http = request(h.server);
-}, 240_000);
+}, 300_000);
 
 afterAll(async () => {
   await h?.stop();
@@ -1306,6 +1306,122 @@ describe('import de produits (CSV / URL)', () => {
       .post(`/api/shops/${shop}/import/csv`)
       .set('authorization', `Bearer ${stranger}`)
       .send({ csv: 'name,price\nX,1' })
+      .expect(403);
+  });
+});
+
+describe('commandes acheteur & paiement (checkout)', () => {
+  async function stockedProduct(token: string, shopId: string, name: string, stock: number) {
+    const created = await http
+      .post(`/api/shops/${shopId}/products`)
+      .set('authorization', `Bearer ${token}`)
+      .send({
+        name,
+        category: 'electronique',
+        price: { amount: 5000 },
+        stock,
+        images: ['https://x/y.jpg'],
+      })
+      .expect(201);
+    await http
+      .post(`/api/shops/${shopId}/products/${created.body.id}/publish`)
+      .set('authorization', `Bearer ${token}`)
+      .expect(201);
+    return created.body.id as string;
+  }
+
+  it('achat → paiement (fake) → payée + stock décrémenté + expédition ; garde-fous', async () => {
+    const t = await newSeller('order-seller@ex.com');
+    const shop = await newShop(t, 'Order Shop');
+    const auth = { authorization: `Bearer ${t}` };
+    const p1 = await stockedProduct(t, shop, 'Chargeur', 5);
+    const p2 = await stockedProduct(t, shop, 'Câble', 1);
+
+    // URL de retour hors du domaine de la vitrine → refus
+    await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: p1, qty: 2 }],
+        buyerName: 'Aïcha',
+        buyerPhone: '+221771234567',
+        returnUrl: 'http://evil.example/x',
+      })
+      .expect(400);
+
+    // Stock insuffisant → refus
+    await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: p2, qty: 5 }],
+        buyerName: 'Aïcha',
+        buyerPhone: '+221771234567',
+        returnUrl: 'http://order-shop.lvh.me/commande/return',
+      })
+      .expect(400);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [
+          { productId: p1, qty: 2 },
+          { productId: p2, qty: 1 },
+        ],
+        buyerName: 'Aïcha',
+        buyerPhone: '+221771234567',
+        note: 'Livrer le matin',
+        returnUrl: 'http://order-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    expect(co.body.checkoutUrl).toContain('tx_ref=');
+    const txRef = new URL(co.body.checkoutUrl).searchParams.get('tx_ref')!;
+    const orderId = co.body.orderId as string;
+    const token = co.body.buyerToken as string;
+
+    // Confirmation acheteur
+    const c1 = await http
+      .post(`/api/shops/${shop}/orders/${orderId}/confirm`)
+      .send({ token, txRef })
+      .expect(201);
+    expect(c1.body.status).toBe('paid');
+    expect(c1.body.subtotal).toBe(3 * 5000);
+    expect(c1.body.paidAt).toBeTruthy();
+
+    // Idempotent
+    const c2 = await http
+      .post(`/api/shops/${shop}/orders/${orderId}/confirm`)
+      .send({ token, txRef })
+      .expect(201);
+    expect(c2.body.status).toBe('paid');
+
+    // Stock décrémenté
+    const prod1 = await http
+      .get(`/api/shops/${shop}/products/${p1}/edit`)
+      .set(auth)
+      .expect(200);
+    expect(prod1.body.stock).toBe(3);
+
+    // Suivi acheteur : bon jeton OK, mauvais jeton → 403
+    await http
+      .get(`/api/shops/${shop}/orders/${orderId}/track?token=${token}`)
+      .expect(200);
+    await http
+      .get(`/api/shops/${shop}/orders/${orderId}/track?token=mauvais-jeton-1234`)
+      .expect(403);
+
+    // Vendeur : liste + expédition
+    const list = await http.get(`/api/shops/${shop}/orders`).set(auth).expect(200);
+    expect(list.body.total).toBe(1);
+    expect(list.body.items[0].note).toBe('Livrer le matin');
+    const ful = await http
+      .post(`/api/shops/${shop}/orders/${orderId}/fulfill`)
+      .set(auth)
+      .expect(201);
+    expect(ful.body.status).toBe('fulfilled');
+
+    // Webhook : sans signature → 403
+    await http
+      .post('/api/orders/webhook/flutterwave')
+      .send({ data: { tx_ref: txRef } })
       .expect(403);
   });
 });

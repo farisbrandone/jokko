@@ -66,6 +66,12 @@ export default async function ShopPage({ params }: Params) {
             Équipe
           </Link>
           <Link
+            href={`/s/${shopId}/orders`}
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
+          >
+            Commandes
+          </Link>
+          <Link
             href={`/s/${shopId}/reviews`}
             className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm"
           >

@@ -685,6 +685,31 @@ presentation/    contrôleurs NestJS + validation Zod
   (CSV → brouillons + lignes fautives, SSRF `http`/`127.0.0.1` → 400, non-membre
   → 403) — 42 unitaires, 35 d'intégration
 
+**Incrément 42 — commandes acheteur & paiement (checkout)**
+
+- [x] Contexte `orders` : agrégat `Order` (lignes figées, jeton acheteur,
+  statuts `pending_payment` → `paid` → `fulfilled` / `canceled`) ; table
+  `orders` sans RLS (filtre `shop_id` explicite, accès acheteur par jeton) ;
+  passerelle de paiement réutilisée (`PAYMENT_GATEWAY` exporté par `billing`)
+- [x] `PlaceOrderUseCase` (contrôle publication + stock, devise unique, garde
+  `returnUrl` dans le domaine de la vitrine) → `{ orderId, buyerToken,
+  checkoutUrl }` ; `ApplyOrderPaymentUseCase` idempotent → `paid`, décrément du
+  stock, e-mail aux membres
+- [x] API : `POST /shops/:id/orders` (public, throttle 8/min), `.../:oid/confirm`
+  (jeton), `.../:oid/track` (jeton) ; vendeur : `GET`, `.../:oid/fulfill|cancel`
+  (CASL `read`/`manage Order`) ; `POST /orders/webhook/flutterwave` (secret
+  partagé)
+- [x] Vitrine : panier `localStorage` (`useSyncExternalStore`, snapshot mis en
+  cache), bouton panier dans l'en-tête, « Ajouter au panier » sur la fiche,
+  pages `/panier` (formulaire → paiement), `/commande/return` (confirme puis
+  redirige), `/commande/:id` (suivi par jeton) + BFF `/api/orders*`
+- [x] Dashboard : page `/s/:id/orders` (onglets par statut, expédier / annuler —
+  React Query) + lien « Commandes »
+- [x] Tests : 1 d'intégration (achat → paiement fake → payée + stock décrémenté
+  + expédition ; `returnUrl` hors domaine → 400, stock insuffisant → 400, jeton
+  invalide → 403, webhook sans signature → 403) ; E2E « panier → paiement fake →
+  commande payée » — 36 d'intégration, 6 E2E
+
 **Suite**
 
 - [ ] SuperTokens : rendu obsolète par OAuth (inc. 31) + OTP (inc. 23) +

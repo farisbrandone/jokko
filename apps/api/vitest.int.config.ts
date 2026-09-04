@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['test/**/*.int.spec.ts'],
-    hookTimeout: 240_000,
+    hookTimeout: 300_000,
     testTimeout: 30_000,
     fileParallelism: false,
     pool: 'forks',

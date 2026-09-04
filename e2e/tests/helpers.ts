@@ -8,8 +8,8 @@ export const rnd = () => Math.random().toString(36).slice(2, 9);
 /** Crée un vendeur + une boutique publiée avec un produit, via l'API. Retourne le slug. */
 export async function seedShop(
   request: APIRequestContext,
-  opts: { productName?: string } = {},
-): Promise<{ slug: string; shopId: string; token: string; productName: string }> {
+  opts: { productName?: string; stock?: number } = {},
+): Promise<{ slug: string; shopId: string; token: string; productName: string; productId: string }> {
   const email = `e2e-${rnd()}@example.com`;
   const reg = await request.post(`${API}/auth/register`, {
     data: { email, password: 'motdepasse1', name: 'E2E Vendeur' },
@@ -32,6 +32,7 @@ export async function seedShop(
       name: productName,
       category: 'electronique',
       price: { amount: 12000 },
+      stock: opts.stock ?? 0,
       images: ['https://picsum.photos/seed/e2e/600'],
     },
   });
@@ -55,5 +56,5 @@ export async function seedShop(
     )
     .toBeGreaterThan(0);
 
-  return { slug: shop.slug, shopId: shop.id, token, productName };
+  return { slug: shop.slug, shopId: shop.id, token, productName, productId };
 }

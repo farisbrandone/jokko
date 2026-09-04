@@ -3,6 +3,7 @@ import { getTranslations } from 'next-intl/server';
 import { whatsappLink } from '@jokko/ui';
 import type { ShopView } from '@/lib/api';
 import { SearchBox } from './search-box';
+import { CartButton } from './cart-button';
 
 export async function SiteHeader({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('nav');
@@ -18,6 +19,7 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
         <div className="flex-1 max-w-md">
           <SearchBox />
         </div>
+        <CartButton />
         {shop?.whatsapp ? (
           <a
             href={whatsappLink(shop.whatsapp, `${shop.name}, `)}

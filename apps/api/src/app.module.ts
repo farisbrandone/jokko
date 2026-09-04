@@ -25,6 +25,7 @@ import { PushModule } from './modules/push/push.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ModerationModule } from './modules/moderation/moderation.module';
 import { BillingModule } from './modules/billing/billing.module';
+import { OrdersModule } from './modules/orders/orders.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
 import { TeamModule } from './modules/team/team.module';
@@ -80,6 +81,7 @@ import { AdminModule } from './modules/admin/admin.module';
     AnalyticsModule,
     ModerationModule,
     BillingModule,
+    OrdersModule,
     ReviewsModule,
     PrivacyModule,
     TeamModule,

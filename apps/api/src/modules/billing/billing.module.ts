@@ -37,6 +37,6 @@ const gatewayProvider: Provider = {
     { provide: SUBSCRIPTION_REPOSITORY, useClass: MikroOrmSubscriptionRepository },
     { provide: PAYMENT_LOG_REPOSITORY, useClass: MikroOrmPaymentLogRepository },
   ],
-  exports: [BillingService, SUBSCRIPTION_REPOSITORY],
+  exports: [BillingService, SUBSCRIPTION_REPOSITORY, PAYMENT_GATEWAY],
 })
 export class BillingModule {}

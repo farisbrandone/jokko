@@ -91,6 +91,7 @@ export interface AppConfig {
     conversationDays: number;
     dispatchLogDays: number;
     impersonationDays: number;
+    orderDays: number;
   };
   billing: {
     priceXof: number;
@@ -214,6 +215,7 @@ export const buildConfig = (env: Env): AppConfig => ({
     conversationDays: env.RETENTION_CONVERSATION_DAYS,
     dispatchLogDays: env.RETENTION_DISPATCH_LOG_DAYS,
     impersonationDays: env.RETENTION_IMPERSONATION_DAYS,
+    orderDays: env.RETENTION_ORDER_DAYS,
   },
   billing: {
     priceXof: env.BILLING_PRICE_XOF,

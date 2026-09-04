@@ -3,6 +3,7 @@ export * from './shop';
 export * from './domain';
 export * from './catalog';
 export * from './import';
+export * from './orders';
 export * from './reviews';
 export * from './membership';
 export * from './team';

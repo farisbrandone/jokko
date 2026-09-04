@@ -11,6 +11,7 @@ export interface UserDataExport {
   billing: Record<string, unknown>[];
   buyerConversations: Record<string, unknown>[];
   buyerMessages: Record<string, unknown>[];
+  buyerOrders: Record<string, unknown>[];
 }
 
 /**
@@ -89,6 +90,17 @@ export class PrivacyService {
         ).rows
       : [];
 
+    const buyerOrders = (
+      await this.db.query(
+        `select id, shop_id, buyer_name, buyer_phone, buyer_email, note, lines, subtotal,
+                currency, status, created_at, paid_at, fulfilled_at
+           from orders
+          where buyer_email is not null and lower(buyer_email) = lower($1)
+          order by created_at`,
+        [user.email],
+      )
+    ).rows;
+
     return {
       generatedAt: new Date().toISOString(),
       user,
@@ -99,6 +111,7 @@ export class PrivacyService {
       billing,
       buyerConversations,
       buyerMessages,
+      buyerOrders,
     };
   }
 
@@ -134,6 +147,12 @@ export class PrivacyService {
       await client.query(
         `update conversations
             set buyer_name = 'Utilisateur supprimé', buyer_email = null
+          where buyer_email is not null and lower(buyer_email) = lower($1)`,
+        [u.email],
+      );
+      await client.query(
+        `update orders
+            set buyer_name = 'Utilisateur supprimé', buyer_email = null, buyer_phone = ''
           where buyer_email is not null and lower(buyer_email) = lower($1)`,
         [u.email],
       );
