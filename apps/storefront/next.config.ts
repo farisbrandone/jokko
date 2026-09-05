@@ -7,6 +7,14 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const monorepoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+// Hôte du stockage objet (images produits), à autoriser pour l'optimiseur
+// d'images de Next (`/_next/image`) — sinon 400. Par défaut : MinIO de dev.
+const mediaUrl = new URL(process.env.MEDIA_ORIGIN ?? 'http://localhost:59000');
+const mediaPattern = {
+  protocol: mediaUrl.protocol.replace(':', '') as 'http' | 'https',
+  hostname: mediaUrl.hostname,
+};
+
 const securityHeaders = [
   // La vitrine peut être intégrée par le vendeur sur son propre site → SAMEORIGIN.
   { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
@@ -42,6 +50,7 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@jokko/contracts', '@jokko/ui'],
   images: {
     remotePatterns: [
+      mediaPattern,
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
       { protocol: 'http', hostname: 'localhost' },
