@@ -237,7 +237,8 @@ Base de données + premier compte administrateur :
 
 ```bash
 pnpm --filter @jokko/api run db:migrate:prod
-pnpm --filter @jokko/api run make-admin -- <votre-email>
+# "pnpm run ... -- <email>" transmet un "--" littéral au script : passer par "exec"
+pnpm --filter @jokko/api exec tsx src/cli/make-admin.ts <votre-email>
 ```
 
 Démarrage pm2 :

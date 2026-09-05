@@ -153,7 +153,7 @@ pnpm seed
 
 1. Se donner les droits (l'API doit tourner) :
    ```bash
-   pnpm --filter @jokko/api run make-admin -- demo@jokko.test
+   pnpm --filter @jokko/api exec tsx src/cli/make-admin.ts demo@jokko.test
    ```
 2. http://localhost:3002 → se connecter avec `demo@jokko.test` → KPI plateforme,
    liste des boutiques (**suspendre / réactiver** — une boutique suspendue
