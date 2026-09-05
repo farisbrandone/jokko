@@ -4,6 +4,11 @@ import { dirname, join } from 'node:path';
 
 const monorepoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
+// Upload direct navigateur → stockage objet (product-form.tsx fait un fetch()
+// PUT vers l'URL S3 présignée) : son origine doit être autorisée en connect-src,
+// sinon le navigateur bloque la requête (violation CSP), même avec une URL
+// correcte. Par défaut, l'origine du MinIO de dev (voir docs/guide-test.md).
+const mediaOrigin = process.env.MEDIA_ORIGIN ?? 'http://localhost:59000';
 
 const securityHeaders = [
   { key: 'X-Frame-Options', value: 'DENY' },
@@ -19,7 +24,7 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: https:",
       "font-src 'self' data:",
-      "connect-src 'self'",
+      `connect-src 'self' ${mediaOrigin}`,
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
