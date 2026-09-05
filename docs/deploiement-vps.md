@@ -175,8 +175,8 @@ Déjà dans `.env` (§7) — valeurs à fournir vous-même :
 
 | Variable | Obligatoire | Commande pour la générer |
 | --- | --- | --- |
-| `POSTGRES_PASSWORD` | ✅ | `openssl rand -base64 36` |
-| `JOKKO_APP_PASSWORD` | ✅ | `openssl rand -base64 36` |
+| `POSTGRES_PASSWORD` | ✅ | `openssl rand -hex 32` (pas de `base64` : recopié dans une URL `postgres://`, un `/` généré la casserait) |
+| `JOKKO_APP_PASSWORD` | ✅ | `openssl rand -hex 32` (même raison) |
 | `MEILI_MASTER_KEY` | ✅ | `openssl rand -base64 36` |
 | `S3_SECRET_KEY` | ✅ | `openssl rand -base64 36` |
 | `AUTH_JWT_SECRET` | ✅ | `openssl rand -base64 48` |
