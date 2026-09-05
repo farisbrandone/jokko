@@ -1,4 +1,4 @@
-import { readTokens, writeTokens } from './session';
+import { clearTokens, readTokens, writeTokens } from './session';
 
 const BASE = process.env.JOKKO_API_URL ?? 'http://localhost:3333/api';
 
@@ -43,9 +43,20 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     });
     if (r.ok) {
       const data = (await r.json()) as { tokens: { accessToken: string; refreshToken: string } };
-      await writeTokens(data.tokens.accessToken, data.tokens.refreshToken);
       res = await raw(path, init, data.tokens.accessToken);
+      // Les cookies ne peuvent être modifiés que depuis une Server Action ou
+      // un Route Handler (pas depuis le rendu d'un Server Component, qui
+      // appelle aussi apiFetch) : on tente, sans jamais faire échouer l'appel
+      // API en cours si ça n'est pas permis dans ce contexte.
+      await writeTokens(data.tokens.accessToken, data.tokens.refreshToken).catch(() => {});
     }
+  }
+  if (res.status === 401) {
+    // Session irrécupérable (pas de refresh, ou refresh lui-même invalide).
+    // Le middleware, lui, sait purger les cookies de façon fiable (voir
+    // middleware.ts) — ceci n'est qu'un filet de sécurité best-effort pour
+    // les appels passés par une Route Handler (ex. /api/proxy/...).
+    await clearTokens().catch(() => {});
   }
   return res;
 }
