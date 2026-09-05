@@ -160,6 +160,10 @@ nano .env
 # → domaine déjà réglé sur scoliaa.com, rien à changer sur ce point
 # → renseigner tous les CHANGE_ME_* (générer chaque secret avec la commande
 #   indiquée en commentaire au-dessus de chaque ligne, ou voir §8)
+# → ⚠️ CHANGE_ME_pg_owner et CHANGE_ME_pg_app apparaissent CHACUN 2 fois
+#   (une fois seul, une fois recopié dans une URL DATABASE_*) : remplacez
+#   les 2 occurrences par la MÊME valeur, sinon l'API échoue à se
+#   connecter à Postgres ("password authentication failed").
 
 docker compose -f infra/docker/compose.data.yaml --env-file .env up -d
 docker compose -f infra/docker/compose.data.yaml ps   # tout doit afficher "healthy"
