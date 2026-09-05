@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
 import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, getReviews, type ProductView } from '@/lib/api';
 import { AddToCart } from '@/components/add-to-cart';
+import { ProductGallery } from '@/components/product-gallery';
 import { ContactBar } from '@/components/contact-bar';
 import { ProductReviews } from '@/components/product-reviews';
 import { ReportButton } from '@/components/report-button';
@@ -94,32 +94,7 @@ export default async function ProductPage({ params }: Params) {
       />
       <TrackOnMount name="product_view" props={{ slug: product.slug, name: product.name }} />
 
-      <div className="flex flex-col gap-3">
-        <div className="relative aspect-square rounded-[var(--radius-card)] overflow-hidden bg-[var(--color-surface-2)]">
-          {product.images[0] ? (
-            <Image
-              src={product.images[0]}
-              alt={product.name}
-              fill
-              priority
-              sizes="(max-width:768px) 100vw, 50vw"
-              className="object-cover"
-            />
-          ) : null}
-        </div>
-        {product.images.length > 1 ? (
-          <div className="grid grid-cols-4 gap-2">
-            {product.images.slice(1, 5).map((src) => (
-              <div
-                key={src}
-                className="relative aspect-square rounded-md overflow-hidden bg-[var(--color-surface-2)]"
-              >
-                <Image src={src} alt="" fill sizes="20vw" className="object-cover" />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      <ProductGallery images={product.images} alt={product.name} />
 
       <div className="flex flex-col gap-4">
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">
