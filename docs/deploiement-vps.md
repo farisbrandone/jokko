@@ -233,12 +233,10 @@ pnpm --filter @jokko/admin run build
 bash infra/scripts/build-standalone.sh
 ```
 
-Base de données + premier compte administrateur :
+Base de données :
 
 ```bash
 pnpm --filter @jokko/api run db:migrate:prod
-# "pnpm run ... -- <email>" transmet un "--" littéral au script : passer par "exec"
-pnpm --filter @jokko/api exec tsx src/cli/make-admin.ts <votre-email>
 ```
 
 Démarrage pm2 :
@@ -261,10 +259,22 @@ pm2 logs --lines 50
 nginx -t                  # toujours "ok" — confirme que rien n'a cassé pour l'autre app
 ```
 
-Dans un navigateur : créer un compte sur `dashboard.scoliaa.com`, créer
-une boutique, publier un produit, vérifier son apparition sur
-`https://<slug>.scoliaa.com` — c'est cette URL, générée automatiquement,
-que le créateur de boutique donne à ses clients, et sur laquelle ils restent
+**Premier compte administrateur** — `make-admin` ne fait que promouvoir un
+compte **déjà existant** ; il faut le créer d'abord :
+
+1. Dans un navigateur : `https://dashboard.scoliaa.com` → **Créer le compte**
+   avec votre e-mail (celui que vous voulez rendre administrateur) + un mot
+   de passe.
+2. Puis, sur le VPS :
+   ```bash
+   pnpm --filter @jokko/api exec tsx src/cli/make-admin.ts <votre-email>
+   ```
+3. Se reconnecter sur `https://console.scoliaa.com` avec ce compte.
+
+Ensuite, toujours dans un navigateur : créer une boutique, publier un
+produit, vérifier son apparition sur `https://<slug>.scoliaa.com` — c'est
+cette URL, générée automatiquement, que le créateur de boutique donne à ses
+clients, et sur laquelle ils restent
 en naviguant.
 
 ## 12. Mise à jour (redéploiement)
