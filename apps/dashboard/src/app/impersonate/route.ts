@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { apiBase } from '@/lib/api';
 import { ACCESS, REFRESH } from '@/lib/cookies';
+import { publicOrigin } from '@/lib/origin';
 
 /**
  * Point d'entrée d'une session support : la console plateforme redirige ici avec
@@ -10,7 +11,8 @@ import { ACCESS, REFRESH } from '@/lib/cookies';
 export async function GET(req: NextRequest) {
   const token = req.nextUrl.searchParams.get('token');
   const shopId = req.nextUrl.searchParams.get('shopId');
-  const login = new URL('/login', req.url);
+  const origin = publicOrigin(req);
+  const login = new URL('/login', origin);
 
   if (!token) return NextResponse.redirect(login);
 
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
   const me = (await res.json()) as { impersonatedBy?: string | null };
   if (!me.impersonatedBy) return NextResponse.redirect(login);
 
-  const dest = new URL(shopId ? `/s/${shopId}` : '/', req.url);
+  const dest = new URL(shopId ? `/s/${shopId}` : '/', origin);
   const out = NextResponse.redirect(dest);
   out.cookies.set(ACCESS, token, {
     httpOnly: true,

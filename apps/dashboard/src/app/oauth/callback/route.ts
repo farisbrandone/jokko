@@ -1,12 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { apiBase } from '@/lib/api';
+import { publicOrigin } from '@/lib/origin';
 import { writeTokens } from '@/lib/session';
 
 /** Retour OAuth : troque le ticket court contre une session, puis redirige. */
 export async function GET(req: NextRequest) {
   const ticket = req.nextUrl.searchParams.get('ticket');
-  const home = new URL('/', req.url);
-  const fail = new URL('/login?error=oauth', req.url);
+  const origin = publicOrigin(req);
+  const home = new URL('/', origin);
+  const fail = new URL('/login?error=oauth', origin);
   if (!ticket) return NextResponse.redirect(fail);
 
   try {
