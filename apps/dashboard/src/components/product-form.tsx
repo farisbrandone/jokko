@@ -29,6 +29,7 @@ export function ProductForm({ shopId, product }: Props) {
   const [stock, setStock] = useState(String(product?.stock ?? 0));
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [err, setErr] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
 
@@ -61,6 +62,7 @@ export function ProductForm({ shopId, product }: Props) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
+    setSaved(false);
     const payload = {
       name,
       category,
@@ -74,13 +76,17 @@ export function ProductForm({ shopId, product }: Props) {
       if (editing && product) {
         await patch(`/api/proxy/shops/${shopId}/products/${product.id}`, payload);
         router.refresh();
+        setSaved(true);
       } else {
         const created = await post<{ id: string }>(
           `/api/proxy/shops/${shopId}/products`,
           payload,
         );
+        if (!created?.id) throw new Error('Réponse inattendue du serveur (produit sans identifiant).');
+        // Pas de router.refresh() ici : appelé juste après router.push(), il
+        // interrompt la navigation en cours (la page de destination récupère
+        // de toute façon des données fraîches).
         router.push(`/s/${shopId}/products/${created.id}`);
-        router.refresh();
       }
     } catch (e) {
       setErr((e as Error).message);
@@ -188,6 +194,7 @@ export function ProductForm({ shopId, product }: Props) {
       </div>
 
       {err ? <p className="text-sm text-[var(--color-danger)]">{err}</p> : null}
+      {saved ? <p className="text-sm text-[var(--color-good)]">✓ Modifications enregistrées.</p> : null}
 
       <button
         disabled={busy || uploading}
