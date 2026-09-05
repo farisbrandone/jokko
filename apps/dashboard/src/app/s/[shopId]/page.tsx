@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { apiJson } from '@/lib/api';
+import { storefrontUrl } from '@/lib/origin';
 import type { ProductList, SessionUser } from '@/lib/types';
 import { Shell } from '@/components/shell';
 import { ProductRow } from '@/components/product-row';
@@ -33,6 +34,14 @@ export default async function ShopPage({ params }: Params) {
           <h1 className="font-[family-name:var(--font-display)] text-xl font-bold">
             {membership.slug}
           </h1>
+          <a
+            href={storefrontUrl(membership.slug)}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-[var(--color-muted)] underline underline-offset-2"
+          >
+            {storefrontUrl(membership.slug).replace(/^https?:\/\//, '')} ↗
+          </a>
         </div>
         <div className="flex gap-2">
           <Link
