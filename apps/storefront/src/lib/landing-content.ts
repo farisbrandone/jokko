@@ -70,7 +70,7 @@ const fr: LandingContent = {
   },
   pillars: [
     { value: '2 min', label: 'pour ouvrir votre boutique' },
-    { value: '1 lien', label: 'à partager sur WhatsApp, Instagram, TikTok' },
+    { value: '1 lien', label: 'à partager sur WhatsApp, Facebook, Instagram, TikTok' },
     { value: '0 F', label: 'pour commencer à vendre' },
     { value: '24/7', label: 'votre boutique reste ouverte' },
   ],
@@ -84,11 +84,11 @@ const fr: LandingContent = {
       points: [
         {
           title: 'Une vitrine crédible en quelques minutes',
-          body: "Nom, logo, couleurs, catégories : votre boutique ressemble à une vraie marque, pas à un catalogue improvisé.",
+          body: "Nom, couleurs de marque, catégories, phrase d'accroche : votre boutique ressemble à une vraie marque, pas à un catalogue improvisé.",
         },
         {
           title: 'Un seul lien, partout',
-          body: "votreboutique.scoliaa.com se colle dans une bio Instagram, un statut WhatsApp ou une publicité — et renvoie toujours vers vos produits à jour.",
+          body: "votreboutique.scoliaa.com se colle dans une page Facebook, une bio Instagram, un statut WhatsApp ou une publicité — et renvoie toujours vers vos produits à jour.",
         },
         {
           title: 'Paiement et commandes intégrés',
@@ -257,7 +257,7 @@ const en: LandingContent = {
   },
   pillars: [
     { value: '2 min', label: 'to open your shop' },
-    { value: '1 link', label: 'to share on WhatsApp, Instagram, TikTok' },
+    { value: '1 link', label: 'to share on WhatsApp, Facebook, Instagram, TikTok' },
     { value: 'Free', label: 'to start selling' },
     { value: '24/7', label: 'your shop stays open' },
   ],
@@ -271,11 +271,11 @@ const en: LandingContent = {
       points: [
         {
           title: 'A credible storefront in minutes',
-          body: 'Name, logo, colours, categories: your shop looks like a real brand, not an improvised list.',
+          body: 'Name, brand colours, categories, tagline: your shop looks like a real brand, not an improvised list.',
         },
         {
           title: 'One link, everywhere',
-          body: 'yourshop.scoliaa.com fits in an Instagram bio, a WhatsApp status or an ad — always pointing to your up-to-date products.',
+          body: 'yourshop.scoliaa.com fits on a Facebook page, an Instagram bio, a WhatsApp status or an ad — always pointing to your up-to-date products.',
         },
         {
           title: 'Payments and orders built in',
