@@ -1,26 +1,51 @@
-import { getTranslations } from 'next-intl/server';
-import { currentShop } from '@/lib/shop';
+import type { Metadata } from 'next';
+import { getLocale, getTranslations } from 'next-intl/server';
+import { currentShop, siteUrl } from '@/lib/shop';
 import { getDirectory, searchProducts } from '@/lib/api';
+import { landingContent } from '@/lib/landing-content';
 import { ProductGrid } from '@/components/product-grid';
 import { Facets } from '@/components/facets';
-import { ShopDirectory } from '@/components/shop-directory';
+import { LandingPage } from '@/components/landing/landing-page';
+import type { AppLocale } from '@/i18n/request';
 
 export const revalidate = 60;
 
-type Params = { searchParams: Promise<{ q?: string; vertical?: string; page?: string }> };
+export async function generateMetadata(): Promise<Metadata> {
+  const shop = await currentShop();
+  if (shop) return {}; // la home de boutique hérite des métadonnées du layout
 
-export default async function HomePage({ searchParams }: Params) {
+  const [base, locale] = await Promise.all([siteUrl(), getLocale()]);
+  const c = landingContent(locale as AppLocale);
+  return {
+    title: c.meta.title,
+    description: c.meta.description,
+    keywords: c.meta.keywords,
+    alternates: { canonical: '/' },
+    openGraph: {
+      type: 'website',
+      siteName: 'Jokko',
+      title: c.meta.title,
+      description: c.meta.description,
+      url: base,
+      locale: locale.replace('-', '_'),
+    },
+    twitter: { card: 'summary_large_image', title: c.meta.title, description: c.meta.description },
+  };
+}
+
+export default async function HomePage() {
   const shop = await currentShop();
 
-  // Hors d'une boutique (domaine apex) : annuaire public des boutiques inscrites.
+  // Domaine apex : page d'accueil marketing + aperçu de l'annuaire.
   if (!shop) {
-    const sp = await searchParams;
-    const query = { q: sp.q, vertical: sp.vertical };
-    const data = await getDirectory({
-      ...query,
-      page: sp.page ? Number(sp.page) : undefined,
-    }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 24 }));
-    return <ShopDirectory data={data} query={query} />;
+    const [base, locale, directory] = await Promise.all([
+      siteUrl(),
+      getLocale(),
+      getDirectory({ page: 1 }).catch(() => ({ items: [], total: 0, page: 1, pageSize: 24 })),
+    ]);
+    return (
+      <LandingPage locale={locale as AppLocale} apex={base} featured={directory.items} />
+    );
   }
 
   const [results, t] = await Promise.all([

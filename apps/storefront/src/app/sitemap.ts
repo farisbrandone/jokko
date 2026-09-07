@@ -8,7 +8,12 @@ export const revalidate = 3600;
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = await siteUrl();
   const shop = await currentShop();
-  if (!shop) return [{ url: base, lastModified: new Date() }];
+  if (!shop) {
+    return [
+      { url: `${base}/`, changeFrequency: 'weekly', priority: 1 },
+      { url: `${base}/boutiques`, changeFrequency: 'daily', priority: 0.8 },
+    ];
+  }
 
   const slugs: string[] = [];
   try {

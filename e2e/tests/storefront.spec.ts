@@ -43,7 +43,7 @@ test("l'annuaire du domaine apex liste une boutique inscrite", async ({ page, re
 
   // Recherche par marqueur unique → l'annuaire ne renvoie que cette boutique.
   await expect(async () => {
-    await page.goto(`http://lvh.me:3000/?q=${marker}`);
+    await page.goto(`http://lvh.me:3000/boutiques?q=${marker}`);
     await expect(page.getByRole('heading', { name: /boutiques Jokko/i })).toBeVisible();
     await expect(page.getByText(tagline)).toBeVisible({ timeout: 3_000 });
   }).toPass({ timeout: 20_000 });
