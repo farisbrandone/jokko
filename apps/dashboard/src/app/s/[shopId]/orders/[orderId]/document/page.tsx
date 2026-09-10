@@ -72,6 +72,8 @@ export default async function SellerOrderDocument({ params, searchParams }: Para
           buyerEmail: order.buyerEmail,
           lines: order.lines.map((l) => ({ name: l.name, qty: l.qty, unitAmount: l.unitAmount })),
           subtotal: order.subtotal,
+          discountCode: order.discountCode,
+          discountAmount: order.discountAmount,
           deliveryFee: order.deliveryFee,
           total: order.total,
           currency: order.currency,

@@ -12,6 +12,11 @@ import {
   type ShopRepository,
 } from '../../shop/domain/ports/shop.repository';
 import { PAYMENT_GATEWAY, type PaymentGateway } from '../../billing/domain/ports';
+import {
+  DISCOUNT_CODE_REPOSITORY,
+  type DiscountCodeRepository,
+} from '../../discounts/domain/ports';
+import type { DiscountCode } from '../../discounts/domain/discount-code.aggregate';
 import { Order } from '../domain/order.aggregate';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
 import { OrderWhatsappNotifier } from './order-whatsapp.notifier';
@@ -26,6 +31,7 @@ export class PlaceOrderUseCase {
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
     @Inject(SHOP_REPOSITORY) private readonly shops: ShopRepository,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
+    @Inject(DISCOUNT_CODE_REPOSITORY) private readonly discounts: DiscountCodeRepository,
     private readonly whatsapp: OrderWhatsappNotifier,
   ) {
     this.rootDomain = config.get('tenant', { infer: true }).rootDomain;
@@ -64,6 +70,21 @@ export class PlaceOrderUseCase {
     const address = input.deliveryAddress?.trim();
     if (!address) throw new BadRequestException('Adresse de livraison requise');
     return { label: zone.label, fee: zone.fee, address };
+  }
+
+  /** Revalide le code saisi et recalcule la remise sur le sous-total réel. */
+  private async resolveDiscount(
+    shopId: string,
+    code: string | undefined,
+    subtotal: number,
+  ): Promise<{ discount: DiscountCode; amount: number } | null> {
+    if (!code?.trim()) return null;
+    const discount = await this.discounts.findByShopAndCode(shopId, code);
+    if (!discount) throw new BadRequestException('Code de réduction inconnu');
+    const reason = discount.rejectionReason(subtotal);
+    if (reason) throw new BadRequestException(reason);
+    const amount = discount.computeDiscount(subtotal);
+    return amount > 0 ? { discount, amount } : null;
   }
 
   async execute(shopId: string, input: CreateOrderInput): Promise<OrderCheckout> {
@@ -116,6 +137,9 @@ export class PlaceOrderUseCase {
       }
     }
 
+    const subtotal = lines.reduce((sum, l) => sum + l.unitAmount * l.qty, 0);
+    const applied = await this.resolveDiscount(shopId, input.discountCode, subtotal);
+
     const { order, token } = Order.create({
       shopId,
       buyerName: input.buyerName,
@@ -129,11 +153,17 @@ export class PlaceOrderUseCase {
       deliveryZoneLabel: delivery.label,
       deliveryFee: delivery.fee,
       deliveryAddress: delivery.address,
+      discountCode: applied?.discount.code ?? null,
+      discountAmount: applied?.amount ?? 0,
     });
 
     // Paiement à la livraison : pas de passerelle, la commande entre en « à livrer ».
     if (input.paymentMethod === 'cash_on_delivery') {
       await this.orders.save(order);
+      if (applied) {
+        applied.discount.redeem();
+        await this.discounts.save(applied.discount);
+      }
       void this.whatsapp.orderPlaced(order.toSnapshot());
       return { orderId: order.id, buyerToken: token, checkoutUrl: null };
     }

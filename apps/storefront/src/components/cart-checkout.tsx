@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatMoney } from '@jokko/ui';
 import { cart, lineKey, rememberOrder, useCart } from '@/lib/cart';
@@ -20,11 +20,52 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
+  const [codeInput, setCodeInput] = useState('');
+  const [discount, setDiscount] = useState<{ code: string; label: string; amount: number } | null>(
+    null,
+  );
+  const [discountBusy, setDiscountBusy] = useState(false);
+  const [discountErr, setDiscountErr] = useState<string | null>(null);
+
   const cartCurrency = items[0]?.currency ?? currency;
   const subtotal = items.reduce((s, i) => s + i.unitAmount * i.qty, 0);
   const selectedZone = useMemo(() => zones.find((z) => z.id === zoneId), [zones, zoneId]);
   const deliveryFee = deliveryMethod === 'delivery' ? (selectedZone?.fee ?? 0) : 0;
-  const total = subtotal + deliveryFee;
+  const discountAmount = discount ? Math.min(discount.amount, subtotal) : 0;
+  const total = Math.max(0, subtotal - discountAmount + deliveryFee);
+
+  // Le montant d'une remise en % dépend du sous-total : si le panier change
+  // après application, on invalide le code (l'acheteur le ré-applique).
+  useEffect(() => {
+    setDiscount(null);
+    setDiscountErr(null);
+  }, [subtotal]);
+
+  const applyCode = async () => {
+    const code = codeInput.trim();
+    if (!code) return;
+    setDiscountBusy(true);
+    setDiscountErr(null);
+    try {
+      const res = await fetch('/api/discounts/preview', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ code, subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(
+          data?.message ?? (data?.issues?.[0]?.message as string) ?? 'Code invalide',
+        );
+      }
+      setDiscount({ code: data.code, label: data.label, amount: data.discountAmount });
+    } catch (e) {
+      setDiscount(null);
+      setDiscountErr((e as Error).message);
+    } finally {
+      setDiscountBusy(false);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -63,6 +104,7 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
           deliveryMethod,
           deliveryZoneId: deliveryMethod === 'delivery' ? selectedZone?.id : undefined,
           deliveryAddress: deliveryMethod === 'delivery' ? address.trim() : undefined,
+          discountCode: discount?.code,
         }),
       });
       const data = await res.json();
@@ -245,12 +287,67 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
           className={field}
         />
 
+        {/* Code promo */}
+        <fieldset className="flex flex-col gap-1.5">
+          <span className="text-sm font-medium">Code promo</span>
+          {discount ? (
+            <div className="flex items-center justify-between rounded-[var(--radius-btn)] border border-[var(--color-brand)] bg-[var(--color-brand-soft)] px-3 py-2 text-sm">
+              <span>
+                <strong>{discount.code}</strong> appliqué — {discount.label}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setDiscount(null);
+                  setCodeInput('');
+                }}
+                className="text-xs text-[var(--color-danger)] underline"
+              >
+                Retirer
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <input
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    void applyCode();
+                  }
+                }}
+                placeholder="Ex. BIENVENUE10"
+                maxLength={24}
+                className={`${field} flex-1 uppercase`}
+              />
+              <button
+                type="button"
+                onClick={() => void applyCode()}
+                disabled={discountBusy || !codeInput.trim()}
+                className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 text-sm disabled:opacity-50"
+              >
+                {discountBusy ? '…' : 'Appliquer'}
+              </button>
+            </div>
+          )}
+          {discountErr ? (
+            <p className="text-xs text-[var(--color-danger)]">{discountErr}</p>
+          ) : null}
+        </fieldset>
+
         {/* Récapitulatif */}
         <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] p-3 text-sm">
           <div className="flex justify-between">
             <span className="text-[var(--color-muted)]">Sous-total</span>
             <span>{formatMoney(subtotal, cartCurrency)}</span>
           </div>
+          {discountAmount > 0 ? (
+            <div className="mt-1 flex justify-between text-[var(--color-good)]">
+              <span>Remise{discount ? ` (${discount.code})` : ''}</span>
+              <span>− {formatMoney(discountAmount, cartCurrency)}</span>
+            </div>
+          ) : null}
           <div className="mt-1 flex justify-between">
             <span className="text-[var(--color-muted)]">Livraison</span>
             <span>{deliveryFee > 0 ? formatMoney(deliveryFee, cartCurrency) : 'Gratuit'}</span>

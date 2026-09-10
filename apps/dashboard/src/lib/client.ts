@@ -19,6 +19,15 @@ export async function patch<T>(path: string, body: unknown): Promise<T> {
   return handle<T>(res);
 }
 
+export async function del(path: string): Promise<void> {
+  const res = await fetch(path, { method: 'DELETE' });
+  if (!res.ok && res.status !== 204) {
+    const text = await res.text();
+    const data = text ? JSON.parse(text) : {};
+    throw new Error(data?.error ?? data?.message ?? `Erreur ${res.status}`);
+  }
+}
+
 async function handle<T>(res: Response): Promise<T> {
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};

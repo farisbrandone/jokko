@@ -52,6 +52,19 @@ export interface NotificationSettings {
   cooldownSeconds: number;
 }
 
+export interface DiscountCode {
+  id: string;
+  code: string;
+  kind: 'percent' | 'fixed';
+  value: number;
+  minSubtotal: number | null;
+  maxRedemptions: number | null;
+  redeemedCount: number;
+  expiresAt: string | null;
+  active: boolean;
+  createdAt: string;
+}
+
 export interface BillingSummary {
   plan: 'trial' | 'pro';
   status: 'trialing' | 'active' | 'past_due' | 'canceled';

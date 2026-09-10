@@ -38,6 +38,8 @@ export const CreateOrderSchema = z.object({
   /** Requis si deliveryMethod === 'delivery' — id d'une zone de la boutique. */
   deliveryZoneId: z.string().max(40).optional(),
   deliveryAddress: z.string().trim().max(600).optional(),
+  /** Code de réduction saisi par l'acheteur — revalidé et recalculé côté serveur. */
+  discountCode: z.string().trim().min(3).max(24).optional(),
   /** URL de retour après paiement (fournie par la vitrine, sur son propre domaine). */
   returnUrl: z.string().url().max(2048),
 });
@@ -74,6 +76,8 @@ export const OrderSchema = z.object({
   deliveryZoneLabel: z.string().nullable(),
   deliveryFee: z.number().int().nonnegative(),
   deliveryAddress: z.string().nullable(),
+  discountCode: z.string().nullable(),
+  discountAmount: z.number().int().nonnegative(),
   total: z.number().int().nonnegative(),
   createdAt: z.string(),
   paidAt: z.string().nullable(),

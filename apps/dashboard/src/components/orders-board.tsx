@@ -104,6 +104,12 @@ export function OrdersBoard({ shopId }: { shopId: string }) {
               </ul>
 
               <div className="mt-2 rounded-[var(--radius-btn)] bg-[var(--color-surface-2)] p-2 text-sm">
+                {o.discountAmount > 0 ? (
+                  <div className="flex justify-between text-[var(--color-good)]">
+                    <span>Remise{o.discountCode ? ` (${o.discountCode})` : ''}</span>
+                    <span>− {formatMoney(o.discountAmount, o.currency)}</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between">
                   <span className="text-[var(--color-muted)]">
                     {o.deliveryZoneLabel ? `Livraison — ${o.deliveryZoneLabel}` : 'Retrait en boutique'}

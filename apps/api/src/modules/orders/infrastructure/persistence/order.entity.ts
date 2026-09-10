@@ -56,6 +56,12 @@ export class OrderEntity {
   @Property({ type: 'string', length: 600, fieldName: 'delivery_address', nullable: true })
   deliveryAddress: string | null = null;
 
+  @Property({ type: 'string', length: 24, fieldName: 'discount_code', nullable: true })
+  discountCode: string | null = null;
+
+  @Property({ type: 'integer', fieldName: 'discount_amount' })
+  discountAmount = 0;
+
   @Property({ type: 'string', length: 64, fieldName: 'buyer_token_hash' })
   buyerTokenHash!: string;
 

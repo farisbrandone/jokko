@@ -40,6 +40,8 @@ const order: OrderSnapshot = {
   deliveryZoneLabel: 'Dakar centre',
   deliveryFee: 1000,
   deliveryAddress: 'Plateau',
+  discountCode: null,
+  discountAmount: 0,
   buyerTokenHash: 'h',
   txRef: null,
   providerTxId: null,

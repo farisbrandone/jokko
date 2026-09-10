@@ -22,6 +22,8 @@ export interface OrderSnapshot {
   deliveryZoneLabel: string | null;
   deliveryFee: number;
   deliveryAddress: string | null;
+  discountCode: string | null;
+  discountAmount: number;
   buyerTokenHash: string;
   txRef: string | null;
   providerTxId: string | null;
@@ -52,6 +54,8 @@ export class Order {
     private readonly _deliveryZoneLabel: string | null,
     private readonly _deliveryFee: number,
     private readonly _deliveryAddress: string | null,
+    private readonly _discountCode: string | null,
+    private readonly _discountAmount: number,
     private readonly _buyerTokenHash: string,
     private _txRef: string | null,
     private _providerTxId: string | null,
@@ -74,10 +78,17 @@ export class Order {
     deliveryZoneLabel?: string | null;
     deliveryFee?: number;
     deliveryAddress?: string | null;
+    discountCode?: string | null;
+    discountAmount?: number;
   }): { order: Order; token: string } {
     const token = randomBytes(24).toString('base64url');
     const subtotal = props.lines.reduce((sum, l) => sum + l.unitAmount * l.qty, 0);
     const fee = Math.max(0, Math.round(props.deliveryFee ?? 0));
+    const discountAmount = Math.max(
+      0,
+      Math.min(Math.round(props.discountAmount ?? 0), subtotal),
+    );
+    const discountCode = discountAmount > 0 ? (props.discountCode?.trim().toUpperCase() ?? null) : null;
     const status: OrderStatus =
       props.paymentMethod === 'cash_on_delivery' ? 'to_deliver' : 'pending_payment';
     const now = new Date();
@@ -97,6 +108,8 @@ export class Order {
       props.deliveryZoneLabel?.trim() || null,
       fee,
       props.deliveryAddress?.trim() || null,
+      discountCode,
+      discountAmount,
       hashOrderToken(token),
       null,
       null,
@@ -125,6 +138,8 @@ export class Order {
       s.deliveryZoneLabel,
       s.deliveryFee,
       s.deliveryAddress,
+      s.discountCode,
+      s.discountAmount,
       s.buyerTokenHash,
       s.txRef,
       s.providerTxId,
@@ -144,9 +159,15 @@ export class Order {
   get deliveryFee(): number {
     return this._deliveryFee;
   }
-  /** Montant à encaisser : sous-total + frais de livraison. */
+  get discountCode(): string | null {
+    return this._discountCode;
+  }
+  get discountAmount(): number {
+    return this._discountAmount;
+  }
+  /** Montant à encaisser : sous-total − remise + frais de livraison (min. 0). */
   get total(): number {
-    return this._subtotal + this._deliveryFee;
+    return Math.max(0, this._subtotal - this._discountAmount + this._deliveryFee);
   }
   get currency(): string {
     return this._currency;
@@ -220,6 +241,8 @@ export class Order {
       deliveryZoneLabel: this._deliveryZoneLabel,
       deliveryFee: this._deliveryFee,
       deliveryAddress: this._deliveryAddress,
+      discountCode: this._discountCode,
+      discountAmount: this._discountAmount,
       buyerTokenHash: this._buyerTokenHash,
       txRef: this._txRef,
       providerTxId: this._providerTxId,

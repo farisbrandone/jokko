@@ -5,6 +5,7 @@ import { ShopModule } from '../shop/shop.module';
 import { CatalogModule } from '../catalog/catalog.module';
 import { BillingModule } from '../billing/billing.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { DiscountsModule } from '../discounts/discounts.module';
 import { OrderEntity } from './infrastructure/persistence/order.entity';
 import { MikroOrmOrderRepository } from './infrastructure/persistence/mikro-orm-order.repository';
 import { ORDER_REPOSITORY } from './domain/ports';
@@ -23,6 +24,7 @@ import { OrdersWebhookController } from './presentation/orders-webhook.controlle
     CatalogModule,
     BillingModule,
     NotificationsModule,
+    DiscountsModule,
   ],
   controllers: [OrdersController, OrdersWebhookController],
   providers: [

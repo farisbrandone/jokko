@@ -26,6 +26,8 @@ export class MikroOrmOrderRepository implements OrderRepository {
       deliveryZoneLabel: row.deliveryZoneLabel,
       deliveryFee: row.deliveryFee,
       deliveryAddress: row.deliveryAddress,
+      discountCode: row.discountCode,
+      discountAmount: row.discountAmount,
       buyerTokenHash: row.buyerTokenHash,
       txRef: row.txRef,
       providerTxId: row.providerTxId,
@@ -55,6 +57,8 @@ export class MikroOrmOrderRepository implements OrderRepository {
     row.deliveryZoneLabel = s.deliveryZoneLabel;
     row.deliveryFee = s.deliveryFee;
     row.deliveryAddress = s.deliveryAddress;
+    row.discountCode = s.discountCode;
+    row.discountAmount = s.discountAmount;
     row.buyerTokenHash = s.buyerTokenHash;
     row.txRef = s.txRef;
     row.providerTxId = s.providerTxId;

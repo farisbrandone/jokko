@@ -22,6 +22,8 @@ export interface OrderDocumentData {
   buyerEmail: string | null;
   lines: { name: string; qty: number; unitAmount: number }[];
   subtotal: number;
+  discountCode?: string | null;
+  discountAmount?: number;
   deliveryFee: number;
   total: number;
   currency: string;
@@ -166,6 +168,12 @@ export function OrderDocument({
       {showPrices ? (
         <div style={{ marginTop: 14, marginLeft: 'auto', width: 260 }}>
           <Row label="Sous-total" value={money(order.subtotal)} />
+          {order.discountAmount && order.discountAmount > 0 ? (
+            <Row
+              label={`Remise${order.discountCode ? ` (${order.discountCode})` : ''}`}
+              value={`− ${money(order.discountAmount)}`}
+            />
+          ) : null}
           <Row
             label={order.deliveryZoneLabel ? `Livraison (${order.deliveryZoneLabel})` : 'Livraison'}
             value={order.deliveryFee > 0 ? money(order.deliveryFee) : 'Gratuit'}

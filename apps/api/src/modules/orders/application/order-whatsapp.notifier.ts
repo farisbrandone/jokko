@@ -55,7 +55,7 @@ export class OrderWhatsappNotifier {
       shopName: s?.name ?? 'la boutique',
       shopWhatsapp: s?.whatsapp ?? null,
       url: s ? this.trackingUrl(s.slug, o.id) : null,
-      total: o.subtotal + o.deliveryFee,
+      total: Math.max(0, o.subtotal - o.discountAmount + o.deliveryFee),
       ref: o.id.slice(0, 8).toUpperCase(),
       count: o.lines.reduce((n, l) => n + l.qty, 0),
     };

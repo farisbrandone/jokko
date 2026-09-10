@@ -1623,4 +1623,89 @@ describe('commandes acheteur & paiement (checkout)', () => {
     expect(byLabel['Bleu / M']).toBe(5); // inchangé
     expect(prod.body.stock).toBe(5);
   });
+
+  it('code de réduction : remise appliquée au sous-total, usage incrémenté, garde-fous', async () => {
+    const t = await newSeller('promo-seller@ex.com');
+    const shop = await newShop(t, 'Promo Shop');
+    const auth = { authorization: `Bearer ${t}` };
+
+    const code = await http
+      .post(`/api/shops/${shop}/discounts`)
+      .set(auth)
+      .send({ code: 'bienvenue10', kind: 'percent', value: 10, minSubtotal: 15000, maxRedemptions: 1 })
+      .expect(201);
+    expect(code.body).toMatchObject({ code: 'BIENVENUE10', kind: 'percent', value: 10, active: true });
+
+    const created = await http
+      .post(`/api/shops/${shop}/products`)
+      .set(auth)
+      .send({
+        name: 'Sac',
+        category: 'mode-accessoires',
+        price: { amount: 20000 },
+        images: ['https://x/y.jpg'],
+        stock: 5,
+      })
+      .expect(201);
+    const pid = created.body.id as string;
+    await http.post(`/api/shops/${shop}/products/${pid}/publish`).set(auth).expect(201);
+
+    // sous-total sous le minimum → refus
+    await http
+      .post(`/api/shops/${shop}/discounts/preview`)
+      .send({ code: 'BIENVENUE10', subtotal: 10000 })
+      .expect(400);
+
+    // aperçu OK
+    const preview = await http
+      .post(`/api/shops/${shop}/discounts/preview`)
+      .send({ code: 'BIENVENUE10', subtotal: 20000 })
+      .expect(200);
+    expect(preview.body.discountAmount).toBe(2000);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: pid, qty: 1 }],
+        buyerName: 'Ama',
+        buyerPhone: '+237690004455',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        discountCode: 'bienvenue10',
+        returnUrl: 'http://promo-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    const orderId = co.body.orderId as string;
+    const token = co.body.buyerToken as string;
+
+    const track = await http
+      .get(`/api/shops/${shop}/orders/${orderId}/track?token=${token}`)
+      .expect(200);
+    expect(track.body.subtotal).toBe(20000);
+    expect(track.body.discountCode).toBe('BIENVENUE10');
+    expect(track.body.discountAmount).toBe(2000);
+    expect(track.body.total).toBe(18000);
+
+    // usage consommé → maxRedemptions atteint
+    const list = await http.get(`/api/shops/${shop}/discounts`).set(auth).expect(200);
+    expect(list.body[0].redeemedCount).toBe(1);
+    await http
+      .post(`/api/shops/${shop}/discounts/preview`)
+      .send({ code: 'BIENVENUE10', subtotal: 20000 })
+      .expect(400);
+
+    // code inconnu → 400 à la commande
+    await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: pid, qty: 1 }],
+        buyerName: 'Ama',
+        buyerPhone: '+237690004455',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        discountCode: 'NOPExx',
+        returnUrl: 'http://promo-shop.lvh.me/commande/return',
+      })
+      .expect(400);
+  });
 });

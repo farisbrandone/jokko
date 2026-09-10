@@ -71,6 +71,12 @@ export default function OrderPage({ params }: { params: Promise<{ orderId: strin
           <span className="text-[var(--color-muted)]">Sous-total</span>
           <span>{formatMoney(order.subtotal, order.currency)}</span>
         </div>
+        {order.discountAmount > 0 ? (
+          <div className="mt-1 flex justify-between text-[var(--color-good)]">
+            <span>Remise{order.discountCode ? ` (${order.discountCode})` : ''}</span>
+            <span>− {formatMoney(order.discountAmount, order.currency)}</span>
+          </div>
+        ) : null}
         <div className="mt-1 flex justify-between">
           <span className="text-[var(--color-muted)]">
             {order.deliveryZoneLabel ? `Livraison — ${order.deliveryZoneLabel}` : 'Retrait en boutique'}

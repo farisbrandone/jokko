@@ -10,6 +10,10 @@ import {
 } from '../../identity/domain/ports';
 import { Mailer } from '../../notifications/infrastructure/mailer';
 import { renderEmail } from '../../notifications/infrastructure/email-template';
+import {
+  DISCOUNT_CODE_REPOSITORY,
+  type DiscountCodeRepository,
+} from '../../discounts/domain/ports';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
 import { OrderWhatsappNotifier } from './order-whatsapp.notifier';
 
@@ -29,6 +33,7 @@ export class ApplyOrderPaymentUseCase {
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
     @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
+    @Inject(DISCOUNT_CODE_REPOSITORY) private readonly discounts: DiscountCodeRepository,
     private readonly mailer: Mailer,
     private readonly whatsapp: OrderWhatsappNotifier,
   ) {}
@@ -51,10 +56,23 @@ export class ApplyOrderPaymentUseCase {
     if (!order.markPaid(verified.providerTxId)) return 'ignored';
     await this.orders.save(order);
     await this.decrementStock(order.shopId, order.lines);
+    await this.redeemDiscount(order.shopId, order.discountCode);
     await this.notifySeller(order);
     void this.whatsapp.orderPaid(order.toSnapshot());
     this.logger.log(`commande ${order.id} payée (${txRef})`);
     return 'applied';
+  }
+
+  private async redeemDiscount(shopId: string, code: string | null): Promise<void> {
+    if (!code) return;
+    try {
+      const discount = await this.discounts.findByShopAndCode(shopId, code);
+      if (!discount) return;
+      discount.redeem();
+      await this.discounts.save(discount);
+    } catch (err) {
+      this.logger.warn(`incrément d'usage du code ${code} échoué : ${(err as Error).message}`);
+    }
   }
 
   private async decrementStock(
