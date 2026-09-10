@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { currentShop } from '@/lib/shop';
 import { searchProducts } from '@/lib/api';
-import { ProductGrid } from '@/components/product-grid';
+import { ProductBrowser } from '@/components/product-browser';
 import { TrackOnMount } from '@/components/track-event';
 import { ShopUnavailable } from '@/components/shop-unavailable';
 
@@ -20,15 +20,16 @@ export default async function SearchPage({ searchParams }: Search) {
 
   const sp = await searchParams;
   const q = (sp.q ?? '').trim();
+  const params = {
+    q,
+    category: sp.category,
+    minPrice: sp.minPrice,
+    maxPrice: sp.maxPrice,
+    inStock: sp.inStock,
+    sort: sp.sort ?? 'relevance',
+  };
   const [results, t] = await Promise.all([
-    searchProducts(shop.id, {
-      q,
-      category: sp.category,
-      minPrice: sp.minPrice,
-      maxPrice: sp.maxPrice,
-      sort: sp.sort,
-      pageSize: 48,
-    }),
+    searchProducts(shop.id, { ...params, pageSize: 24 }),
     getTranslations('search'),
   ]);
 
@@ -38,7 +39,18 @@ export default async function SearchPage({ searchParams }: Search) {
       <h1 className="text-lg">
         {q ? t('title', { query: q }) : t('count', { count: results.total })}
       </h1>
-      <ProductGrid hits={results.items} />
+      <ProductBrowser
+        initial={results}
+        currency={shop.currency}
+        initialParams={{
+          q,
+          category: sp.category,
+          minPrice: sp.minPrice,
+          maxPrice: sp.maxPrice,
+          inStock: sp.inStock === 'true',
+          sort: sp.sort ?? 'relevance',
+        }}
+      />
     </div>
   );
 }

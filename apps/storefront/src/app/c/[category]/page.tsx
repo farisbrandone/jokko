@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { currentShop } from '@/lib/shop';
 import { searchProducts } from '@/lib/api';
-import { ProductGrid } from '@/components/product-grid';
-import { Facets } from '@/components/facets';
+import { ProductBrowser } from '@/components/product-browser';
 import { ShopUnavailable } from '@/components/shop-unavailable';
 
 export const revalidate = 60;
@@ -20,19 +19,18 @@ export default async function CategoryPage({ params }: Params) {
   if (!shop) return <ShopUnavailable />;
 
   const category = decodeURIComponent((await params).category);
-  const results = await searchProducts(shop.id, { category, pageSize: 48, sort: 'newest' });
+  const results = await searchProducts(shop.id, { category, pageSize: 24, sort: 'newest' });
 
   return (
     <div className="flex flex-col gap-4">
       <h1 className="font-[family-name:var(--font-display)] text-xl font-bold capitalize">
         {category.replace(/-/g, ' ')}
       </h1>
-      <div className="grid md:grid-cols-[180px_1fr] gap-6">
-        <aside className="hidden md:block">
-          <Facets basePath="/" facets={results.facets} activeCategory={category} />
-        </aside>
-        <ProductGrid hits={results.items} />
-      </div>
+      <ProductBrowser
+        initial={results}
+        currency={shop.currency}
+        initialParams={{ category, sort: 'newest' }}
+      />
     </div>
   );
 }

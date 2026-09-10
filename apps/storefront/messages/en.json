@@ -48,6 +48,25 @@
   "facets": {
     "categories": "Categories"
   },
+  "browse": {
+    "all": "All",
+    "filters": "Filters",
+    "sort": "Sort",
+    "sortRelevance": "Relevance",
+    "sortNewest": "Newest",
+    "sortPriceAsc": "Price: low to high",
+    "sortPriceDesc": "Price: high to low",
+    "priceRange": "Price",
+    "priceMin": "Min",
+    "priceMax": "Max",
+    "inStockOnly": "In stock only",
+    "apply": "Show results",
+    "clear": "Clear all",
+    "results": "{count, plural, =0 {No products} one {# product} other {# products}}",
+    "loadingMore": "Loading…",
+    "end": "You have seen everything.",
+    "empty": "No product matches these filters."
+  },
   "thread": {
     "title": "Conversation with {shop}",
     "about": "About {product}",
