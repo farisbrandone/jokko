@@ -6,6 +6,7 @@ import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, getReviews, type ProductView } from '@/lib/api';
 import { AddToCart } from '@/components/add-to-cart';
 import { ProductGallery } from '@/components/product-gallery';
+import { QuickOrder } from '@/components/quick-order';
 import { ContactBar } from '@/components/contact-bar';
 import { ProductReviews } from '@/components/product-reviews';
 import { ReportButton } from '@/components/report-button';
@@ -50,7 +51,8 @@ export default async function ProductPage({ params }: Params) {
   if (!product) notFound();
 
   const t = await getTranslations('product');
-  const url = `${await siteUrl()}/p/${product.slug}`;
+  const base = await siteUrl();
+  const url = `${base}/p/${product.slug}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -125,6 +127,18 @@ export default async function ProductPage({ params }: Params) {
             image: product.images[0] ?? null,
           }}
           stock={product.stock}
+        />
+
+        <QuickOrder
+          shopName={shop.name}
+          whatsapp={shop.whatsapp}
+          productId={product.id}
+          productName={product.name}
+          productUrl={url}
+          unitAmount={product.price.amount}
+          currency={product.price.currency}
+          stock={product.stock}
+          siteUrl={base}
         />
 
         <ContactBar

@@ -28,6 +28,11 @@ test('la vitrine affiche la boutique et sa fiche produit', async ({ page, reques
   // Barre de contact (deep links WhatsApp/SMS/appel + partage).
   await expect(article.getByRole('button', { name: 'Partager' })).toBeVisible();
   await expect(article.getByRole('link', { name: 'WhatsApp' })).toBeVisible();
+  // Commande en un message : le canal e-mail est toujours proposé.
+  const orderEmail = article.getByRole('button', { name: /Commander par e-mail/i });
+  await expect(orderEmail).toBeVisible();
+  await orderEmail.click();
+  await expect(article.getByPlaceholder(/Adresse de livraison/i)).toBeVisible();
 });
 
 test("l'annuaire du domaine apex liste une boutique inscrite", async ({ page, request }) => {
