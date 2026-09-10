@@ -18,15 +18,17 @@ export default function OrderPage({ params }: { params: Promise<{ orderId: strin
   const { orderId } = use(params);
   const [order, setOrder] = useState<Order | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
     const pending = recallOrder();
-    const token = pending?.orderId === orderId ? pending.buyerToken : null;
-    if (!token) {
+    const t = pending?.orderId === orderId ? pending.buyerToken : null;
+    if (!t) {
       setError('Cette commande ne peut pas être affichée sur cet appareil.');
       return;
     }
-    fetch(`/api/orders/track?orderId=${orderId}&token=${encodeURIComponent(token)}`)
+    setToken(t);
+    fetch(`/api/orders/track?orderId=${orderId}&token=${encodeURIComponent(t)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('introuvable'))))
       .then(setOrder)
       .catch(() => setError('Commande introuvable.'));
@@ -102,6 +104,27 @@ export default function OrderPage({ params }: { params: Promise<{ orderId: strin
         <p className="mt-4 text-sm text-[var(--color-good)]">
           Merci ! Le vendeur a été prévenu et vous recontactera pour la livraison.
         </p>
+      ) : null}
+
+      {token ? (
+        <div className="mt-6 flex flex-wrap gap-2 text-sm">
+          <a
+            href={`/commande/${orderId}/document?type=invoice&token=${encodeURIComponent(token)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 hover:bg-[var(--color-surface-2)]"
+          >
+            Facture
+          </a>
+          <a
+            href={`/commande/${orderId}/document?type=bon&token=${encodeURIComponent(token)}`}
+            target="_blank"
+            rel="noreferrer"
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-3 py-2 hover:bg-[var(--color-surface-2)]"
+          >
+            Bon de livraison
+          </a>
+        </div>
       ) : null}
     </div>
   );

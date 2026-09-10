@@ -127,25 +127,35 @@ export function OrdersBoard({ shopId }: { shopId: string }) {
                 <p className="mt-1 text-sm italic text-[var(--color-muted)]">« {o.note} »</p>
               ) : null}
 
-              {o.status === 'paid' || o.status === 'to_deliver' ? (
-                <div className="mt-3 flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => act.mutate({ id: o.id, action: 'fulfill' })}
-                    disabled={act.isPending}
-                  >
-                    {o.status === 'to_deliver' ? 'Marquer livrée' : 'Marquer expédiée'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    onClick={() => act.mutate({ id: o.id, action: 'cancel' })}
-                    disabled={act.isPending}
-                  >
-                    Annuler
-                  </Button>
-                </div>
-              ) : null}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {o.status === 'paid' || o.status === 'to_deliver' ? (
+                  <>
+                    <Button
+                      size="sm"
+                      onClick={() => act.mutate({ id: o.id, action: 'fulfill' })}
+                      disabled={act.isPending}
+                    >
+                      {o.status === 'to_deliver' ? 'Marquer livrée' : 'Marquer expédiée'}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => act.mutate({ id: o.id, action: 'cancel' })}
+                      disabled={act.isPending}
+                    >
+                      Annuler
+                    </Button>
+                  </>
+                ) : null}
+                <a
+                  href={`/s/${shopId}/orders/${o.id}/document`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs hover:bg-[var(--color-surface-2)]"
+                >
+                  Facture / Bon
+                </a>
+              </div>
             </li>
           ))}
         </ul>
