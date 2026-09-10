@@ -74,10 +74,33 @@ test('achat : panier → paiement (fake) → commande payée', async ({ page, re
   await expect(page).toHaveURL(/\/panier/);
 
   await page.getByPlaceholder('Votre nom').fill('Awa Cliente');
-  await page.getByPlaceholder('Téléphone (+221…)').fill('+221771234567');
+  await page.getByPlaceholder(/Téléphone/).fill('+221771234567');
   await page.getByRole('button', { name: /Payer/ }).click();
 
   // Passerelle fake → retour immédiat → confirmation → page commande
   await expect(page).toHaveURL(/\/commande\/[0-9a-f-]{36}/, { timeout: 15_000 });
   await expect(page.getByText(/Statut :/)).toContainText('Payée');
+});
+
+test('achat : paiement à la livraison → commande à livrer', async ({ page, request }) => {
+  test.slow();
+  const { slug, productName } = await seedShop(request, { stock: 3 });
+
+  const card = page.getByRole('link', { name: new RegExp(productName, 'i') });
+  await expect(async () => {
+    await page.goto(shopUrl(slug));
+    await expect(card).toBeVisible({ timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+  await card.click();
+  await page.getByRole('button', { name: 'Ajouter au panier' }).click();
+  await page.getByRole('link', { name: 'Voir le panier' }).click();
+  await expect(page).toHaveURL(/\/panier/);
+
+  await page.getByPlaceholder('Votre nom').fill('Bina Cliente');
+  await page.getByPlaceholder(/Téléphone/).fill('+221771234500');
+  await page.getByText('Paiement à la livraison').click();
+  await page.getByRole('button', { name: /Commander/ }).click();
+
+  await expect(page).toHaveURL(/\/commande\/[0-9a-f-]{36}/, { timeout: 15_000 });
+  await expect(page.getByText(/Statut :/)).toContainText('À livrer');
 });

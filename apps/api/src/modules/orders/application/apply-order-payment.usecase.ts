@@ -42,8 +42,8 @@ export class ApplyOrderPaymentUseCase {
 
     const verified = await this.gateway.verifyByReference(txRef);
     if (verified.status !== 'successful') return verified.status === 'failed' ? 'failed' : 'ignored';
-    if (verified.amount > 0 && verified.amount < order.subtotal) {
-      this.logger.warn(`sous-paiement pour ${txRef} (${verified.amount}/${order.subtotal})`);
+    if (verified.amount > 0 && verified.amount < order.total) {
+      this.logger.warn(`sous-paiement pour ${txRef} (${verified.amount}/${order.total})`);
       return 'failed';
     }
 
@@ -73,7 +73,9 @@ export class ApplyOrderPaymentUseCase {
 
   private async notifySeller(order: {
     shopId: string;
-    subtotal: number;
+    total: number;
+    deliveryFee: number;
+    deliveryZoneLabel: string | null;
     currency: string;
     buyerName: string;
     lines: { name: string; qty: number }[];
@@ -82,16 +84,20 @@ export class ApplyOrderPaymentUseCase {
       const members = await this.memberships.listMembers(order.shopId);
       const to = members.map((m) => m.email).filter(Boolean);
       if (to.length === 0) return;
+      const deliveryLine = order.deliveryZoneLabel
+        ? `Livraison ${order.deliveryZoneLabel} : ${fmt(order.deliveryFee, order.currency)}`
+        : 'Retrait en boutique';
       const { html, text } = renderEmail({
         title: 'Nouvelle commande payée',
         lines: [
-          `${order.buyerName} a payé une commande de ${fmt(order.subtotal, order.currency)}.`,
+          `${order.buyerName} a payé une commande de ${fmt(order.total, order.currency)}.`,
           order.lines.map((l) => `• ${l.qty} × ${l.name}`).join('\n'),
+          deliveryLine,
         ],
       });
       await this.mailer.send({
         to,
-        subject: `Commande payée — ${fmt(order.subtotal, order.currency)}`,
+        subject: `Commande payée — ${fmt(order.total, order.currency)}`,
         text,
         html,
       });

@@ -3,11 +3,18 @@ import { IdSchema, paginated } from './common';
 
 export const OrderStatusSchema = z.enum([
   'pending_payment',
+  'to_deliver',
   'paid',
   'fulfilled',
   'canceled',
 ]);
 export type OrderStatus = z.infer<typeof OrderStatusSchema>;
+
+export const PaymentMethodSchema = z.enum(['online', 'cash_on_delivery']);
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
+
+export const DeliveryMethodSchema = z.enum(['pickup', 'delivery']);
+export type DeliveryMethod = z.infer<typeof DeliveryMethodSchema>;
 
 const PhoneSchema = z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro E.164 attendu');
 
@@ -20,6 +27,11 @@ export const CreateOrderSchema = z.object({
   buyerPhone: PhoneSchema,
   buyerEmail: z.string().email().max(320).optional(),
   note: z.string().trim().max(500).optional(),
+  paymentMethod: PaymentMethodSchema.default('online'),
+  deliveryMethod: DeliveryMethodSchema.default('pickup'),
+  /** Requis si deliveryMethod === 'delivery' — id d'une zone de la boutique. */
+  deliveryZoneId: z.string().max(40).optional(),
+  deliveryAddress: z.string().trim().max(600).optional(),
   /** URL de retour après paiement (fournie par la vitrine, sur son propre domaine). */
   returnUrl: z.string().url().max(2048),
 });
@@ -49,16 +61,24 @@ export const OrderSchema = z.object({
   lines: z.array(OrderLineSchema),
   subtotal: z.number().int().nonnegative(),
   currency: z.string(),
+  paymentMethod: PaymentMethodSchema,
+  deliveryMethod: DeliveryMethodSchema,
+  deliveryZoneLabel: z.string().nullable(),
+  deliveryFee: z.number().int().nonnegative(),
+  deliveryAddress: z.string().nullable(),
+  total: z.number().int().nonnegative(),
   createdAt: z.string(),
   paidAt: z.string().nullable(),
   fulfilledAt: z.string().nullable(),
+  deliveredAt: z.string().nullable(),
 });
 export type Order = z.infer<typeof OrderSchema>;
 
 export const OrderCheckoutSchema = z.object({
   orderId: IdSchema,
   buyerToken: z.string(),
-  checkoutUrl: z.string().url(),
+  /** Null pour un paiement à la livraison : la vitrine redirige alors vers le suivi. */
+  checkoutUrl: z.string().url().nullable(),
 });
 export type OrderCheckout = z.infer<typeof OrderCheckoutSchema>;
 

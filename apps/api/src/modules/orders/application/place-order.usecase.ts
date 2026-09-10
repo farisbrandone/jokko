@@ -7,6 +7,10 @@ import {
   PRODUCT_REPOSITORY,
   type ProductRepository,
 } from '../../catalog/domain/ports/product.repository';
+import {
+  SHOP_REPOSITORY,
+  type ShopRepository,
+} from '../../shop/domain/ports/shop.repository';
 import { PAYMENT_GATEWAY, type PaymentGateway } from '../../billing/domain/ports';
 import { Order } from '../domain/order.aggregate';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
@@ -19,6 +23,7 @@ export class PlaceOrderUseCase {
     config: ConfigService<AppConfig, true>,
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
+    @Inject(SHOP_REPOSITORY) private readonly shops: ShopRepository,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
   ) {
     this.rootDomain = config.get('tenant', { infer: true }).rootDomain;
@@ -42,8 +47,26 @@ export class PlaceOrderUseCase {
     return url.toString();
   }
 
+  /** Résout les frais + libellé de livraison depuis les zones de la boutique. */
+  private async resolveDelivery(
+    shopId: string,
+    input: CreateOrderInput,
+  ): Promise<{ label: string | null; fee: number; address: string | null }> {
+    if (input.deliveryMethod === 'pickup') {
+      return { label: null, fee: 0, address: null };
+    }
+    const shop = await this.shops.findById(shopId);
+    if (!shop) throw new NotFoundException('Boutique introuvable');
+    const zone = shop.deliveryZones.find((z) => z.id === input.deliveryZoneId);
+    if (!zone) throw new BadRequestException('Zone de livraison inconnue');
+    const address = input.deliveryAddress?.trim();
+    if (!address) throw new BadRequestException('Adresse de livraison requise');
+    return { label: zone.label, fee: zone.fee, address };
+  }
+
   async execute(shopId: string, input: CreateOrderInput): Promise<OrderCheckout> {
     const returnUrl = this.assertReturnUrl(input.returnUrl);
+    const delivery = await this.resolveDelivery(shopId, input);
 
     const lines: OrderLine[] = [];
     let currency: string | null = null;
@@ -73,7 +96,18 @@ export class PlaceOrderUseCase {
       note: input.note,
       lines,
       currency: currency!,
+      paymentMethod: input.paymentMethod,
+      deliveryMethod: input.deliveryMethod,
+      deliveryZoneLabel: delivery.label,
+      deliveryFee: delivery.fee,
+      deliveryAddress: delivery.address,
     });
+
+    // Paiement à la livraison : pas de passerelle, la commande entre en « à livrer ».
+    if (input.paymentMethod === 'cash_on_delivery') {
+      await this.orders.save(order);
+      return { orderId: order.id, buyerToken: token, checkoutUrl: null };
+    }
 
     const txRef = `jokko-ord-${randomBytes(12).toString('hex')}`;
     order.attachPaymentRef(txRef);
@@ -83,7 +117,7 @@ export class PlaceOrderUseCase {
       input.buyerEmail || `${input.buyerPhone.replace(/\D/g, '')}@order.jokko.local`;
     const checkout = await this.gateway.createCheckout({
       txRef,
-      amount: order.subtotal,
+      amount: order.total,
       currency: order.currency,
       email,
       returnUrl,

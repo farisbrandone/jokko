@@ -27,7 +27,9 @@ import { PlaceOrderUseCase } from '../application/place-order.usecase';
 import { OrdersService } from '../application/orders.service';
 
 const ListQuery = z.object({
-  status: z.enum(['pending_payment', 'paid', 'fulfilled', 'canceled']).optional(),
+  status: z
+    .enum(['pending_payment', 'to_deliver', 'paid', 'fulfilled', 'canceled'])
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
 });
 const TokenQuery = z.object({ token: z.string().min(10).max(200) });

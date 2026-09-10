@@ -1479,4 +1479,80 @@ describe('commandes acheteur & paiement (checkout)', () => {
       .send({ data: { tx_ref: txRef } })
       .expect(403);
   });
+
+  it('paiement à la livraison + zone de livraison → à livrer → livrée (stock décrémenté)', async () => {
+    const t = await newSeller('cod-seller@ex.com');
+    const shop = await newShop(t, 'COD Shop');
+    const auth = { authorization: `Bearer ${t}` };
+    const p = await stockedProduct(t, shop, 'Sac', 4);
+
+    const dz = await http
+      .patch(`/api/shops/${shop}`)
+      .set(auth)
+      .send({ deliveryZones: [{ label: 'Bonabéri', fee: 1000 }] })
+      .expect(200);
+    const zoneId = dz.body.deliveryZones[0].id as string;
+
+    // Livraison sans zone connue → 400
+    await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: p, qty: 1 }],
+        buyerName: 'Awa',
+        buyerPhone: '+237690000000',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'delivery',
+        deliveryZoneId: 'inexistant',
+        deliveryAddress: 'x',
+        returnUrl: 'http://cod-shop.lvh.me/commande/return',
+      })
+      .expect(400);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: p, qty: 2 }],
+        buyerName: 'Awa',
+        buyerPhone: '+237690000000',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'delivery',
+        deliveryZoneId: zoneId,
+        deliveryAddress: 'Rue 12, près du marché',
+        returnUrl: 'http://cod-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    expect(co.body.checkoutUrl).toBeNull();
+    const orderId = co.body.orderId as string;
+    const token = co.body.buyerToken as string;
+
+    const track = await http
+      .get(`/api/shops/${shop}/orders/${orderId}/track?token=${token}`)
+      .expect(200);
+    expect(track.body.status).toBe('to_deliver');
+    expect(track.body.deliveryFee).toBe(1000);
+    expect(track.body.total).toBe(11000);
+    expect(track.body.deliveryZoneLabel).toBe('Bonabéri');
+    expect(track.body.deliveryAddress).toContain('Rue 12');
+    expect(track.body.paymentMethod).toBe('cash_on_delivery');
+
+    // stock intact tant que non livrée
+    let prod = await http.get(`/api/shops/${shop}/products/${p}/edit`).set(auth).expect(200);
+    expect(prod.body.stock).toBe(4);
+
+    const listTodo = await http
+      .get(`/api/shops/${shop}/orders?status=to_deliver`)
+      .set(auth)
+      .expect(200);
+    expect(listTodo.body.total).toBe(1);
+
+    const done = await http
+      .post(`/api/shops/${shop}/orders/${orderId}/fulfill`)
+      .set(auth)
+      .expect(201);
+    expect(done.body.status).toBe('fulfilled');
+    expect(done.body.deliveredAt).toBeTruthy();
+
+    prod = await http.get(`/api/shops/${shop}/products/${p}/edit`).set(auth).expect(200);
+    expect(prod.body.stock).toBe(2);
+  });
 });

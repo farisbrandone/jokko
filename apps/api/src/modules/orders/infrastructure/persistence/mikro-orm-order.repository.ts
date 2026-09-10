@@ -21,12 +21,18 @@ export class MikroOrmOrderRepository implements OrderRepository {
       subtotal: row.subtotal,
       currency: row.currency,
       status: row.status,
+      paymentMethod: row.paymentMethod,
+      deliveryMethod: row.deliveryMethod,
+      deliveryZoneLabel: row.deliveryZoneLabel,
+      deliveryFee: row.deliveryFee,
+      deliveryAddress: row.deliveryAddress,
       buyerTokenHash: row.buyerTokenHash,
       txRef: row.txRef,
       providerTxId: row.providerTxId,
       createdAt: row.createdAt.toISOString(),
       paidAt: row.paidAt ? row.paidAt.toISOString() : null,
       fulfilledAt: row.fulfilledAt ? row.fulfilledAt.toISOString() : null,
+      deliveredAt: row.deliveredAt ? row.deliveredAt.toISOString() : null,
     });
   }
 
@@ -44,12 +50,18 @@ export class MikroOrmOrderRepository implements OrderRepository {
     row.subtotal = s.subtotal;
     row.currency = s.currency;
     row.status = s.status;
+    row.paymentMethod = s.paymentMethod;
+    row.deliveryMethod = s.deliveryMethod;
+    row.deliveryZoneLabel = s.deliveryZoneLabel;
+    row.deliveryFee = s.deliveryFee;
+    row.deliveryAddress = s.deliveryAddress;
     row.buyerTokenHash = s.buyerTokenHash;
     row.txRef = s.txRef;
     row.providerTxId = s.providerTxId;
     row.createdAt = new Date(s.createdAt);
     row.paidAt = s.paidAt ? new Date(s.paidAt) : null;
     row.fulfilledAt = s.fulfilledAt ? new Date(s.fulfilledAt) : null;
+    row.deliveredAt = s.deliveredAt ? new Date(s.deliveredAt) : null;
     await em.persistAndFlush(row);
   }
 

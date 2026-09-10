@@ -1,6 +1,11 @@
 import { Entity, Index, PrimaryKey, Property } from '@mikro-orm/core';
 import { randomUUID } from 'node:crypto';
-import type { OrderLine, OrderStatus } from '@jokko/contracts';
+import type {
+  DeliveryMethod,
+  OrderLine,
+  OrderStatus,
+  PaymentMethod,
+} from '@jokko/contracts';
 
 /** `orders` : accès serveur avec `shop_id` explicite (pas de RLS), acheteur via jeton. */
 @Entity({ tableName: 'orders' })
@@ -36,6 +41,21 @@ export class OrderEntity {
   @Property({ type: 'string', length: 16 })
   status: OrderStatus = 'pending_payment';
 
+  @Property({ type: 'string', length: 20, fieldName: 'payment_method' })
+  paymentMethod: PaymentMethod = 'online';
+
+  @Property({ type: 'string', length: 12, fieldName: 'delivery_method' })
+  deliveryMethod: DeliveryMethod = 'pickup';
+
+  @Property({ type: 'string', length: 60, fieldName: 'delivery_zone_label', nullable: true })
+  deliveryZoneLabel: string | null = null;
+
+  @Property({ type: 'integer', fieldName: 'delivery_fee' })
+  deliveryFee = 0;
+
+  @Property({ type: 'string', length: 600, fieldName: 'delivery_address', nullable: true })
+  deliveryAddress: string | null = null;
+
   @Property({ type: 'string', length: 64, fieldName: 'buyer_token_hash' })
   buyerTokenHash!: string;
 
@@ -53,4 +73,7 @@ export class OrderEntity {
 
   @Property({ type: 'datetime', fieldName: 'fulfilled_at', nullable: true })
   fulfilledAt: Date | null = null;
+
+  @Property({ type: 'datetime', fieldName: 'delivered_at', nullable: true })
+  deliveredAt: Date | null = null;
 }

@@ -37,8 +37,9 @@ export default async function ShopPage({ params }: Params) {
   const membership = me.memberships.find((m) => m.shopId === shopId);
   if (!membership) redirect('/');
 
-  const [products, toShip, openThreads] = await Promise.all([
+  const [products, toDeliver, toShip, openThreads] = await Promise.all([
     apiJson<ProductList>(`/shops/${shopId}/products?pageSize=100`),
+    apiJson<CountOnly>(`/shops/${shopId}/orders?status=to_deliver&pageSize=1`).catch(() => ({ total: 0 })),
     apiJson<CountOnly>(`/shops/${shopId}/orders?status=paid&pageSize=1`).catch(() => ({ total: 0 })),
     apiJson<CountOnly>(`/shops/${shopId}/inbox?status=open&pageSize=1`).catch(() => ({ total: 0 })),
   ]);
@@ -80,7 +81,7 @@ export default async function ShopPage({ params }: Params) {
 
       <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi label="Produits publiés" value={published} href={shopHref} />
-        <Kpi label="En brouillon" value={products.total - published} href={shopHref} />
+        <Kpi label="À livrer" value={toDeliver.total} href={`${shopHref}/orders`} />
         <Kpi label="À expédier" value={toShip.total} href={`${shopHref}/orders`} />
         <Kpi label="Messages ouverts" value={openThreads.total} href={`${shopHref}/inbox`} />
       </div>

@@ -6,6 +6,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Order as OrderView, OrderList } from '@jokko/contracts';
+import { Money } from '../../catalog/domain/value-objects/money';
+import {
+  PRODUCT_REPOSITORY,
+  type ProductRepository,
+} from '../../catalog/domain/ports/product.repository';
 import { Order } from '../domain/order.aggregate';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
 import { ApplyOrderPaymentUseCase } from './apply-order-payment.usecase';
@@ -22,9 +27,16 @@ function toView(order: Order): OrderView {
     lines: s.lines,
     subtotal: s.subtotal,
     currency: s.currency,
+    paymentMethod: s.paymentMethod,
+    deliveryMethod: s.deliveryMethod,
+    deliveryZoneLabel: s.deliveryZoneLabel,
+    deliveryFee: s.deliveryFee,
+    deliveryAddress: s.deliveryAddress,
+    total: s.subtotal + s.deliveryFee,
     createdAt: s.createdAt,
     paidAt: s.paidAt,
     fulfilledAt: s.fulfilledAt,
+    deliveredAt: s.deliveredAt,
   };
 }
 
@@ -32,6 +44,7 @@ function toView(order: Order): OrderView {
 export class OrdersService {
   constructor(
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
+    @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
     private readonly applyPayment: ApplyOrderPaymentUseCase,
   ) {}
 
@@ -76,14 +89,20 @@ export class OrdersService {
     return this.getForShop(shopId, id);
   }
 
+  /** « Expédiée » (en ligne) ou « Livrée & encaissée » (paiement à la livraison). */
   async fulfill(shopId: string, id: string): Promise<OrderView> {
     const order = await this.orders.findByShopAndId(shopId, id);
     if (!order) throw new NotFoundException('Commande introuvable');
-    if (order.status !== 'paid') {
-      throw new BadRequestException('Seule une commande payée peut être marquée comme expédiée');
+    if (order.status !== 'paid' && order.status !== 'to_deliver') {
+      throw new BadRequestException(
+        'Seule une commande payée ou à livrer peut être marquée comme terminée',
+      );
     }
+    const wasCod = order.paymentMethod === 'cash_on_delivery';
     order.fulfill();
     await this.orders.save(order);
+    // Paiement à la livraison : le stock n'a pas été décrémenté au paiement.
+    if (wasCod) await this.decrementStock(shopId, order.lines);
     return toView(order);
   }
 
@@ -93,5 +112,21 @@ export class OrdersService {
     order.cancel();
     await this.orders.save(order);
     return toView(order);
+  }
+
+  private async decrementStock(
+    shopId: string,
+    lines: { productId: string; qty: number }[],
+  ): Promise<void> {
+    for (const line of lines) {
+      const product = await this.products.findById(shopId, line.productId);
+      if (!product) continue;
+      const s = product.toSnapshot();
+      const res = product.update({
+        stock: Math.max(0, s.stock - line.qty),
+        price: Money.create(s.price.amount, s.price.currency).unwrap(),
+      });
+      if (res.isOk) await this.products.save(product);
+    }
   }
 }

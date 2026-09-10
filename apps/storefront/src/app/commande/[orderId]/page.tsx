@@ -8,8 +8,9 @@ import { recallOrder } from '@/lib/cart';
 
 const LABELS: Record<string, string> = {
   pending_payment: 'En attente de paiement',
-  paid: 'Payée',
-  fulfilled: 'Expédiée',
+  to_deliver: 'À livrer',
+  paid: 'Payée — à expédier',
+  fulfilled: 'Terminée',
   canceled: 'Annulée',
 };
 
@@ -43,6 +44,8 @@ export default function OrderPage({ params }: { params: Promise<{ orderId: strin
   }
   if (!order) return <p className="py-16 text-center text-[var(--color-muted)]">Chargement…</p>;
 
+  const cod = order.paymentMethod === 'cash_on_delivery';
+
   return (
     <div className="mx-auto max-w-xl">
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Votre commande</h1>
@@ -60,13 +63,39 @@ export default function OrderPage({ params }: { params: Promise<{ orderId: strin
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-right font-semibold">
-        Total : {formatMoney(order.subtotal, order.currency)}
-      </p>
+
+      <div className="mt-3 border-t border-[var(--color-border)] pt-3 text-sm">
+        <div className="flex justify-between">
+          <span className="text-[var(--color-muted)]">Sous-total</span>
+          <span>{formatMoney(order.subtotal, order.currency)}</span>
+        </div>
+        <div className="mt-1 flex justify-between">
+          <span className="text-[var(--color-muted)]">
+            {order.deliveryZoneLabel ? `Livraison — ${order.deliveryZoneLabel}` : 'Retrait en boutique'}
+          </span>
+          <span>{order.deliveryFee > 0 ? formatMoney(order.deliveryFee, order.currency) : 'Gratuit'}</span>
+        </div>
+        <div className="mt-2 flex justify-between border-t border-[var(--color-border)] pt-2 text-base font-semibold">
+          <span>{cod ? 'À régler à la livraison' : 'Total'}</span>
+          <span>{formatMoney(order.total, order.currency)}</span>
+        </div>
+      </div>
+
+      {order.deliveryAddress ? (
+        <p className="mt-3 text-sm text-[var(--color-muted)]">
+          Adresse : {order.deliveryAddress}
+        </p>
+      ) : null}
 
       {order.status === 'pending_payment' ? (
         <p className="mt-4 text-sm text-[var(--color-muted)]">
-          Le paiement n'a pas encore été confirmé. Cette page se mettra à jour.
+          Le paiement n&apos;a pas encore été confirmé. Cette page se mettra à jour.
+        </p>
+      ) : null}
+      {order.status === 'to_deliver' ? (
+        <p className="mt-4 text-sm text-[var(--color-good)]">
+          Commande enregistrée. Le vendeur vous contacte pour la livraison ; vous
+          réglerez {formatMoney(order.total, order.currency)} à la réception.
         </p>
       ) : null}
       {order.status === 'paid' ? (
