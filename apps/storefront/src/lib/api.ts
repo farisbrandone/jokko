@@ -36,6 +36,13 @@ export interface ProductView {
   stock: number;
   images: string[];
   attributes: Record<string, string | number | boolean | string[]>;
+  variants: {
+    id?: string;
+    label: string;
+    sku?: string | null;
+    priceAmount?: number | null;
+    stock: number;
+  }[];
   status: string;
   createdAt: string;
   updatedAt: string;

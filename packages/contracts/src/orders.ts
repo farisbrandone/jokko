@@ -20,7 +20,13 @@ const PhoneSchema = z.string().regex(/^\+[1-9]\d{6,14}$/, 'numéro E.164 attendu
 
 export const CreateOrderSchema = z.object({
   items: z
-    .array(z.object({ productId: IdSchema, qty: z.number().int().min(1).max(99) }))
+    .array(
+      z.object({
+        productId: IdSchema,
+        variantId: z.string().max(40).optional(),
+        qty: z.number().int().min(1).max(99),
+      }),
+    )
     .min(1)
     .max(50),
   buyerName: z.string().trim().min(2).max(80),
@@ -45,6 +51,8 @@ export type ConfirmOrderInput = z.infer<typeof ConfirmOrderSchema>;
 
 export const OrderLineSchema = z.object({
   productId: z.string(),
+  variantId: z.string().nullable().optional(),
+  variantLabel: z.string().nullable().optional(),
   name: z.string(),
   unitAmount: z.number().int().nonnegative(),
   qty: z.number().int().min(1),

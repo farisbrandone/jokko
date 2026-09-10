@@ -78,14 +78,40 @@ export class PlaceOrderUseCase {
       if (p.status !== 'published') {
         throw new BadRequestException(`« ${p.name} » n'est plus disponible`);
       }
-      if (p.stock < item.qty) {
-        throw new BadRequestException(`Stock insuffisant pour « ${p.name} »`);
-      }
       currency ??= p.price.currency;
       if (p.price.currency !== currency) {
         throw new BadRequestException('Les produits de cette commande ont des devises différentes');
       }
-      lines.push({ productId: p.id, name: p.name, unitAmount: p.price.amount, qty: item.qty });
+
+      if (p.variants.length > 0) {
+        const variant = p.variants.find((v) => v.id === item.variantId);
+        if (!variant) {
+          throw new BadRequestException(`Choisissez une déclinaison pour « ${p.name} »`);
+        }
+        if (variant.stock < item.qty) {
+          throw new BadRequestException(`Stock insuffisant pour « ${p.name} — ${variant.label} »`);
+        }
+        lines.push({
+          productId: p.id,
+          variantId: variant.id ?? null,
+          variantLabel: variant.label,
+          name: `${p.name} — ${variant.label}`,
+          unitAmount: variant.priceAmount ?? p.price.amount,
+          qty: item.qty,
+        });
+      } else {
+        if (p.stock < item.qty) {
+          throw new BadRequestException(`Stock insuffisant pour « ${p.name} »`);
+        }
+        lines.push({
+          productId: p.id,
+          variantId: null,
+          variantLabel: null,
+          name: p.name,
+          unitAmount: p.price.amount,
+          qty: item.qty,
+        });
+      }
     }
 
     const { order, token } = Order.create({

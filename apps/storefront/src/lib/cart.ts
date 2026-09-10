@@ -4,6 +4,8 @@ import { useSyncExternalStore } from 'react';
 
 export interface CartItem {
   productId: string;
+  variantId: string | null;
+  variantLabel: string | null;
   slug: string;
   name: string;
   unitAmount: number;
@@ -11,6 +13,10 @@ export interface CartItem {
   image: string | null;
   qty: number;
 }
+
+/** Clé unique d'une ligne panier : produit + déclinaison. */
+export const lineKey = (productId: string, variantId: string | null): string =>
+  `${productId}::${variantId ?? ''}`;
 
 const KEY = 'jokko_cart';
 const listeners = new Set<() => void>();
@@ -58,19 +64,20 @@ export const cart = {
   items: read,
   add(item: Omit<CartItem, 'qty'>, qty = 1): void {
     const items = read().map((i) => ({ ...i }));
-    const existing = items.find((i) => i.productId === item.productId);
+    const k = lineKey(item.productId, item.variantId ?? null);
+    const existing = items.find((i) => lineKey(i.productId, i.variantId) === k);
     if (existing) existing.qty = Math.min(99, existing.qty + qty);
-    else items.push({ ...item, qty });
+    else items.push({ ...item, variantId: item.variantId ?? null, qty });
     write(items);
   },
-  setQty(productId: string, qty: number): void {
+  setQty(key: string, qty: number): void {
     const items = read()
-      .map((i) => (i.productId === productId ? { ...i, qty } : { ...i }))
+      .map((i) => (lineKey(i.productId, i.variantId) === key ? { ...i, qty } : { ...i }))
       .filter((i) => i.qty > 0);
     write(items);
   },
-  remove(productId: string): void {
-    write(read().filter((i) => i.productId !== productId));
+  remove(key: string): void {
+    write(read().filter((i) => lineKey(i.productId, i.variantId) !== key));
   },
   clear(): void {
     write([]);

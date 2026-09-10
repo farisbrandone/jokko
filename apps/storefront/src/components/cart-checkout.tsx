@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { formatMoney } from '@jokko/ui';
-import { cart, rememberOrder, useCart } from '@/lib/cart';
+import { cart, lineKey, rememberOrder, useCart } from '@/lib/cart';
 
 type Zone = { id?: string; label: string; fee: number };
 
@@ -50,7 +50,11 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          items: items.map((i) => ({ productId: i.productId, qty: i.qty })),
+          items: items.map((i) => ({
+            productId: i.productId,
+            variantId: i.variantId ?? undefined,
+            qty: i.qty,
+          })),
           buyerName: form.buyerName.trim(),
           buyerPhone: form.buyerPhone.trim(),
           buyerEmail: form.buyerEmail.trim() || undefined,
@@ -90,15 +94,20 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
       <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">Panier</h1>
 
       <ul className="mt-4 flex flex-col gap-3">
-        {items.map((i) => (
+        {items.map((i) => {
+          const k = lineKey(i.productId, i.variantId);
+          return (
           <li
-            key={i.productId}
+            key={k}
             className="flex items-center justify-between gap-3 rounded-[var(--radius-card)] border border-[var(--color-border)] p-3"
           >
             <div className="min-w-0">
               <Link href={`/p/${i.slug}`} className="font-medium">
                 {i.name}
               </Link>
+              {i.variantLabel ? (
+                <p className="text-xs text-[var(--color-faint)]">{i.variantLabel}</p>
+              ) : null}
               <p className="text-sm text-[var(--color-muted)]">
                 {formatMoney(i.unitAmount, i.currency)}
               </p>
@@ -109,19 +118,20 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
                 min={1}
                 max={99}
                 value={i.qty}
-                onChange={(e) => cart.setQty(i.productId, Number(e.target.value) || 1)}
+                onChange={(e) => cart.setQty(k, Number(e.target.value) || 1)}
                 className="w-14 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1 text-sm"
               />
               <button
                 type="button"
-                onClick={() => cart.remove(i.productId)}
+                onClick={() => cart.remove(k)}
                 className="text-xs text-[var(--color-danger)] underline"
               >
                 Retirer
               </button>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <form onSubmit={checkout} className="mt-6 flex flex-col gap-4">

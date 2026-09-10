@@ -1,12 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
-import { formatMoney } from '@jokko/ui';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getProduct, getReviews, type ProductView } from '@/lib/api';
-import { AddToCart } from '@/components/add-to-cart';
 import { ProductGallery } from '@/components/product-gallery';
-import { QuickOrder } from '@/components/quick-order';
+import { ProductPurchase } from '@/components/product-purchase';
 import { ContactBar } from '@/components/contact-bar';
 import { ProductReviews } from '@/components/product-reviews';
 import { ReportButton } from '@/components/report-button';
@@ -50,7 +47,6 @@ export default async function ProductPage({ params }: Params) {
   const { shop, product } = data;
   if (!product) notFound();
 
-  const t = await getTranslations('product');
   const base = await siteUrl();
   const url = `${base}/p/${product.slug}`;
 
@@ -71,9 +67,6 @@ export default async function ProductPage({ params }: Params) {
       seller: { '@type': 'Organization', name: shop.name },
     },
   };
-
-  const hasPromo =
-    product.compareAtPrice && product.compareAtPrice.amount > product.price.amount;
 
   const reviews = await getReviews(shop.id, product.id).catch(() => ({
     summary: { average: 0, count: 0, distribution: [0, 0, 0, 0, 0] as [number, number, number, number, number] },
@@ -102,44 +95,27 @@ export default async function ProductPage({ params }: Params) {
         <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">
           {product.name}
         </h1>
-        <p className="text-xl">
-          <span className="font-semibold">
-            {formatMoney(product.price.amount, product.price.currency)}
-          </span>
-          {hasPromo ? (
-            <span className="ml-2 text-[var(--color-faint)] line-through">
-              {formatMoney(product.compareAtPrice!.amount, product.compareAtPrice!.currency)}
-            </span>
-          ) : null}
-        </p>
-        <p className="text-sm text-[var(--color-muted)]">
-          {product.stock > 0 ? t('inStock') : t('outOfStock')} · {product.category}
-        </p>
-        <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
 
-        <AddToCart
-          item={{
-            productId: product.id,
+        <ProductPurchase
+          product={{
+            id: product.id,
             slug: product.slug,
             name: product.name,
-            unitAmount: product.price.amount,
+            priceAmount: product.price.amount,
+            compareAtAmount: product.compareAtPrice?.amount ?? null,
             currency: product.price.currency,
             image: product.images[0] ?? null,
+            stock: product.stock,
+            category: product.category,
+            variants: product.variants ?? [],
           }}
-          stock={product.stock}
-        />
-
-        <QuickOrder
           shopName={shop.name}
           whatsapp={shop.whatsapp}
-          productId={product.id}
-          productName={product.name}
           productUrl={url}
-          unitAmount={product.price.amount}
-          currency={product.price.currency}
-          stock={product.stock}
           siteUrl={base}
         />
+
+        <p className="whitespace-pre-line leading-relaxed">{product.description}</p>
 
         <ContactBar
           shopName={shop.name}

@@ -1555,4 +1555,72 @@ describe('commandes acheteur & paiement (checkout)', () => {
     prod = await http.get(`/api/shops/${shop}/products/${p}/edit`).set(auth).expect(200);
     expect(prod.body.stock).toBe(2);
   });
+
+  it('déclinaisons : commande sur une déclinaison → stock de la déclinaison décrémenté', async () => {
+    const t = await newSeller('var-seller@ex.com');
+    const shop = await newShop(t, 'Var Shop');
+    const auth = { authorization: `Bearer ${t}` };
+
+    const created = await http
+      .post(`/api/shops/${shop}/products`)
+      .set(auth)
+      .send({
+        name: 'Chemise',
+        category: 'mode-accessoires',
+        price: { amount: 12000 },
+        images: ['https://x/y.jpg'],
+        variants: [
+          { label: 'Bleu / M', stock: 5 },
+          { label: 'Bleu / L', stock: 2, priceAmount: 13000 },
+        ],
+      })
+      .expect(201);
+    const pid = created.body.id as string;
+    expect(created.body.stock).toBe(7); // somme
+    const vL = created.body.variants.find((v: { label: string }) => v.label === 'Bleu / L');
+    await http.post(`/api/shops/${shop}/products/${pid}/publish`).set(auth).expect(201);
+
+    // commander sans déclinaison → 400
+    await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: pid, qty: 1 }],
+        buyerName: 'Kofi',
+        buyerPhone: '+237690001122',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://var-shop.lvh.me/commande/return',
+      })
+      .expect(400);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: pid, variantId: vL.id, qty: 2 }],
+        buyerName: 'Kofi',
+        buyerPhone: '+237690001122',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://var-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    const orderId = co.body.orderId as string;
+    const token = co.body.buyerToken as string;
+
+    const track = await http
+      .get(`/api/shops/${shop}/orders/${orderId}/track?token=${token}`)
+      .expect(200);
+    expect(track.body.lines[0].name).toContain('Bleu / L');
+    expect(track.body.subtotal).toBe(2 * 13000); // prix de la déclinaison
+
+    await http.post(`/api/shops/${shop}/orders/${orderId}/fulfill`).set(auth).expect(201);
+
+    const prod = await http.get(`/api/shops/${shop}/products/${pid}/edit`).set(auth).expect(200);
+    const byLabel = Object.fromEntries(
+      prod.body.variants.map((v: { label: string; stock: number }) => [v.label, v.stock]),
+    );
+    expect(byLabel['Bleu / L']).toBe(0); // 2 - 2
+    expect(byLabel['Bleu / M']).toBe(5); // inchangé
+    expect(prod.body.stock).toBe(5);
+  });
 });

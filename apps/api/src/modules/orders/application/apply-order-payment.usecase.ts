@@ -1,5 +1,4 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Money } from '../../catalog/domain/value-objects/money';
 import {
   PRODUCT_REPOSITORY,
   type ProductRepository,
@@ -57,16 +56,12 @@ export class ApplyOrderPaymentUseCase {
 
   private async decrementStock(
     shopId: string,
-    lines: { productId: string; qty: number }[],
+    lines: { productId: string; variantId?: string | null; qty: number }[],
   ): Promise<void> {
     for (const line of lines) {
       const product = await this.products.findById(shopId, line.productId);
       if (!product) continue;
-      const s = product.toSnapshot();
-      const res = product.update({
-        stock: Math.max(0, s.stock - line.qty),
-        price: Money.create(s.price.amount, s.price.currency).unwrap(),
-      });
+      const res = product.adjustStock(-line.qty, line.variantId ?? null);
       if (res.isOk) await this.products.save(product);
     }
   }
