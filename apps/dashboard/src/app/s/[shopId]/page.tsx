@@ -96,24 +96,33 @@ export default async function ShopPage({ params }: Params) {
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]">
-          <table className="w-full min-w-[520px] text-sm">
-            <thead className="text-left text-xs uppercase tracking-wide text-[var(--color-faint)]">
-              <tr>
-                <th className="px-3 py-2 font-medium">Produit</th>
-                <th className="py-2 pr-3 font-medium">Prix</th>
-                <th className="py-2 pr-3 font-medium">Stock</th>
-                <th className="py-2 pr-3 font-medium">Statut</th>
-                <th className="px-3 py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {products.items.map((p) => (
-                <ProductRow key={p.id} shopId={shopId} product={p} />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <>
+          {/* Cartes — mobile */}
+          <div className="flex flex-col gap-2 sm:hidden">
+            {products.items.map((p) => (
+              <ProductRow key={p.id} shopId={shopId} product={p} variant="card" />
+            ))}
+          </div>
+          {/* Tableau — desktop */}
+          <div className="hidden overflow-x-auto rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] sm:block">
+            <table className="w-full text-sm">
+              <thead className="text-left text-xs uppercase tracking-wide text-[var(--color-faint)]">
+                <tr>
+                  <th className="px-3 py-2 font-medium">Produit</th>
+                  <th className="py-2 pr-3 font-medium">Prix</th>
+                  <th className="py-2 pr-3 font-medium">Stock</th>
+                  <th className="py-2 pr-3 font-medium">Statut</th>
+                  <th className="px-3 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {products.items.map((p) => (
+                  <ProductRow key={p.id} shopId={shopId} product={p} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </Shell>
   );

@@ -56,7 +56,14 @@ export function OrdersBoard({ shopId }: { shopId: string }) {
       </div>
 
       {list.isLoading ? (
-        <p className="text-sm text-[var(--color-muted)]">Chargement…</p>
+        <div className="flex flex-col gap-3">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-28 animate-pulse rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)]"
+            />
+          ))}
+        </div>
       ) : (list.data?.items.length ?? 0) === 0 ? (
         <p className="text-sm text-[var(--color-muted)]">Aucune commande.</p>
       ) : (

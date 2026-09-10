@@ -13,7 +13,15 @@ const BADGE: Record<Product['status'], string> = {
   archived: 'bg-[var(--color-surface-2)] text-[var(--color-faint)]',
 };
 
-export function ProductRow({ shopId, product }: { shopId: string; product: Product }) {
+export function ProductRow({
+  shopId,
+  product,
+  variant = 'row',
+}: {
+  shopId: string;
+  product: Product;
+  variant?: 'row' | 'card';
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const published = product.status === 'published';
@@ -32,16 +40,55 @@ export function ProductRow({ shopId, product }: { shopId: string; product: Produ
     }
   };
 
+  const badge = (
+    <span className={`rounded px-2 py-0.5 text-xs ${BADGE[product.status]}`}>{product.status}</span>
+  );
+  const toggleBtn = (
+    <button
+      onClick={toggle}
+      disabled={busy}
+      className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-60"
+    >
+      {published ? 'Dépublier' : 'Publier'}
+    </button>
+  );
+
+  if (variant === 'card') {
+    return (
+      <div className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+        <div className="flex items-start justify-between gap-2">
+          <Link
+            href={`/s/${shopId}/products/${product.id}`}
+            className="font-medium hover:underline"
+          >
+            {product.name}
+          </Link>
+          {badge}
+        </div>
+        <div className="mt-1 text-xs capitalize text-[var(--color-muted)]">
+          {product.category.replace(/-/g, ' ')}
+        </div>
+        <div className="mt-2 flex items-center justify-between">
+          <span className="text-sm tabular-nums">
+            {formatMoney(product.price.amount, product.price.currency)}
+            <span className="ml-2 text-xs text-[var(--color-muted)]">stock {product.stock}</span>
+          </span>
+          {toggleBtn}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <tr className="border-t border-[var(--color-border)]">
-      <td className="py-2 pr-3">
+      <td className="px-3 py-2">
         <Link
           href={`/s/${shopId}/products/${product.id}`}
           className="font-medium hover:underline"
         >
           {product.name}
         </Link>
-        <div className="text-xs text-[var(--color-muted)] capitalize">
+        <div className="text-xs capitalize text-[var(--color-muted)]">
           {product.category.replace(/-/g, ' ')}
         </div>
       </td>
@@ -49,20 +96,8 @@ export function ProductRow({ shopId, product }: { shopId: string; product: Produ
         {formatMoney(product.price.amount, product.price.currency)}
       </td>
       <td className="py-2 pr-3 tabular-nums">{product.stock}</td>
-      <td className="py-2 pr-3">
-        <span className={`rounded px-2 py-0.5 text-xs ${BADGE[product.status]}`}>
-          {product.status}
-        </span>
-      </td>
-      <td className="py-2 text-right whitespace-nowrap">
-        <button
-          onClick={toggle}
-          disabled={busy}
-          className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs disabled:opacity-60"
-        >
-          {published ? 'Dépublier' : 'Publier'}
-        </button>
-      </td>
+      <td className="py-2 pr-3">{badge}</td>
+      <td className="whitespace-nowrap px-3 py-2 text-right">{toggleBtn}</td>
     </tr>
   );
 }
