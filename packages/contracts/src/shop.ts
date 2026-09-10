@@ -24,6 +24,15 @@ export type ThemePreset = z.infer<typeof ThemePresetSchema>;
 export const ShopCategoriesSchema = z.array(z.string().trim().min(1).max(40)).max(50);
 export type ShopCategories = z.infer<typeof ShopCategoriesSchema>;
 
+/** Zone de livraison : un libellé (ville / quartier) et des frais dans la devise de la boutique. */
+export const DeliveryZoneSchema = z.object({
+  id: z.string().min(1).max(40).optional(),
+  label: z.string().trim().min(1).max(60),
+  fee: z.number().int().nonnegative().max(100_000_000),
+});
+export type DeliveryZone = z.infer<typeof DeliveryZoneSchema>;
+export const DeliveryZonesSchema = z.array(DeliveryZoneSchema).max(40);
+
 /** Couleur de marque en hexadécimal `#rrggbb` (surcharge le token `--color-brand`). */
 export const BrandColorSchema = z
   .string()
@@ -49,6 +58,7 @@ export const ShopSchema = z.object({
   heroImageUrl: z.string().url().max(600).nullable().optional(),
   accentColor: BrandColorSchema.nullable().optional(),
   announcement: z.string().trim().max(160).nullable().optional(),
+  deliveryZones: DeliveryZonesSchema.default([]),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
@@ -79,6 +89,7 @@ export const UpdateShopSchema = z
     heroImageUrl: z.string().url().max(600).nullable(),
     accentColor: BrandColorSchema.nullable(),
     announcement: z.string().trim().max(160).nullable(),
+    deliveryZones: DeliveryZonesSchema,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });

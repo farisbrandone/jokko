@@ -1,5 +1,6 @@
+import { randomUUID } from 'node:crypto';
 import { AggregateRoot, Guard, Result, UniqueId } from '@jokko/domain-kernel';
-import type { Vertical } from '@jokko/contracts';
+import type { DeliveryZone, Vertical } from '@jokko/contracts';
 import { Slug } from '../../catalog/domain/value-objects/slug';
 import { ShopCreated } from './shop.events';
 
@@ -31,6 +32,7 @@ export interface ShopSnapshot {
   heroImageUrl: string | null;
   accentColor: string | null;
   announcement: string | null;
+  deliveryZones: DeliveryZone[];
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -75,6 +77,27 @@ export interface UpdateShopProfileProps {
   heroImageUrl?: string | null;
   accentColor?: string | null;
   announcement?: string | null;
+  deliveryZones?: DeliveryZone[];
+}
+
+/** Nettoyage des zones de livraison : libellé trimé non vide, dédup par libellé, frais ≥ 0, id stable. */
+export function normalizeDeliveryZones(list: readonly DeliveryZone[]): DeliveryZone[] {
+  const seen = new Set<string>();
+  const out: DeliveryZone[] = [];
+  for (const z of list) {
+    const label = z.label.trim();
+    if (!label) continue;
+    const key = label.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push({
+      id: z.id && /^[\w-]{1,40}$/.test(z.id) ? z.id : randomUUID(),
+      label: label.slice(0, 60),
+      fee: Math.max(0, Math.round(z.fee)),
+    });
+    if (out.length >= 40) break;
+  }
+  return out;
 }
 
 /** Nettoyage : trim, retrait des vides, déduplication insensible à la casse, plafond 50. */
@@ -111,6 +134,7 @@ export class Shop extends AggregateRoot {
     private _tagline: string | null,
     private _categories: string[],
     private _appearance: ShopAppearance,
+    private _deliveryZones: DeliveryZone[],
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -150,6 +174,7 @@ export class Shop extends AggregateRoot {
       null,
       [],
       { ...EMPTY_APPEARANCE },
+      [],
       'active',
       now,
       now,
@@ -182,6 +207,7 @@ export class Shop extends AggregateRoot {
         accentColor: snap.accentColor ?? null,
         announcement: snap.announcement ?? null,
       },
+      (snap.deliveryZones ?? []).map((z) => ({ ...z })),
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -190,6 +216,14 @@ export class Shop extends AggregateRoot {
 
   get slug(): string {
     return this._slug.value;
+  }
+
+  get deliveryZones(): DeliveryZone[] {
+    return this._deliveryZones.map((z) => ({ ...z }));
+  }
+
+  get currency(): string {
+    return this._currency;
   }
 
   /** Édition du profil par un membre autorisé (nom, WhatsApp, thème, couleur). */
@@ -235,6 +269,9 @@ export class Shop extends AggregateRoot {
       const color = normalizeBrandColor(patch.accentColor);
       if (color.isErr) return Result.err(color.getError());
       this._appearance.accentColor = color.unwrap();
+    }
+    if (patch.deliveryZones !== undefined) {
+      this._deliveryZones = normalizeDeliveryZones(patch.deliveryZones);
     }
     this._updatedAt = new Date();
     return Result.ok(undefined);
@@ -321,6 +358,7 @@ export class Shop extends AggregateRoot {
       heroImageUrl: this._appearance.heroImageUrl,
       accentColor: this._appearance.accentColor,
       announcement: this._appearance.announcement,
+      deliveryZones: this._deliveryZones.map((z) => ({ ...z })),
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

@@ -390,6 +390,27 @@ describe('profil boutique (couleur de marque)', () => {
       .set('authorization', `Bearer ${owner}`)
       .send({ accentColor: 'turquoise' })
       .expect(400);
+
+    // zones de livraison : normalisées + visibles en vitrine, id assigné
+    const dz = await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({
+        deliveryZones: [
+          { label: '  Akwa ', fee: 1500 },
+          { label: 'AKWA', fee: 3000 },
+          { label: 'Bonabéri', fee: 2000 },
+        ],
+      })
+      .expect(200);
+    expect(dz.body.deliveryZones).toHaveLength(2);
+    expect(dz.body.deliveryZones[0]).toMatchObject({ label: 'Akwa', fee: 1500 });
+    expect(dz.body.deliveryZones[0].id).toBeTruthy();
+    const dzPublic = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(dzPublic.body.deliveryZones.map((z: { label: string }) => z.label)).toEqual([
+      'Akwa',
+      'Bonabéri',
+    ]);
   });
 });
 

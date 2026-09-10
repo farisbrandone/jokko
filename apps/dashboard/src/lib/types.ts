@@ -69,6 +69,7 @@ export interface ShopProfile {
   heroImageUrl: string | null;
   accentColor: string | null;
   announcement: string | null;
+  deliveryZones: { id?: string; label: string; fee: number }[];
 }
 
 export const VERTICALS = [

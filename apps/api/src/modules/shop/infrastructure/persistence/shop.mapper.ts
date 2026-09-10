@@ -26,6 +26,11 @@ export const ShopMapper = {
       heroImageUrl: entity.heroImageUrl,
       accentColor: entity.accentColor,
       announcement: entity.announcement,
+      deliveryZones: (entity.deliveryZones ?? []).map((z) => ({
+        id: z.id,
+        label: z.label,
+        fee: z.fee,
+      })),
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -56,6 +61,7 @@ export const ShopMapper = {
     entity.heroImageUrl = s.heroImageUrl;
     entity.accentColor = s.accentColor;
     entity.announcement = s.announcement;
+    entity.deliveryZones = s.deliveryZones.map((z) => ({ id: z.id, label: z.label, fee: z.fee }));
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

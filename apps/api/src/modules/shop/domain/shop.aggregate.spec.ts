@@ -119,4 +119,27 @@ describe('Shop (agrégat)', () => {
     expect(shop.toSnapshot().heroTitle).toBeNull();
     expect(shop.updateProfile({ accentColor: 'bleu' }).isErr).toBe(true);
   });
+
+  it('updateProfile : zones de livraison normalisées (libellé trimé, dédup, frais ≥ 0, id assigné)', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    expect(shop.toSnapshot().deliveryZones).toEqual([]);
+
+    shop.updateProfile({
+      deliveryZones: [
+        { label: '  Akwa ', fee: 1500 },
+        { label: 'AKWA', fee: 2000 },
+        { label: 'Bonabéri', fee: -50 },
+        { label: '   ', fee: 100 },
+      ],
+    });
+    const zones = shop.toSnapshot().deliveryZones;
+    expect(zones).toHaveLength(2);
+    expect(zones[0]).toMatchObject({ label: 'Akwa', fee: 1500 });
+    expect(zones[1]).toMatchObject({ label: 'Bonabéri', fee: 0 });
+    expect(zones[0].id).toBeTruthy();
+  });
 });

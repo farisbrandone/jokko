@@ -10,6 +10,7 @@ import { CustomDomainForm } from '@/components/custom-domain-form';
 import { DirectoryOptInForm } from '@/components/directory-optin-form';
 import { ShopCategoriesForm } from '@/components/shop-categories-form';
 import { ShopAppearanceForm } from '@/components/shop-appearance-form';
+import { DeliveryZonesForm } from '@/components/delivery-zones-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,15 @@ export default async function SettingsPage({ params }: Params) {
           utilisées comme filtres sur votre vitrine. L&apos;ordre est respecté.
         </p>
         <ShopCategoriesForm shopId={shopId} initial={shop.categories ?? []} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Zones de livraison</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Ville / quartier et frais associés. Proposés au panier ; l&apos;acheteur
+          peut aussi choisir le retrait en boutique (gratuit).
+        </p>
+        <DeliveryZonesForm shopId={shopId} initial={shop.deliveryZones ?? []} />
       </section>
 
       <section className="mb-10">

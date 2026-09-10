@@ -66,6 +66,9 @@ export class ShopEntity {
   @Property({ type: 'string', length: 160, nullable: true })
   announcement: string | null = null;
 
+  @Property({ type: 'json', fieldName: 'delivery_zones' })
+  deliveryZones: { id?: string; label: string; fee: number }[] = [];
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 
