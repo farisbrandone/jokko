@@ -31,6 +31,7 @@ export const ShopMapper = {
         label: z.label,
         fee: z.fee,
       })),
+      lowStockThreshold: entity.lowStockThreshold ?? 3,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -62,6 +63,7 @@ export const ShopMapper = {
     entity.accentColor = s.accentColor;
     entity.announcement = s.announcement;
     entity.deliveryZones = s.deliveryZones.map((z) => ({ id: z.id, label: z.label, fee: z.fee }));
+    entity.lowStockThreshold = s.lowStockThreshold;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

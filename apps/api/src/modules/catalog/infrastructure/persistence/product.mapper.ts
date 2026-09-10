@@ -16,6 +16,7 @@ export const ProductMapper = {
       stock: entity.stock,
       images: entity.images,
       attributes: entity.attributes,
+      variants: entity.variants ?? [],
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -35,6 +36,7 @@ export const ProductMapper = {
     entity.stock = s.stock;
     entity.images = s.images;
     entity.attributes = s.attributes;
+    entity.variants = s.variants;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

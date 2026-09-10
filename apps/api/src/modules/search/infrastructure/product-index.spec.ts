@@ -14,6 +14,7 @@ const snap = (over: Partial<ProductSnapshot> = {}): ProductSnapshot => ({
   stock: 0,
   images: [],
   attributes: {},
+  variants: [],
   status: 'published',
   createdAt: '2026-09-01T10:00:00.000Z',
   updatedAt: '2026-09-01T10:00:00.000Z',

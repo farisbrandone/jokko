@@ -69,4 +69,33 @@ describe('Product (agrégat)', () => {
     expect(product.belongsTo('shop-1')).toBe(true);
     expect(product.belongsTo('shop-2')).toBe(false);
   });
+
+  it('déclinaisons : stock produit = somme, normalisation, ajustement par déclinaison', () => {
+    const product = Product.create({
+      shopId: 'shop-1',
+      name: 'T-shirt',
+      category: 'mode-accessoires',
+      price: priceXof(5000),
+      stock: 999,
+      variants: [
+        { label: '  Rouge / M ', stock: 3, priceAmount: null },
+        { label: 'ROUGE / M', stock: 10 },
+        { label: 'Bleu / L', stock: 2, priceAmount: 6000, sku: ' SKU-1 ' },
+        { label: '  ', stock: 5 },
+      ],
+    }).unwrap();
+    const s = product.toSnapshot();
+    expect(s.variants).toHaveLength(2);
+    expect(s.variants[0]).toMatchObject({ label: 'Rouge / M', stock: 3, priceAmount: null });
+    expect(s.variants[1]).toMatchObject({ label: 'Bleu / L', stock: 2, priceAmount: 6000, sku: 'SKU-1' });
+    expect(s.stock).toBe(5); // 3 + 2, et non le 999 fourni
+    expect(s.variants[0].id).toBeTruthy();
+
+    const vid = s.variants[0].id!;
+    expect(product.adjustStock(-2, vid).isOk).toBe(true);
+    const s2 = product.toSnapshot();
+    expect(s2.variants[0].stock).toBe(1);
+    expect(s2.stock).toBe(3);
+    expect(product.adjustStock(-1, 'inconnu').isErr).toBe(true);
+  });
 });

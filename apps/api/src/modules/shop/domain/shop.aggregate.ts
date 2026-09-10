@@ -33,6 +33,7 @@ export interface ShopSnapshot {
   accentColor: string | null;
   announcement: string | null;
   deliveryZones: DeliveryZone[];
+  lowStockThreshold: number;
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -78,6 +79,7 @@ export interface UpdateShopProfileProps {
   accentColor?: string | null;
   announcement?: string | null;
   deliveryZones?: DeliveryZone[];
+  lowStockThreshold?: number;
 }
 
 /** Nettoyage des zones de livraison : libellé trimé non vide, dédup par libellé, frais ≥ 0, id stable. */
@@ -135,6 +137,7 @@ export class Shop extends AggregateRoot {
     private _categories: string[],
     private _appearance: ShopAppearance,
     private _deliveryZones: DeliveryZone[],
+    private _lowStockThreshold: number,
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -175,6 +178,7 @@ export class Shop extends AggregateRoot {
       [],
       { ...EMPTY_APPEARANCE },
       [],
+      3,
       'active',
       now,
       now,
@@ -208,6 +212,7 @@ export class Shop extends AggregateRoot {
         announcement: snap.announcement ?? null,
       },
       (snap.deliveryZones ?? []).map((z) => ({ ...z })),
+      snap.lowStockThreshold ?? 3,
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -272,6 +277,9 @@ export class Shop extends AggregateRoot {
     }
     if (patch.deliveryZones !== undefined) {
       this._deliveryZones = normalizeDeliveryZones(patch.deliveryZones);
+    }
+    if (patch.lowStockThreshold !== undefined) {
+      this._lowStockThreshold = Math.max(0, Math.min(999, Math.round(patch.lowStockThreshold)));
     }
     this._updatedAt = new Date();
     return Result.ok(undefined);
@@ -359,6 +367,7 @@ export class Shop extends AggregateRoot {
       accentColor: this._appearance.accentColor,
       announcement: this._appearance.announcement,
       deliveryZones: this._deliveryZones.map((z) => ({ ...z })),
+      lowStockThreshold: this._lowStockThreshold,
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

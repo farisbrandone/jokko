@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { apiJson } from '@/lib/api';
 import { storefrontUrl } from '@/lib/origin';
-import type { ProductList, SessionUser } from '@/lib/types';
+import type { ProductList, SessionUser, ShopProfile } from '@/lib/types';
 
 type CountOnly = { total: number };
 import { Shell } from '@/components/shell';
@@ -37,13 +37,19 @@ export default async function ShopPage({ params }: Params) {
   const membership = me.memberships.find((m) => m.shopId === shopId);
   if (!membership) redirect('/');
 
-  const [products, toDeliver, toShip, openThreads] = await Promise.all([
+  const [products, shop, toDeliver, toShip, openThreads] = await Promise.all([
     apiJson<ProductList>(`/shops/${shopId}/products?pageSize=100`),
+    apiJson<ShopProfile>(`/shops/${membership.slug}`).catch(() => null),
     apiJson<CountOnly>(`/shops/${shopId}/orders?status=to_deliver&pageSize=1`).catch(() => ({ total: 0 })),
     apiJson<CountOnly>(`/shops/${shopId}/orders?status=paid&pageSize=1`).catch(() => ({ total: 0 })),
     apiJson<CountOnly>(`/shops/${shopId}/inbox?status=open&pageSize=1`).catch(() => ({ total: 0 })),
   ]);
+  const threshold = shop?.lowStockThreshold ?? 3;
   const published = products.items.filter((p) => p.status === 'published').length;
+  const lowStock = products.items.filter((p) => {
+    const units = p.variants && p.variants.length > 0 ? p.variants.map((v) => v.stock) : [p.stock];
+    return units.some((n) => n > 0 && n <= threshold);
+  }).length;
   const shopHref = `/s/${shopId}`;
 
   return (
@@ -79,8 +85,9 @@ export default async function ShopPage({ params }: Params) {
         </div>
       </div>
 
-      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <Kpi label="Produits publiés" value={published} href={shopHref} />
+        <Kpi label="Stock bas" value={lowStock} href={shopHref} />
         <Kpi label="À livrer" value={toDeliver.total} href={`${shopHref}/orders`} />
         <Kpi label="À expédier" value={toShip.total} href={`${shopHref}/orders`} />
         <Kpi label="Messages ouverts" value={openThreads.total} href={`${shopHref}/inbox`} />
@@ -101,7 +108,7 @@ export default async function ShopPage({ params }: Params) {
           {/* Cartes — mobile */}
           <div className="flex flex-col gap-2 sm:hidden">
             {products.items.map((p) => (
-              <ProductRow key={p.id} shopId={shopId} product={p} variant="card" />
+              <ProductRow key={p.id} shopId={shopId} product={p} variant="card" lowStockThreshold={threshold} />
             ))}
           </div>
           {/* Tableau — desktop */}
@@ -118,7 +125,7 @@ export default async function ShopPage({ params }: Params) {
               </thead>
               <tbody>
                 {products.items.map((p) => (
-                  <ProductRow key={p.id} shopId={shopId} product={p} />
+                  <ProductRow key={p.id} shopId={shopId} product={p} lowStockThreshold={threshold} />
                 ))}
               </tbody>
             </table>

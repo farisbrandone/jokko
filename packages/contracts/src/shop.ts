@@ -59,6 +59,8 @@ export const ShopSchema = z.object({
   accentColor: BrandColorSchema.nullable().optional(),
   announcement: z.string().trim().max(160).nullable().optional(),
   deliveryZones: DeliveryZonesSchema.default([]),
+  /** Seuil d'alerte « stock bas » dans le tableau de bord. */
+  lowStockThreshold: z.number().int().min(0).max(999).default(3),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
@@ -90,6 +92,7 @@ export const UpdateShopSchema = z
     accentColor: BrandColorSchema.nullable(),
     announcement: z.string().trim().max(160).nullable(),
     deliveryZones: DeliveryZonesSchema,
+    lowStockThreshold: z.number().int().min(0).max(999),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });

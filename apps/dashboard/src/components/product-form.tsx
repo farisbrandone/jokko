@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { patch, post } from '@/lib/client';
-import { VERTICALS, type Product } from '@/lib/types';
+import { VERTICALS, type Product, type ProductVariant } from '@/lib/types';
 
 interface Props {
   shopId: string;
@@ -16,6 +16,16 @@ interface UploadUrl {
   uploadUrl: string;
   publicUrl: string;
 }
+
+type VariantDraft = { id?: string; label: string; sku: string; priceAmount: string; stock: string };
+
+const toDraft = (v: ProductVariant): VariantDraft => ({
+  id: v.id,
+  label: v.label,
+  sku: v.sku ?? '',
+  priceAmount: v.priceAmount != null ? String(v.priceAmount) : '',
+  stock: String(v.stock),
+});
 
 export function ProductForm({ shopId, product, categories = [] }: Props) {
   const router = useRouter();
@@ -32,11 +42,20 @@ export function ProductForm({ shopId, product, categories = [] }: Props) {
     product?.compareAtPrice ? String(product.compareAtPrice.amount) : '',
   );
   const [stock, setStock] = useState(String(product?.stock ?? 0));
+  const [variants, setVariants] = useState<VariantDraft[]>(
+    (product?.variants ?? []).map(toDraft),
+  );
   const [images, setImages] = useState<string[]>(product?.images ?? []);
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  const hasVariants = variants.length > 0;
+  const variantStockTotal = variants.reduce((s, v) => s + (Number(v.stock) || 0), 0);
+
+  const setV = (i: number, patchV: Partial<VariantDraft>) =>
+    setVariants((list) => list.map((v, idx) => (idx === i ? { ...v, ...patchV } : v)));
 
   const onFiles = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -68,14 +87,24 @@ export function ProductForm({ shopId, product, categories = [] }: Props) {
     setBusy(true);
     setErr(null);
     setSaved(false);
+    const cleanVariants = variants
+      .filter((v) => v.label.trim())
+      .map((v) => ({
+        id: v.id,
+        label: v.label.trim(),
+        sku: v.sku.trim() || null,
+        priceAmount: v.priceAmount.trim() ? Number(v.priceAmount) : null,
+        stock: Math.max(0, Number(v.stock) || 0),
+      }));
     const payload = {
       name,
       category,
       description,
       price: { amount: Number(price), currency: 'XOF' },
       compareAtPrice: compareAt ? { amount: Number(compareAt), currency: 'XOF' } : null,
-      stock: Number(stock),
+      stock: cleanVariants.length > 0 ? variantStockTotal : Number(stock),
       images,
+      variants: cleanVariants,
     };
     try {
       if (editing && product) {
@@ -88,9 +117,6 @@ export function ProductForm({ shopId, product, categories = [] }: Props) {
           payload,
         );
         if (!created?.id) throw new Error('Réponse inattendue du serveur (produit sans identifiant).');
-        // Pas de router.refresh() ici : appelé juste après router.push(), il
-        // interrompt la navigation en cours (la page de destination récupère
-        // de toute façon des données fraîches).
         router.push(`/s/${shopId}/products/${created.id}`);
       }
     } catch (e) {
@@ -158,13 +184,83 @@ export function ProductForm({ shopId, product, categories = [] }: Props) {
         </label>
         <label className="text-sm flex flex-col gap-1">
           Stock
-          <input
-            inputMode="numeric"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-            className={field}
-          />
+          {hasVariants ? (
+            <span className={`${field} text-[var(--color-muted)]`}>
+              {variantStockTotal} (somme)
+            </span>
+          ) : (
+            <input
+              inputMode="numeric"
+              value={stock}
+              onChange={(e) => setStock(e.target.value)}
+              className={field}
+            />
+          )}
         </label>
+      </div>
+
+      {/* Déclinaisons */}
+      <div className="flex flex-col gap-2 text-sm">
+        <div className="flex items-center justify-between">
+          <span className="font-medium">Déclinaisons (taille, couleur…)</span>
+          <button
+            type="button"
+            onClick={() =>
+              setVariants((l) => [...l, { label: '', sku: '', priceAmount: '', stock: '0' }])
+            }
+            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 text-xs"
+          >
+            + Ajouter
+          </button>
+        </div>
+        {hasVariants ? (
+          <div className="flex flex-col gap-2">
+            {variants.map((v, i) => (
+              <div
+                key={v.id ?? i}
+                className="grid grid-cols-[1fr_84px_96px_32px] items-center gap-2 rounded-[var(--radius-btn)] border border-[var(--color-border)] p-2"
+              >
+                <input
+                  placeholder="Ex. Rouge / M"
+                  value={v.label}
+                  onChange={(e) => setV(i, { label: e.target.value })}
+                  className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-sm"
+                />
+                <input
+                  inputMode="numeric"
+                  placeholder="Stock"
+                  value={v.stock}
+                  onChange={(e) => setV(i, { stock: e.target.value.replace(/\D/g, '') })}
+                  className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-right text-sm tabular-nums"
+                />
+                <input
+                  inputMode="numeric"
+                  placeholder="Prix"
+                  title="Prix propre à la déclinaison (vide = prix du produit)"
+                  value={v.priceAmount}
+                  onChange={(e) => setV(i, { priceAmount: e.target.value.replace(/\D/g, '') })}
+                  className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-2 py-1.5 text-right text-sm tabular-nums"
+                />
+                <button
+                  type="button"
+                  onClick={() => setVariants((l) => l.filter((_, idx) => idx !== i))}
+                  aria-label="Retirer la déclinaison"
+                  className="grid h-6 w-6 place-items-center rounded-full bg-[var(--color-surface-2)] text-xs hover:bg-[var(--color-danger)] hover:text-white"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <p className="text-xs text-[var(--color-muted)]">
+              Le stock du produit devient la somme des stocks de déclinaison. Prix
+              vide = prix du produit.
+            </p>
+          </div>
+        ) : (
+          <p className="text-xs text-[var(--color-muted)]">
+            Aucune déclinaison : le produit se vend en une seule version.
+          </p>
+        )}
       </div>
 
       <div className="text-sm flex flex-col gap-2">

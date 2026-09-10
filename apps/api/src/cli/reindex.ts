@@ -30,6 +30,7 @@ interface Row {
   stock: number;
   images: string[];
   attributes: ProductSnapshot['attributes'];
+  variants: ProductSnapshot['variants'] | null;
   status: ProductSnapshot['status'];
   created_at: Date;
   updated_at: Date;
@@ -47,6 +48,7 @@ const toSnapshot = (r: Row): ProductSnapshot => ({
   stock: r.stock,
   images: r.images,
   attributes: r.attributes,
+  variants: r.variants ?? [],
   status: r.status,
   createdAt: new Date(r.created_at).toISOString(),
   updatedAt: new Date(r.updated_at).toISOString(),

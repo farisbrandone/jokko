@@ -17,14 +17,36 @@ export function ProductRow({
   shopId,
   product,
   variant = 'row',
+  lowStockThreshold = 3,
 }: {
   shopId: string;
   product: Product;
   variant?: 'row' | 'card';
+  lowStockThreshold?: number;
 }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const published = product.status === 'published';
+
+  const stockUnits =
+    product.variants && product.variants.length > 0
+      ? product.variants.map((v) => v.stock)
+      : [product.stock];
+  const stockState: 'out' | 'low' | 'ok' = stockUnits.every((n) => n <= 0)
+    ? 'out'
+    : stockUnits.some((n) => n > 0 && n <= lowStockThreshold)
+      ? 'low'
+      : 'ok';
+  const stockBadge =
+    stockState === 'out' ? (
+      <span className="rounded bg-[var(--color-danger)]/15 px-2 py-0.5 text-xs text-[var(--color-danger)]">
+        rupture
+      </span>
+    ) : stockState === 'low' ? (
+      <span className="rounded bg-[var(--color-danger)]/12 px-2 py-0.5 text-xs text-[var(--color-danger)]">
+        stock bas
+      </span>
+    ) : null;
 
   const toggle = async () => {
     setBusy(true);
@@ -63,7 +85,10 @@ export function ProductRow({
           >
             {product.name}
           </Link>
-          {badge}
+          <div className="flex shrink-0 gap-1">
+            {stockBadge}
+            {badge}
+          </div>
         </div>
         <div className="mt-1 text-xs capitalize text-[var(--color-muted)]">
           {product.category.replace(/-/g, ' ')}
@@ -95,7 +120,12 @@ export function ProductRow({
       <td className="py-2 pr-3 tabular-nums">
         {formatMoney(product.price.amount, product.price.currency)}
       </td>
-      <td className="py-2 pr-3 tabular-nums">{product.stock}</td>
+      <td className="py-2 pr-3 tabular-nums">
+        <span className="inline-flex items-center gap-1.5">
+          {product.stock}
+          {stockBadge}
+        </span>
+      </td>
       <td className="py-2 pr-3">{badge}</td>
       <td className="whitespace-nowrap px-3 py-2 text-right">{toggleBtn}</td>
     </tr>

@@ -38,6 +38,7 @@ export class CreateProductUseCase {
       stock: input.stock,
       images: input.images,
       attributes: input.attributes,
+      variants: input.variants,
     });
     if (created.isErr) return Result.err(created.getError());
 

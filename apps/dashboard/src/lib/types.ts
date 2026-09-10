@@ -11,6 +11,14 @@ export interface Money {
   currency: string;
 }
 
+export interface ProductVariant {
+  id?: string;
+  label: string;
+  sku?: string | null;
+  priceAmount?: number | null;
+  stock: number;
+}
+
 export interface Product {
   id: string;
   shopId: string;
@@ -23,6 +31,7 @@ export interface Product {
   stock: number;
   images: string[];
   attributes: Record<string, string | number | boolean | string[]>;
+  variants: ProductVariant[];
   status: 'draft' | 'published' | 'archived';
   createdAt: string;
   updatedAt: string;
@@ -63,6 +72,7 @@ export interface ShopProfile {
   brandColor: string | null;
   listed: boolean;
   tagline: string | null;
+  lowStockThreshold: number;
   categories: string[];
   heroTitle: string | null;
   heroSubtitle: string | null;

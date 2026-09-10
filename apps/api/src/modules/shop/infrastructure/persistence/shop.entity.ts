@@ -69,6 +69,9 @@ export class ShopEntity {
   @Property({ type: 'json', fieldName: 'delivery_zones' })
   deliveryZones: { id?: string; label: string; fee: number }[] = [];
 
+  @Property({ type: 'integer', fieldName: 'low_stock_threshold' })
+  lowStockThreshold = 3;
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 

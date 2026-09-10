@@ -18,6 +18,7 @@ type Form = {
   themePreset: ThemePreset;
   brandColor: string;
   useBrandColor: boolean;
+  lowStockThreshold: string;
 };
 
 const HEX_RE = /^#[0-9a-fA-F]{6}$/;
@@ -30,6 +31,7 @@ export function ShopProfileForm({ initial }: { initial: ShopProfile }) {
     themePreset: initial.themePreset,
     brandColor: initial.brandColor ?? '#c2410c',
     useBrandColor: initial.brandColor != null,
+    lowStockThreshold: String(initial.lowStockThreshold ?? 3),
   });
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -55,6 +57,7 @@ export function ShopProfileForm({ initial }: { initial: ShopProfile }) {
         whatsapp: form.whatsapp.trim() || null,
         themePreset: form.themePreset,
         brandColor: form.useBrandColor ? form.brandColor.toLowerCase() : null,
+        lowStockThreshold: Math.max(0, Math.min(999, Number(form.lowStockThreshold) || 0)),
       });
       setSaved(true);
       router.refresh();
@@ -102,6 +105,20 @@ export function ShopProfileForm({ initial }: { initial: ShopProfile }) {
             </option>
           ))}
         </select>
+      </label>
+
+      <label className="flex flex-col gap-1 text-sm">
+        <span className="font-medium">Alerte « stock bas » à partir de</span>
+        <input
+          inputMode="numeric"
+          value={form.lowStockThreshold}
+          onChange={(e) => set('lowStockThreshold', e.target.value.replace(/\D/g, ''))}
+          className="w-24 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2"
+        />
+        <span className="text-xs text-[var(--color-muted)]">
+          Un produit (ou une déclinaison) à ce niveau ou en dessous est signalé
+          dans le tableau de bord.
+        </span>
       </label>
 
       <fieldset className="flex flex-col gap-2 text-sm">

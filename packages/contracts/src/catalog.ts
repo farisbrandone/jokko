@@ -12,6 +12,20 @@ export const DynamicAttributesSchema = z.record(
 );
 export type DynamicAttributes = z.infer<typeof DynamicAttributesSchema>;
 
+/**
+ * Déclinaison d'un produit (taille, couleur…). `priceAmount` null = prix du
+ * produit ; sinon il le remplace. Stock propre à la déclinaison.
+ */
+export const ProductVariantSchema = z.object({
+  id: z.string().min(1).max(40).optional(),
+  label: z.string().trim().min(1).max(80),
+  sku: z.string().trim().max(40).nullable().optional(),
+  priceAmount: z.number().int().nonnegative().nullable().optional(),
+  stock: z.number().int().nonnegative(),
+});
+export type ProductVariant = z.infer<typeof ProductVariantSchema>;
+export const ProductVariantsSchema = z.array(ProductVariantSchema).max(60);
+
 export const ProductSchema = z.object({
   id: IdSchema,
   shopId: IdSchema,
@@ -24,6 +38,7 @@ export const ProductSchema = z.object({
   stock: z.number().int().nonnegative().default(0),
   images: z.array(z.string().url()).default([]),
   attributes: DynamicAttributesSchema.default({}),
+  variants: ProductVariantsSchema.default([]),
   status: ProductStatusSchema.default('draft'),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -39,12 +54,14 @@ export const CreateProductSchema = ProductSchema.pick({
   stock: true,
   images: true,
   attributes: true,
+  variants: true,
 }).partial({
   description: true,
   compareAtPrice: true,
   stock: true,
   images: true,
   attributes: true,
+  variants: true,
 });
 export type CreateProductInput = z.infer<typeof CreateProductSchema>;
 

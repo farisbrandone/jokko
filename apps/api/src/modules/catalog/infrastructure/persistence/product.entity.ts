@@ -1,5 +1,5 @@
 import { Entity, Filter, Index, PrimaryKey, Property, Unique } from '@mikro-orm/core';
-import type { DynamicAttributes, ProductStatus } from '@jokko/contracts';
+import type { DynamicAttributes, ProductStatus, ProductVariant } from '@jokko/contracts';
 
 interface MoneyJson {
   amount: number;
@@ -55,6 +55,9 @@ export class ProductEntity {
 
   @Property({ type: 'json' })
   attributes: DynamicAttributes = {};
+
+  @Property({ type: 'json' })
+  variants: ProductVariant[] = [];
 
   @Property({ type: 'string', length: 20 })
   status: ProductStatus = 'draft';

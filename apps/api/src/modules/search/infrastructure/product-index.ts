@@ -22,22 +22,29 @@ export interface ProductDoc {
   createdAtTs: number;
 }
 
-export const toProductDoc = (p: ProductSnapshot): ProductDoc => ({
-  id: p.id,
-  shopId: p.shopId,
-  slug: p.slug,
-  name: p.name,
-  description: p.description,
-  category: p.category,
-  priceAmount: p.price.amount,
-  currency: p.price.currency,
-  compareAtPriceAmount: p.compareAtPrice?.amount ?? null,
-  stock: p.stock,
-  inStock: p.stock > 0,
-  images: p.images,
-  status: p.status,
-  createdAtTs: Date.parse(p.createdAt) || 0,
-});
+export const toProductDoc = (p: ProductSnapshot): ProductDoc => {
+  // Avec des déclinaisons : prix affiché = plus bas prix effectif (« à partir de »).
+  const variantPrices = (p.variants ?? [])
+    .map((v) => (v.priceAmount == null ? p.price.amount : v.priceAmount))
+    .filter((n) => Number.isFinite(n));
+  const priceAmount = variantPrices.length > 0 ? Math.min(...variantPrices) : p.price.amount;
+  return {
+    id: p.id,
+    shopId: p.shopId,
+    slug: p.slug,
+    name: p.name,
+    description: p.description,
+    category: p.category,
+    priceAmount,
+    currency: p.price.currency,
+    compareAtPriceAmount: p.compareAtPrice?.amount ?? null,
+    stock: p.stock,
+    inStock: p.stock > 0,
+    images: p.images,
+    status: p.status,
+    createdAtTs: Date.parse(p.createdAt) || 0,
+  };
+};
 
 @Injectable()
 export class ProductIndex {

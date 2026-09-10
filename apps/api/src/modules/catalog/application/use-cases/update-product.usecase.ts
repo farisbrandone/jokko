@@ -46,6 +46,7 @@ export class UpdateProductUseCase {
       stock: input.stock,
       images: input.images,
       attributes: input.attributes,
+      variants: input.variants,
     });
     if (updated.isErr) return Result.err(updated.getError());
 
