@@ -48,6 +48,9 @@ export class ShopEntity {
   @Property({ type: 'string', length: 140, nullable: true })
   tagline: string | null = null;
 
+  @Property({ type: 'json' })
+  categories: string[] = [];
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 

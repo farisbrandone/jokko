@@ -76,4 +76,16 @@ describe('Shop (agrégat)', () => {
     expect(shop.toSnapshot().brandColor).toBeNull();
     expect(shop.updateProfile({ brandColor: '#12' }).isErr).toBe(true);
   });
+
+  it('updateProfile : catégories normalisées (trim, vides retirés, dédup insensible à la casse)', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    expect(shop.toSnapshot().categories).toEqual([]);
+
+    shop.updateProfile({ categories: ['  Téléphones ', 'Robes', '', 'ROBES', 'Sacs'] });
+    expect(shop.toSnapshot().categories).toEqual(['Téléphones', 'Robes', 'Sacs']);
+  });
 });

@@ -29,6 +29,7 @@ export default async function CategoryPage({ params }: Params) {
       <ProductBrowser
         initial={results}
         currency={shop.currency}
+        shopCategories={shop.categories ?? []}
         initialParams={{ category, sort: 'newest' }}
       />
     </div>

@@ -8,6 +8,8 @@ import { VERTICALS, type Product } from '@/lib/types';
 interface Props {
   shopId: string;
   product?: Product;
+  /** Catégories déclarées par la boutique (Réglages) — sinon les verticales par défaut. */
+  categories?: string[];
 }
 
 interface UploadUrl {
@@ -15,12 +17,15 @@ interface UploadUrl {
   publicUrl: string;
 }
 
-export function ProductForm({ shopId, product }: Props) {
+export function ProductForm({ shopId, product, categories = [] }: Props) {
   const router = useRouter();
   const editing = Boolean(product);
+  const categoryOptions = categories.length > 0 ? categories : [...VERTICALS];
 
   const [name, setName] = useState(product?.name ?? '');
-  const [category, setCategory] = useState(product?.category ?? 'electronique');
+  const [category, setCategory] = useState(
+    product?.category ?? categoryOptions[0] ?? 'electronique',
+  );
   const [description, setDescription] = useState(product?.description ?? '');
   const [price, setPrice] = useState(String(product?.price.amount ?? ''));
   const [compareAt, setCompareAt] = useState(
@@ -115,7 +120,7 @@ export function ProductForm({ shopId, product }: Props) {
           className={field}
         />
         <datalist id="verticals">
-          {VERTICALS.map((v) => (
+          {categoryOptions.map((v) => (
             <option key={v} value={v} />
           ))}
         </datalist>

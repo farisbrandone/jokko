@@ -63,6 +63,7 @@ export interface ShopProfile {
   brandColor: string | null;
   listed: boolean;
   tagline: string | null;
+  categories: string[];
 }
 
 export const VERTICALS = [

@@ -8,6 +8,7 @@ import { ShopProfileForm } from '@/components/shop-profile-form';
 import { PushToggle } from '@/components/push-toggle';
 import { CustomDomainForm } from '@/components/custom-domain-form';
 import { DirectoryOptInForm } from '@/components/directory-optin-form';
+import { ShopCategoriesForm } from '@/components/shop-categories-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -45,6 +46,15 @@ export default async function SettingsPage({ params }: Params) {
           Nom, contact et apparence de la vitrine partagée sur les réseaux.
         </p>
         <ShopProfileForm initial={shop} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Catégories du catalogue</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Vos propres catégories, proposées à la création d&apos;un produit et
+          utilisées comme filtres sur votre vitrine. L&apos;ordre est respecté.
+        </p>
+        <ShopCategoriesForm shopId={shopId} initial={shop.categories ?? []} />
       </section>
 
       <section className="mb-10">

@@ -73,6 +73,7 @@ export default async function HomePage({ searchParams }: Params) {
       <ProductBrowser
         initial={results}
         currency={shop.currency}
+        shopCategories={shop.categories ?? []}
         initialParams={{
           q: sp.q,
           category: sp.category,

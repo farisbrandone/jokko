@@ -20,6 +20,7 @@ export const ShopMapper = {
       customDomainToken: entity.customDomainToken,
       listed: entity.listed,
       tagline: entity.tagline,
+      categories: entity.categories ?? [],
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -44,6 +45,7 @@ export const ShopMapper = {
     entity.customDomainToken = s.customDomainToken;
     entity.listed = s.listed;
     entity.tagline = s.tagline;
+    entity.categories = s.categories;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

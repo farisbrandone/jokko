@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { apiJson, ApiError } from '@/lib/api';
+import { shopCategories } from '@/lib/shop';
 import type { Product } from '@/lib/types';
 import { Shell } from '@/components/shell';
 import { ProductForm } from '@/components/product-form';
@@ -20,6 +21,7 @@ export default async function EditProductPage({ params }: Params) {
     if (e instanceof ApiError && e.status === 404) notFound();
     throw e;
   }
+  const categories = await shopCategories(shopId);
 
   return (
     <Shell>
@@ -34,7 +36,7 @@ export default async function EditProductPage({ params }: Params) {
           {product.status}
         </span>
       </div>
-      <ProductForm shopId={shopId} product={product} />
+      <ProductForm shopId={shopId} product={product} categories={categories} />
     </Shell>
   );
 }

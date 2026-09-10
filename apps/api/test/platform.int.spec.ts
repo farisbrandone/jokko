@@ -356,6 +356,16 @@ describe('profil boutique (couleur de marque)', () => {
     const after = await http.get(`/api/shops/${slug}`).expect(200);
     expect(after.body.name).toBe('Brand Shop ✦');
     expect(after.body.brandColor).toBe('#0ea5e9');
+
+    // catégories personnalisées : normalisées et visibles en vitrine
+    const cats = await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ categories: ['  Téléphones ', 'Accessoires', 'ACCESSOIRES'] })
+      .expect(200);
+    expect(cats.body.categories).toEqual(['Téléphones', 'Accessoires']);
+    const afterCats = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(afterCats.body.categories).toEqual(['Téléphones', 'Accessoires']);
   });
 });
 

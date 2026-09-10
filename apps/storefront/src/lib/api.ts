@@ -13,6 +13,7 @@ export interface ShopView {
   locale: string;
   currency: string;
   customDomain: string | null;
+  categories: string[];
   status: string;
 }
 

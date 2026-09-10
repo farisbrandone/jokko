@@ -20,6 +20,10 @@ export const SlugSchema = z
 export const ThemePresetSchema = z.enum(['grid', 'editorial', 'single', 'dense']);
 export type ThemePreset = z.infer<typeof ThemePresetSchema>;
 
+/** Catégories libres définies par le vendeur pour sa boutique (dédoublonnées côté domaine). */
+export const ShopCategoriesSchema = z.array(z.string().trim().min(1).max(40)).max(50);
+export type ShopCategories = z.infer<typeof ShopCategoriesSchema>;
+
 /** Couleur de marque en hexadécimal `#rrggbb` (surcharge le token `--color-brand`). */
 export const BrandColorSchema = z
   .string()
@@ -38,6 +42,7 @@ export const ShopSchema = z.object({
   customDomain: z.string().optional(),
   listed: z.boolean().default(false),
   tagline: z.string().max(140).nullable().optional(),
+  categories: ShopCategoriesSchema.default([]),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
@@ -62,6 +67,7 @@ export const UpdateShopSchema = z
     brandColor: BrandColorSchema.nullable(),
     listed: z.boolean(),
     tagline: z.string().trim().max(140).nullable(),
+    categories: ShopCategoriesSchema,
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });

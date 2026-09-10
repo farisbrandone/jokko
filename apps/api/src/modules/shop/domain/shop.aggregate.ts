@@ -25,6 +25,7 @@ export interface ShopSnapshot {
   customDomainToken: string | null;
   listed: boolean;
   tagline: string | null;
+  categories: string[];
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -47,6 +48,23 @@ export interface UpdateShopProfileProps {
   brandColor?: string | null;
   listed?: boolean;
   tagline?: string | null;
+  categories?: string[];
+}
+
+/** Nettoyage : trim, retrait des vides, déduplication insensible à la casse, plafond 50. */
+export function normalizeCategories(list: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of list) {
+    const value = raw.trim();
+    if (!value) continue;
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(value.slice(0, 40));
+    if (out.length >= 50) break;
+  }
+  return out;
 }
 
 export class Shop extends AggregateRoot {
@@ -65,6 +83,7 @@ export class Shop extends AggregateRoot {
     private _customDomainToken: string | null,
     private _listed: boolean,
     private _tagline: string | null,
+    private _categories: string[],
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -102,6 +121,7 @@ export class Shop extends AggregateRoot {
       null,
       false,
       null,
+      [],
       'active',
       now,
       now,
@@ -126,6 +146,7 @@ export class Shop extends AggregateRoot {
       snap.customDomainToken,
       snap.listed,
       snap.tagline,
+      [...(snap.categories ?? [])],
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -159,6 +180,9 @@ export class Shop extends AggregateRoot {
     }
     if (patch.tagline !== undefined) {
       this._tagline = patch.tagline?.trim() || null;
+    }
+    if (patch.categories !== undefined) {
+      this._categories = normalizeCategories(patch.categories);
     }
     this._updatedAt = new Date();
     return Result.ok(undefined);
@@ -239,6 +263,7 @@ export class Shop extends AggregateRoot {
       customDomainToken: this._customDomainToken,
       listed: this._listed,
       tagline: this._tagline,
+      categories: [...this._categories],
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),
