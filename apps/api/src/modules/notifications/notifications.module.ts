@@ -13,11 +13,13 @@ import {
   WHATSAPP_SENDER,
 } from './domain/ports';
 import { LogSmsSender, LogWhatsAppSender } from './infrastructure/log.senders';
+import { MetaCloudWhatsAppSender } from './infrastructure/whatsapp-cloud.sender';
 import { Mailer } from './infrastructure/mailer';
 import { MikroOrmDispatchLogRepository } from './infrastructure/persistence/mikro-orm-dispatch-log.repository';
 import { MikroOrmNotificationSettingsRepository } from './infrastructure/persistence/mikro-orm-notification-settings.repository';
 import { TermiiSmsSender, TermiiWhatsAppSender } from './infrastructure/termii.senders';
 import { NotificationSettingsController } from './presentation/notification-settings.controller';
+import { WhatsAppWebhookController } from './presentation/whatsapp-webhook.controller';
 
 /** Termii si une clé API est configurée, sinon adaptateur « log » (dev / CI). */
 const smsProvider: Provider = {
@@ -29,18 +31,21 @@ const smsProvider: Provider = {
   },
 };
 
+/** Priorité : WhatsApp Cloud API (Meta) → Termii → adaptateur « log ». */
 const whatsappProvider: Provider = {
   provide: WHATSAPP_SENDER,
   inject: [ConfigService],
   useFactory: (config: ConfigService<AppConfig, true>) => {
-    const t = config.get('notifications', { infer: true }).termii;
-    return t ? new TermiiWhatsAppSender(t) : new LogWhatsAppSender();
+    const n = config.get('notifications', { infer: true });
+    if (n.whatsappCloud) return new MetaCloudWhatsAppSender(n.whatsappCloud);
+    if (n.termii) return new TermiiWhatsAppSender(n.termii);
+    return new LogWhatsAppSender();
   },
 };
 
 @Module({
   imports: [IdentityModule, ShopModule, PushModule],
-  controllers: [NotificationSettingsController],
+  controllers: [NotificationSettingsController, WhatsAppWebhookController],
   providers: [
     Mailer,
     NewMessageListener,
@@ -50,6 +55,6 @@ const whatsappProvider: Provider = {
     { provide: NOTIFICATION_SETTINGS_REPOSITORY, useClass: MikroOrmNotificationSettingsRepository },
     { provide: DISPATCH_LOG_REPOSITORY, useClass: MikroOrmDispatchLogRepository },
   ],
-  exports: [Mailer],
+  exports: [Mailer, WHATSAPP_SENDER, SMS_SENDER],
 })
 export class NotificationsModule {}

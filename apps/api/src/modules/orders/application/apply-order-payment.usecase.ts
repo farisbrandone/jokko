@@ -11,6 +11,7 @@ import {
 import { Mailer } from '../../notifications/infrastructure/mailer';
 import { renderEmail } from '../../notifications/infrastructure/email-template';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
+import { OrderWhatsappNotifier } from './order-whatsapp.notifier';
 
 const ZERO_DECIMAL = new Set(['XOF', 'XAF', 'JPY', 'KRW', 'CLP', 'VND']);
 const fmt = (amount: number, currency: string): string => {
@@ -29,6 +30,7 @@ export class ApplyOrderPaymentUseCase {
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
     @Inject(MEMBERSHIP_REPOSITORY) private readonly memberships: MembershipRepository,
     private readonly mailer: Mailer,
+    private readonly whatsapp: OrderWhatsappNotifier,
   ) {}
 
   async execute(txRef: string): Promise<'applied' | 'ignored' | 'failed'> {
@@ -50,6 +52,7 @@ export class ApplyOrderPaymentUseCase {
     await this.orders.save(order);
     await this.decrementStock(order.shopId, order.lines);
     await this.notifySeller(order);
+    void this.whatsapp.orderPaid(order.toSnapshot());
     this.logger.log(`commande ${order.id} payée (${txRef})`);
     return 'applied';
   }

@@ -40,6 +40,17 @@ export const envSchema = z.object({
   TERMII_BASE_URL: z.string().url().default('https://api.ng.termii.com'),
   NOTIFICATIONS_COOLDOWN_SEC: z.coerce.number().int().min(0).default(300),
 
+  // WhatsApp Cloud API (Meta). Prioritaire sur Termii pour le canal WhatsApp
+  // s'il est configuré. Entièrement optionnel : sans jeton, on retombe sur
+  // Termii puis sur l'adaptateur « log » — l'application fonctionne normalement.
+  WHATSAPP_CLOUD_TOKEN: z.string().optional(),
+  WHATSAPP_CLOUD_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_CLOUD_API_VERSION: z.string().default('v21.0'),
+  // Webhook entrant (vérification Meta + signature). Optionnels : sans eux le
+  // point de terminaison répond 403 (GET) / 200 sans effet (POST).
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string().optional(),
+  WHATSAPP_APP_SECRET: z.string().optional(),
+
   // Web Push (VAPID). Sans clés, le canal push est un no-op (adaptateur « log »).
   VAPID_PUBLIC_KEY: z.string().optional(),
   VAPID_PRIVATE_KEY: z.string().optional(),

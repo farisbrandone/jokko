@@ -11,6 +11,7 @@ import { ORDER_REPOSITORY } from './domain/ports';
 import { PlaceOrderUseCase } from './application/place-order.usecase';
 import { ApplyOrderPaymentUseCase } from './application/apply-order-payment.usecase';
 import { OrdersService } from './application/orders.service';
+import { OrderWhatsappNotifier } from './application/order-whatsapp.notifier';
 import { OrdersController } from './presentation/orders.controller';
 import { OrdersWebhookController } from './presentation/orders-webhook.controller';
 
@@ -28,6 +29,7 @@ import { OrdersWebhookController } from './presentation/orders-webhook.controlle
     PlaceOrderUseCase,
     ApplyOrderPaymentUseCase,
     OrdersService,
+    OrderWhatsappNotifier,
     { provide: ORDER_REPOSITORY, useClass: MikroOrmOrderRepository },
   ],
 })

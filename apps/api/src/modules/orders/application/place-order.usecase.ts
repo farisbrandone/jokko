@@ -14,6 +14,7 @@ import {
 import { PAYMENT_GATEWAY, type PaymentGateway } from '../../billing/domain/ports';
 import { Order } from '../domain/order.aggregate';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
+import { OrderWhatsappNotifier } from './order-whatsapp.notifier';
 
 @Injectable()
 export class PlaceOrderUseCase {
@@ -25,6 +26,7 @@ export class PlaceOrderUseCase {
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
     @Inject(SHOP_REPOSITORY) private readonly shops: ShopRepository,
     @Inject(PAYMENT_GATEWAY) private readonly gateway: PaymentGateway,
+    private readonly whatsapp: OrderWhatsappNotifier,
   ) {
     this.rootDomain = config.get('tenant', { infer: true }).rootDomain;
   }
@@ -132,6 +134,7 @@ export class PlaceOrderUseCase {
     // Paiement à la livraison : pas de passerelle, la commande entre en « à livrer ».
     if (input.paymentMethod === 'cash_on_delivery') {
       await this.orders.save(order);
+      void this.whatsapp.orderPlaced(order.toSnapshot());
       return { orderId: order.id, buyerToken: token, checkoutUrl: null };
     }
 

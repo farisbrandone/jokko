@@ -18,7 +18,9 @@ async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter({ trustProxy: true }),
-    { bufferLogs: true },
+    // `rawBody` : corps brut conservé pour vérifier la signature HMAC du
+    // webhook WhatsApp Cloud (X-Hub-Signature-256).
+    { bufferLogs: true, rawBody: true },
   );
 
   app.useLogger(app.get(Logger));

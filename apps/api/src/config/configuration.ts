@@ -67,6 +67,15 @@ export interface AppConfig {
       senderId: string;
       baseUrl: string;
     } | null;
+    whatsappCloud: {
+      token: string;
+      phoneNumberId: string;
+      apiVersion: string;
+    } | null;
+    whatsappWebhook: {
+      verifyToken: string | null;
+      appSecret: string | null;
+    };
     webPush: {
       publicKey: string;
       privateKey: string;
@@ -188,6 +197,18 @@ export const buildConfig = (env: Env): AppConfig => ({
           baseUrl: env.TERMII_BASE_URL,
         }
       : null,
+    whatsappCloud:
+      env.WHATSAPP_CLOUD_TOKEN && env.WHATSAPP_CLOUD_PHONE_NUMBER_ID
+        ? {
+            token: env.WHATSAPP_CLOUD_TOKEN,
+            phoneNumberId: env.WHATSAPP_CLOUD_PHONE_NUMBER_ID,
+            apiVersion: env.WHATSAPP_CLOUD_API_VERSION,
+          }
+        : null,
+    whatsappWebhook: {
+      verifyToken: env.WHATSAPP_WEBHOOK_VERIFY_TOKEN ?? null,
+      appSecret: env.WHATSAPP_APP_SECRET ?? null,
+    },
     webPush:
       env.VAPID_PUBLIC_KEY && env.VAPID_PRIVATE_KEY
         ? {

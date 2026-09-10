@@ -187,6 +187,8 @@ Déjà dans `.env` (§7) — valeurs à fournir vous-même :
 | `GOOGLE_OAUTH_CLIENT_ID/SECRET` | optionnel | console Google Cloud → identifiants OAuth 2.0 |
 | `FACEBOOK_OAUTH_CLIENT_ID/SECRET` | optionnel | Meta for Developers → app Facebook Login |
 | `TERMII_API_KEY` | optionnel | tableau de bord Termii |
+| `WHATSAPP_CLOUD_TOKEN` / `WHATSAPP_CLOUD_PHONE_NUMBER_ID` | optionnel | Meta for Developers → app WhatsApp (compte Meta Business **vérifié** requis) |
+| `WHATSAPP_WEBHOOK_VERIFY_TOKEN` / `WHATSAPP_APP_SECRET` | optionnel | chaîne au choix + « App secret » Meta — pour le webhook entrant |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | optionnel | `npx web-push generate-vapid-keys` (local) |
 | `FLW_SECRET_KEY` / `FLW_WEBHOOK_SECRET` | optionnel* | tableau de bord Flutterwave |
 
@@ -206,6 +208,7 @@ no-op, OAuth désactivé, paiement fake).
 | Relais SMTP (Brevo, Postmark, Resend, Amazon SES, Mailgun…) | e-mails transactionnels (confirmation commande, invitations équipe) | **oui** | variable — Brevo : 300 e-mails/jour gratuits ; Postmark/Resend : payant au-delà d'un petit quota gratuit ; SES : ~0,10 $/1000 e-mails. Voir `docs/email-dns.md` (SPF/DKIM/DMARC) |
 | Flutterwave | paiement réel (commandes + abonnements vendeur) | non (fake sans clé) | pas d'abonnement — commission au % par transaction |
 | Termii | OTP SMS + WhatsApp/SMS | non (log sans clé) | pas d'abonnement — facturé au message |
+| WhatsApp Cloud API (Meta) | notifications commande/livraison + boîte de réception | non (log/Termii sans clé) | compte Meta Business **vérifié** requis ; conversations de service (réponse < 24 h) gratuites, notifications proactives par modèle facturées à la conversation (~0,005–0,08 $) |
 | Google / Facebook OAuth | connexion sociale | non | gratuit |
 | VAPID (Web Push) | notifications navigateur | non | gratuit (auto-généré) |
 | Prometheus/Grafana | supervision | non | gratuit mais consomme de la RAM — déconseillé sur ce VPS |
@@ -318,3 +321,31 @@ disque.
   cluster mode), cohérent avec 2 vCores/4 Go.
 - Observabilité (Prometheus/Grafana) volontairement omise pour préserver la
   RAM ; `GET /metrics` reste disponible pour un scraping ponctuel.
+
+## 15. WhatsApp Cloud API — optionnel, à activer plus tard
+
+Rien à faire au premier déploiement. L'app envoie déjà les notifications de
+commande par e-mail, et par WhatsApp/SMS via Termii si une clé Termii est
+fournie. Sans aucune de ces clés, les envois WhatsApp sont simplement
+journalisés (aucun blocage).
+
+Le jour où vous disposez d'un **compte Meta Business vérifié** :
+
+1. Meta for Developers → créer une app, produit « WhatsApp ». Noter le
+   *Phone number ID* et générer un *token* permanent (System User).
+2. Renseigner dans `.env` puis `pm2 restart jokko-api` (aucune migration) :
+   ```
+   WHATSAPP_CLOUD_TOKEN=<token permanent>
+   WHATSAPP_CLOUD_PHONE_NUMBER_ID=<phone number id>
+   WHATSAPP_WEBHOOK_VERIFY_TOKEN=<chaîne au hasard, ex. openssl rand -hex 16>
+   WHATSAPP_APP_SECRET=<App secret de l'app Meta>
+   ```
+3. Console Meta → WhatsApp → Configuration → Webhook :
+   - URL de rappel : `https://api.scoliaa.com/api/whatsapp/webhook`
+   - Token de vérification : la valeur de `WHATSAPP_WEBHOOK_VERIFY_TOKEN`
+   - S'abonner au champ `messages`.
+
+Dès que `WHATSAPP_CLOUD_TOKEN` + `WHATSAPP_CLOUD_PHONE_NUMBER_ID` sont
+présents, l'API bascule automatiquement de Termii/log vers Meta. Le webhook
+entrant est pour l'instant en **journalisation seule** (le routage d'un
+numéro partagé vers la bonne boutique reste à implémenter).

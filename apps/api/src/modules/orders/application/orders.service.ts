@@ -13,6 +13,7 @@ import {
 import { Order } from '../domain/order.aggregate';
 import { ORDER_REPOSITORY, type OrderRepository } from '../domain/ports';
 import { ApplyOrderPaymentUseCase } from './apply-order-payment.usecase';
+import { OrderWhatsappNotifier } from './order-whatsapp.notifier';
 
 function toView(order: Order): OrderView {
   const s = order.toSnapshot();
@@ -45,6 +46,7 @@ export class OrdersService {
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
     @Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository,
     private readonly applyPayment: ApplyOrderPaymentUseCase,
+    private readonly whatsapp: OrderWhatsappNotifier,
   ) {}
 
   async listForShop(
@@ -102,6 +104,7 @@ export class OrdersService {
     await this.orders.save(order);
     // Paiement à la livraison : le stock n'a pas été décrémenté au paiement.
     if (wasCod) await this.decrementStock(shopId, order.lines);
+    void this.whatsapp.orderFulfilled(order.toSnapshot());
     return toView(order);
   }
 
