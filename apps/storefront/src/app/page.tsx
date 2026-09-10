@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import { getLocale, getTranslations } from 'next-intl/server';
+import { getLocale } from 'next-intl/server';
 import { currentShop, siteUrl } from '@/lib/shop';
 import { getDirectory, searchProducts } from '@/lib/api';
 import { landingContent } from '@/lib/landing-content';
 import { ProductBrowser } from '@/components/product-browser';
+import { ShopHero } from '@/components/shop-hero';
 import { LandingPage } from '@/components/landing/landing-page';
 import type { AppLocale } from '@/i18n/request';
 
@@ -56,19 +57,11 @@ export default async function HomePage({ searchParams }: Params) {
     inStock: sp.inStock,
     sort: sp.sort ?? 'newest',
   };
-  const [results, t] = await Promise.all([
-    searchProducts(shop.id, { ...params, pageSize: 24 }),
-    getTranslations('home'),
-  ]);
+  const results = await searchProducts(shop.id, { ...params, pageSize: 24 });
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="rounded-[var(--radius-card)] bg-[var(--color-brand-soft)] px-5 py-8">
-        <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">{shop.name}</h1>
-        <p className="mt-1 text-[var(--color-muted)]">
-          {t('tagline')} {t('productsAvailable', { count: results.total })}
-        </p>
-      </section>
+      <ShopHero shop={shop} productCount={results.total} />
 
       <ProductBrowser
         initial={results}

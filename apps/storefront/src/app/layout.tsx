@@ -61,7 +61,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     getLocale(),
     getMessages(),
   ]);
-  const themeCss = brandThemeCss(shop?.brandColor);
+  const themeCss = brandThemeCss(shop?.brandColor, shop?.accentColor);
   return (
     <html lang={locale} className={`${display.variable} ${sans.variable}`}>
       {themeCss ? (
@@ -73,6 +73,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ServiceWorkerRegistrar />
           {shop ? <PageViewTracker /> : null}
+          {shop?.announcement ? (
+            <div className="bg-[var(--color-brand)] px-4 py-1.5 text-center text-xs font-medium text-[var(--color-brand-ink)]">
+              {shop.announcement}
+            </div>
+          ) : null}
           <SiteHeader shop={shop} />
           <main className="flex-1 w-full mx-auto max-w-6xl px-4 py-6">{children}</main>
           <SiteFooter shop={shop} />

@@ -51,6 +51,21 @@ export class ShopEntity {
   @Property({ type: 'json' })
   categories: string[] = [];
 
+  @Property({ type: 'string', length: 80, fieldName: 'hero_title', nullable: true })
+  heroTitle: string | null = null;
+
+  @Property({ type: 'string', length: 160, fieldName: 'hero_subtitle', nullable: true })
+  heroSubtitle: string | null = null;
+
+  @Property({ type: 'string', length: 600, fieldName: 'hero_image_url', nullable: true })
+  heroImageUrl: string | null = null;
+
+  @Property({ type: 'string', length: 7, fieldName: 'accent_color', nullable: true })
+  accentColor: string | null = null;
+
+  @Property({ type: 'string', length: 160, nullable: true })
+  announcement: string | null = null;
+
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';
 

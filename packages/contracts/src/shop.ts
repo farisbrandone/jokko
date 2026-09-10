@@ -43,6 +43,12 @@ export const ShopSchema = z.object({
   listed: z.boolean().default(false),
   tagline: z.string().max(140).nullable().optional(),
   categories: ShopCategoriesSchema.default([]),
+  // Apparence de la vitrine (page d'accueil de la boutique).
+  heroTitle: z.string().trim().max(80).nullable().optional(),
+  heroSubtitle: z.string().trim().max(160).nullable().optional(),
+  heroImageUrl: z.string().url().max(600).nullable().optional(),
+  accentColor: BrandColorSchema.nullable().optional(),
+  announcement: z.string().trim().max(160).nullable().optional(),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
@@ -68,6 +74,11 @@ export const UpdateShopSchema = z
     listed: z.boolean(),
     tagline: z.string().trim().max(140).nullable(),
     categories: ShopCategoriesSchema,
+    heroTitle: z.string().trim().max(80).nullable(),
+    heroSubtitle: z.string().trim().max(160).nullable(),
+    heroImageUrl: z.string().url().max(600).nullable(),
+    accentColor: BrandColorSchema.nullable(),
+    announcement: z.string().trim().max(160).nullable(),
   })
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'Au moins un champ est requis' });

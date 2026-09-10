@@ -88,4 +88,35 @@ describe('Shop (agrégat)', () => {
     shop.updateProfile({ categories: ['  Téléphones ', 'Robes', '', 'ROBES', 'Sacs'] });
     expect(shop.toSnapshot().categories).toEqual(['Téléphones', 'Robes', 'Sacs']);
   });
+
+  it('updateProfile : apparence (titre, sous-titre, bannière, annonce, accent normalisé)', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    const empty = shop.toSnapshot();
+    expect(empty.heroTitle).toBeNull();
+    expect(empty.accentColor).toBeNull();
+
+    const ok = shop.updateProfile({
+      heroTitle: '  Bienvenue  ',
+      heroSubtitle: '  Livraison Douala  ',
+      heroImageUrl: 'https://media.example/banner.png',
+      announcement: '  -20% ce week-end  ',
+      accentColor: '#0EA5E9',
+    });
+    expect(ok.isOk).toBe(true);
+    const s = shop.toSnapshot();
+    expect(s.heroTitle).toBe('Bienvenue');
+    expect(s.heroSubtitle).toBe('Livraison Douala');
+    expect(s.heroImageUrl).toBe('https://media.example/banner.png');
+    expect(s.announcement).toBe('-20% ce week-end');
+    expect(s.accentColor).toBe('#0ea5e9');
+
+    // chaîne vide → null ; accent invalide → erreur
+    shop.updateProfile({ heroTitle: '   ' });
+    expect(shop.toSnapshot().heroTitle).toBeNull();
+    expect(shop.updateProfile({ accentColor: 'bleu' }).isErr).toBe(true);
+  });
 });

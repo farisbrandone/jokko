@@ -27,17 +27,38 @@ export function darken(hex: string, amount: number): string {
  * Bloc CSS surchargeant les tokens de marque pour la boutique courante.
  * `--color-brand-soft` via `color-mix` (large support navigateur 2023+).
  */
-export function brandThemeCss(brandColor: string | null | undefined): string | null {
-  if (!brandColor || !HEX_RE.test(brandColor)) return null;
-  const hex = brandColor.toLowerCase();
+export function brandThemeCss(
+  brandColor: string | null | undefined,
+  accentColor?: string | null,
+): string | null {
+  const brand = brandColor && HEX_RE.test(brandColor) ? brandColor.toLowerCase() : null;
+  const accent = accentColor && HEX_RE.test(accentColor) ? accentColor.toLowerCase() : null;
+  if (!brand && !accent) return null;
+
+  const light: string[] = [];
+  const dark: string[] = [];
+  if (brand) {
+    light.push(
+      `--color-brand:${brand};`,
+      `--color-brand-ink:${brandInk(brand)};`,
+      `--color-brand-soft:color-mix(in srgb, ${brand} 14%, white);`,
+    );
+    dark.push(`--color-brand-soft:color-mix(in srgb, ${brand} 26%, black);`);
+  }
+  if (accent) {
+    light.push(
+      `--color-accent:${accent};`,
+      `--color-accent-ink:${brandInk(accent)};`,
+      `--color-accent-soft:color-mix(in srgb, ${accent} 14%, white);`,
+    );
+    dark.push(`--color-accent-soft:color-mix(in srgb, ${accent} 26%, black);`);
+  }
   return [
     ':root{',
-    `--color-brand:${hex};`,
-    `--color-brand-ink:${brandInk(hex)};`,
-    `--color-brand-soft:color-mix(in srgb, ${hex} 14%, white);`,
+    light.join(''),
     '}',
     `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){`,
-    `--color-brand-soft:color-mix(in srgb, ${hex} 26%, black);`,
+    dark.join(''),
     '}}',
   ].join('');
 }

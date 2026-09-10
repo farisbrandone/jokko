@@ -26,10 +26,31 @@ export interface ShopSnapshot {
   listed: boolean;
   tagline: string | null;
   categories: string[];
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  heroImageUrl: string | null;
+  accentColor: string | null;
+  announcement: string | null;
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ShopAppearance {
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  heroImageUrl: string | null;
+  accentColor: string | null;
+  announcement: string | null;
+}
+
+const EMPTY_APPEARANCE: ShopAppearance = {
+  heroTitle: null,
+  heroSubtitle: null,
+  heroImageUrl: null,
+  accentColor: null,
+  announcement: null,
+};
 
 interface CreateShopProps {
   name: string;
@@ -49,6 +70,11 @@ export interface UpdateShopProfileProps {
   listed?: boolean;
   tagline?: string | null;
   categories?: string[];
+  heroTitle?: string | null;
+  heroSubtitle?: string | null;
+  heroImageUrl?: string | null;
+  accentColor?: string | null;
+  announcement?: string | null;
 }
 
 /** Nettoyage : trim, retrait des vides, déduplication insensible à la casse, plafond 50. */
@@ -84,6 +110,7 @@ export class Shop extends AggregateRoot {
     private _listed: boolean,
     private _tagline: string | null,
     private _categories: string[],
+    private _appearance: ShopAppearance,
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -122,6 +149,7 @@ export class Shop extends AggregateRoot {
       false,
       null,
       [],
+      { ...EMPTY_APPEARANCE },
       'active',
       now,
       now,
@@ -147,6 +175,13 @@ export class Shop extends AggregateRoot {
       snap.listed,
       snap.tagline,
       [...(snap.categories ?? [])],
+      {
+        heroTitle: snap.heroTitle ?? null,
+        heroSubtitle: snap.heroSubtitle ?? null,
+        heroImageUrl: snap.heroImageUrl ?? null,
+        accentColor: snap.accentColor ?? null,
+        announcement: snap.announcement ?? null,
+      },
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -183,6 +218,23 @@ export class Shop extends AggregateRoot {
     }
     if (patch.categories !== undefined) {
       this._categories = normalizeCategories(patch.categories);
+    }
+    if (patch.heroTitle !== undefined) {
+      this._appearance.heroTitle = patch.heroTitle?.trim() || null;
+    }
+    if (patch.heroSubtitle !== undefined) {
+      this._appearance.heroSubtitle = patch.heroSubtitle?.trim() || null;
+    }
+    if (patch.heroImageUrl !== undefined) {
+      this._appearance.heroImageUrl = patch.heroImageUrl?.trim() || null;
+    }
+    if (patch.announcement !== undefined) {
+      this._appearance.announcement = patch.announcement?.trim() || null;
+    }
+    if (patch.accentColor !== undefined) {
+      const color = normalizeBrandColor(patch.accentColor);
+      if (color.isErr) return Result.err(color.getError());
+      this._appearance.accentColor = color.unwrap();
     }
     this._updatedAt = new Date();
     return Result.ok(undefined);
@@ -264,6 +316,11 @@ export class Shop extends AggregateRoot {
       listed: this._listed,
       tagline: this._tagline,
       categories: [...this._categories],
+      heroTitle: this._appearance.heroTitle,
+      heroSubtitle: this._appearance.heroSubtitle,
+      heroImageUrl: this._appearance.heroImageUrl,
+      accentColor: this._appearance.accentColor,
+      announcement: this._appearance.announcement,
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

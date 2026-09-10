@@ -21,6 +21,11 @@ export const ShopMapper = {
       listed: entity.listed,
       tagline: entity.tagline,
       categories: entity.categories ?? [],
+      heroTitle: entity.heroTitle,
+      heroSubtitle: entity.heroSubtitle,
+      heroImageUrl: entity.heroImageUrl,
+      accentColor: entity.accentColor,
+      announcement: entity.announcement,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -46,6 +51,11 @@ export const ShopMapper = {
     entity.listed = s.listed;
     entity.tagline = s.tagline;
     entity.categories = s.categories;
+    entity.heroTitle = s.heroTitle;
+    entity.heroSubtitle = s.heroSubtitle;
+    entity.heroImageUrl = s.heroImageUrl;
+    entity.accentColor = s.accentColor;
+    entity.announcement = s.announcement;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

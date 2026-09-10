@@ -9,6 +9,7 @@ import { PushToggle } from '@/components/push-toggle';
 import { CustomDomainForm } from '@/components/custom-domain-form';
 import { DirectoryOptInForm } from '@/components/directory-optin-form';
 import { ShopCategoriesForm } from '@/components/shop-categories-form';
+import { ShopAppearanceForm } from '@/components/shop-appearance-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +47,15 @@ export default async function SettingsPage({ params }: Params) {
           Nom, contact et apparence de la vitrine partagée sur les réseaux.
         </p>
         <ShopProfileForm initial={shop} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Apparence de la vitrine</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Grand titre, sous-titre, bannière, bandeau d&apos;annonce et couleur
+          d&apos;accent de votre page d&apos;accueil — avec aperçu en direct.
+        </p>
+        <ShopAppearanceForm initial={shop} />
       </section>
 
       <section className="mb-10">

@@ -14,6 +14,11 @@ export interface ShopView {
   currency: string;
   customDomain: string | null;
   categories: string[];
+  heroTitle: string | null;
+  heroSubtitle: string | null;
+  heroImageUrl: string | null;
+  accentColor: string | null;
+  announcement: string | null;
   status: string;
 }
 

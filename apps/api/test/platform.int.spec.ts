@@ -366,6 +366,30 @@ describe('profil boutique (couleur de marque)', () => {
     expect(cats.body.categories).toEqual(['Téléphones', 'Accessoires']);
     const afterCats = await http.get(`/api/shops/${slug}`).expect(200);
     expect(afterCats.body.categories).toEqual(['Téléphones', 'Accessoires']);
+
+    // apparence de la vitrine : titre / sous-titre / bannière / annonce / accent
+    await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({
+        heroTitle: '  Bienvenue chez nous  ',
+        heroSubtitle: 'Livraison rapide',
+        announcement: 'Promo -20%',
+        accentColor: '#123abc',
+      })
+      .expect(200);
+    const look = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(look.body.heroTitle).toBe('Bienvenue chez nous');
+    expect(look.body.heroSubtitle).toBe('Livraison rapide');
+    expect(look.body.announcement).toBe('Promo -20%');
+    expect(look.body.accentColor).toBe('#123abc');
+
+    // accent invalide → 400
+    await http
+      .patch(`/api/shops/${shopId}`)
+      .set('authorization', `Bearer ${owner}`)
+      .send({ accentColor: 'turquoise' })
+      .expect(400);
   });
 });
 
