@@ -30,6 +30,7 @@ export default async function CategoryPage({ params }: Params) {
         initial={results}
         currency={shop.currency}
         shopCategories={shop.categories ?? []}
+        preset={shop.themePreset}
         initialParams={{ category, sort: 'newest' }}
       />
     </div>

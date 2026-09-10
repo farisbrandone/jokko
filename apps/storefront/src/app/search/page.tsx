@@ -43,6 +43,7 @@ export default async function SearchPage({ searchParams }: Search) {
         initial={results}
         currency={shop.currency}
         shopCategories={shop.categories ?? []}
+        preset={shop.themePreset}
         initialParams={{
           q,
           category: sp.category,

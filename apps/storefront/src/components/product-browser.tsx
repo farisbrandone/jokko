@@ -17,15 +17,30 @@ type Filters = {
   sort?: string;
 };
 
+type Preset = 'grid' | 'editorial' | 'single' | 'dense';
+
 interface Props {
   initial: ProductSearchResult;
   currency: string;
   initialParams: Filters;
   /** Catégories déclarées par la boutique, fusionnées avec les facettes. */
   shopCategories?: string[];
+  /** Disposition de la vitrine choisie par le vendeur. */
+  preset?: string;
 }
 
 const SORTS = ['relevance', 'newest', 'price_asc', 'price_desc'] as const;
+
+const PRESETS: readonly Preset[] = ['grid', 'editorial', 'single', 'dense'];
+const asPreset = (v: string | undefined): Preset =>
+  PRESETS.includes(v as Preset) ? (v as Preset) : 'grid';
+
+const GRID_CLASS: Record<Preset, string> = {
+  grid: 'grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4',
+  dense: 'grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6',
+  editorial: 'grid-cols-1 gap-5 sm:grid-cols-2',
+  single: 'grid-cols-1 gap-3',
+};
 
 function buildQuery(f: Filters, page: number, pageSize: number): string {
   const qs = new URLSearchParams();
@@ -49,55 +64,104 @@ function activeCount(f: Filters): number {
   );
 }
 
-function Card({ hit, label }: { hit: SearchHit; label: string }) {
+function discount(hit: SearchHit): number {
+  return Math.round(100 - (hit.priceAmount / (hit.compareAtPriceAmount as number)) * 100);
+}
+
+function Card({ hit, label, preset }: { hit: SearchHit; label: string; preset: Preset }) {
   const img = hit.images[0];
   const promo = hit.compareAtPriceAmount != null && hit.compareAtPriceAmount > hit.priceAmount;
+  const horizontal = preset === 'single';
+  const compact = preset === 'dense';
+
+  const badges = (
+    <>
+      {!hit.inStock ? (
+        <span className="absolute left-2 top-2 rounded bg-[var(--color-ink)]/80 px-2 py-0.5 text-[11px] text-white">
+          {label}
+        </span>
+      ) : null}
+      {promo ? (
+        <span className="absolute right-2 top-2 rounded bg-[var(--color-danger)] px-2 py-0.5 text-[11px] font-medium text-white">
+          −{discount(hit)}%
+        </span>
+      ) : null}
+    </>
+  );
+
+  const price = (
+    <p className={compact ? 'mt-1 text-xs' : 'mt-1 text-sm'}>
+      <span className="font-semibold">{formatMoney(hit.priceAmount, hit.currency)}</span>
+      {promo ? (
+        <span className="ml-2 text-[var(--color-faint)] line-through">
+          {formatMoney(hit.compareAtPriceAmount as number, hit.currency)}
+        </span>
+      ) : null}
+    </p>
+  );
+
   return (
     <Link
       href={`/p/${hit.slug}`}
-      className="group block overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-shadow hover:shadow-md"
+      className={`group overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] transition-shadow hover:shadow-md ${
+        horizontal ? 'flex gap-3' : 'block'
+      }`}
     >
-      <div className="relative aspect-square bg-[var(--color-surface-2)]">
+      <div
+        className={`relative shrink-0 bg-[var(--color-surface-2)] ${
+          horizontal ? 'aspect-square w-28 sm:w-36' : 'aspect-square'
+        }`}
+      >
         {img ? (
           <Image
             src={img}
             alt={hit.name}
             fill
-            sizes="(max-width:640px) 50vw, 25vw"
+            sizes={horizontal ? '160px' : '(max-width:640px) 50vw, 25vw'}
             className="object-cover transition-transform duration-300 group-hover:scale-[1.04]"
           />
         ) : null}
-        {!hit.inStock ? (
-          <span className="absolute left-2 top-2 rounded bg-[var(--color-ink)]/80 px-2 py-0.5 text-xs text-white">
-            {label}
-          </span>
-        ) : null}
-        {promo ? (
-          <span className="absolute right-2 top-2 rounded bg-[var(--color-danger)] px-2 py-0.5 text-xs font-medium text-white">
-            −
-            {Math.round(
-              100 - (hit.priceAmount / (hit.compareAtPriceAmount as number)) * 100,
-            )}
-            %
-          </span>
-        ) : null}
+        {badges}
       </div>
-      <div className="p-3">
-        <p className="line-clamp-2 text-sm font-medium">{hit.name}</p>
-        <p className="mt-1 text-sm">
-          <span className="font-semibold">{formatMoney(hit.priceAmount, hit.currency)}</span>
-          {promo ? (
-            <span className="ml-2 text-[var(--color-faint)] line-through">
-              {formatMoney(hit.compareAtPriceAmount as number, hit.currency)}
-            </span>
-          ) : null}
-        </p>
+      <div className={`${compact ? 'p-2' : 'p-3'} ${horizontal ? 'flex flex-1 flex-col justify-center' : ''}`}>
+        <p className={`line-clamp-2 font-medium ${compact ? 'text-xs' : 'text-sm'}`}>{hit.name}</p>
+        {preset === 'editorial' && hit.description ? (
+          <p className="mt-1 line-clamp-2 text-xs text-[var(--color-muted)]">{hit.description}</p>
+        ) : null}
+        {price}
       </div>
     </Link>
   );
 }
 
-export function ProductBrowser({ initial, initialParams, shopCategories = [] }: Props) {
+function SkeletonCard({ preset }: { preset: Preset }) {
+  const horizontal = preset === 'single';
+  return (
+    <div
+      className={`animate-pulse overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] ${
+        horizontal ? 'flex gap-3' : 'block'
+      }`}
+    >
+      <div
+        className={`shrink-0 bg-[var(--color-surface-2)] ${
+          horizontal ? 'aspect-square w-28 sm:w-36' : 'aspect-square'
+        }`}
+      />
+      <div className="flex-1 p-3">
+        <div className="h-3 w-4/5 rounded bg-[var(--color-surface-2)]" />
+        <div className="mt-2 h-3 w-1/3 rounded bg-[var(--color-surface-2)]" />
+      </div>
+    </div>
+  );
+}
+
+export function ProductBrowser({
+  initial,
+  initialParams,
+  shopCategories = [],
+  preset,
+}: Props) {
+  const layout = asPreset(preset);
   const t = useTranslations('browse');
   const tp = useTranslations('product');
   const router = useRouter();
@@ -316,17 +380,24 @@ export function ProductBrowser({ initial, initialParams, shopCategories = [] }: 
       ) : null}
 
       {/* Résultats */}
-      {items.length === 0 && !busy ? (
+      {busy ? (
+        <div className={`grid ${GRID_CLASS[layout]}`}>
+          {Array.from({ length: layout === 'dense' ? 12 : 8 }).map((_, i) => (
+            <SkeletonCard key={i} preset={layout} />
+          ))}
+        </div>
+      ) : items.length === 0 ? (
         <p className="py-16 text-center text-[var(--color-muted)]">{t('empty')}</p>
       ) : (
-        <div
-          className={`grid grid-cols-2 gap-3 transition-opacity sm:grid-cols-3 lg:grid-cols-4 ${
-            busy ? 'opacity-50' : ''
-          }`}
-        >
+        <div className={`grid ${GRID_CLASS[layout]}`}>
           {items.map((h) => (
-            <Card key={h.id} hit={h} label={tp('outOfStock')} />
+            <Card key={h.id} hit={h} label={tp('outOfStock')} preset={layout} />
           ))}
+          {more
+            ? Array.from({ length: layout === 'single' ? 2 : 3 }).map((_, i) => (
+                <SkeletonCard key={`s${i}`} preset={layout} />
+              ))
+            : null}
         </div>
       )}
 
