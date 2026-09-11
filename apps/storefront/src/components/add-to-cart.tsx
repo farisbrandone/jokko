@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { cart, type CartItem } from '@/lib/cart';
+import { track } from '@/lib/track';
 
 export function AddToCart({ item, stock }: { item: Omit<CartItem, 'qty'>; stock: number }) {
   const [qty, setQty] = useState(1);
@@ -36,6 +37,7 @@ export function AddToCart({ item, stock }: { item: Omit<CartItem, 'qty'>; stock:
         onClick={() => {
           cart.add(item, qty);
           setAdded(true);
+          track('add_to_cart', { productId: item.productId, qty });
         }}
         className="rounded-[var(--radius-btn)] bg-[var(--color-brand)] px-4 py-2 text-sm font-medium text-[var(--color-brand-ink)]"
       >

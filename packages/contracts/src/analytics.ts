@@ -5,6 +5,7 @@ export const AnalyticsEventNameSchema = z.enum([
   'product_view',
   'search',
   'contact_click',
+  'add_to_cart',
 ]);
 export type AnalyticsEventName = z.infer<typeof AnalyticsEventNameSchema>;
 
@@ -42,5 +43,28 @@ export const AnalyticsSummarySchema = z.object({
   topProducts: z.array(z.object({ slug: z.string(), name: z.string(), views: z.number() })),
   topSearches: z.array(z.object({ term: z.string(), count: z.number() })),
   byDay: z.array(z.object({ day: z.string(), views: z.number() })),
+  /** Entonnoir de conversion : vues produit → ajouts au panier → commandes créées → confirmées. */
+  funnel: z.object({
+    productViews: z.number().int().nonnegative(),
+    addToCart: z.number().int().nonnegative(),
+    ordersCreated: z.number().int().nonnegative(),
+    ordersConfirmed: z.number().int().nonnegative(),
+  }),
+  /** Chiffre d'affaires (commandes confirmées : à livrer, payées ou terminées). */
+  revenue: z.object({
+    currency: z.string(),
+    total: z.number().int().nonnegative(),
+    byDay: z.array(z.object({ day: z.string(), amount: z.number().int().nonnegative() })),
+  }),
+  topProductsBySales: z.array(
+    z.object({
+      productId: z.string(),
+      name: z.string(),
+      qty: z.number().int().nonnegative(),
+      revenue: z.number().int().nonnegative(),
+    }),
+  ),
+  /** Part des acheteurs (numéro de téléphone) avec ≥ 2 commandes confirmées, historique complet. */
+  repeatPurchaseRate: z.number(),
 });
 export type AnalyticsSummary = z.infer<typeof AnalyticsSummarySchema>;

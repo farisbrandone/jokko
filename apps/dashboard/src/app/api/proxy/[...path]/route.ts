@@ -13,10 +13,12 @@ async function forward(req: NextRequest, path: string[]) {
     body: bodyText || undefined,
   });
   const text = await res.text();
-  return new NextResponse(text, {
-    status: res.status,
-    headers: { 'content-type': res.headers.get('content-type') ?? 'application/json' },
-  });
+  const headers: Record<string, string> = {
+    'content-type': res.headers.get('content-type') ?? 'application/json',
+  };
+  const disposition = res.headers.get('content-disposition');
+  if (disposition) headers['content-disposition'] = disposition;
+  return new NextResponse(text, { status: res.status, headers });
 }
 
 type Ctx = { params: Promise<{ path: string[] }> };

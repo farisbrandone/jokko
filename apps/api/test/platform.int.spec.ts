@@ -218,6 +218,73 @@ describe('analytique', () => {
     expect(sum.body.contactClicks).toBe(1);
     expect(sum.body.contactByChannel.whatsapp).toBe(1);
   });
+
+  it('entonnoir : vues → paniers → commandes, CA, top ventes, export CSV', async () => {
+    const t = await newSeller('funnel@ex.com');
+    const shop = await newShop(t, 'Funnel Shop');
+    const auth = { authorization: `Bearer ${t}` };
+
+    const created = await http
+      .post(`/api/shops/${shop}/products`)
+      .set(auth)
+      .send({
+        name: 'Robe',
+        category: 'mode-accessoires',
+        price: { amount: 10000 },
+        images: ['https://x/y.jpg'],
+        stock: 10,
+      })
+      .expect(201);
+    const pid = created.body.id as string;
+    await http.post(`/api/shops/${shop}/products/${pid}/publish`).set(auth).expect(201);
+
+    await http
+      .post(`/api/shops/${shop}/events`)
+      .send({
+        events: [
+          { name: 'product_view', sessionId: 's1', props: { slug: created.body.slug, name: 'Robe' } },
+          { name: 'add_to_cart', sessionId: 's1', props: { productId: pid, qty: 1 } },
+        ],
+      })
+      .expect(201);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: pid, qty: 2 }],
+        buyerName: 'Fatou',
+        buyerPhone: '+237690005566',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://funnel-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    await http.post(`/api/shops/${shop}/orders/${co.body.orderId}/fulfill`).set(auth).expect(201);
+
+    const sum = await http
+      .get(`/api/shops/${shop}/analytics/summary?days=30`)
+      .set(auth)
+      .expect(200);
+    expect(sum.body.funnel).toMatchObject({
+      productViews: 1,
+      addToCart: 1,
+      ordersCreated: 1,
+      ordersConfirmed: 1,
+    });
+    expect(sum.body.revenue.total).toBe(20000);
+    expect(sum.body.revenue.currency).toBe('XOF');
+    expect(sum.body.topProductsBySales[0]).toMatchObject({ name: 'Robe', qty: 2, revenue: 20000 });
+    expect(sum.body.repeatPurchaseRate).toBe(0); // un seul acheteur, une seule commande
+
+    const csv = await http
+      .get(`/api/shops/${shop}/analytics/export.csv?days=30`)
+      .set(auth)
+      .expect(200);
+    expect(csv.headers['content-type']).toContain('text/csv');
+    expect(csv.headers['content-disposition']).toContain('attachment');
+    expect(csv.text).toContain('Fatou');
+    expect(csv.text.split('\r\n').filter(Boolean)).toHaveLength(2); // en-tête + 1 commande
+  });
 });
 
 describe('notifications multi-canal & anti-spam', () => {

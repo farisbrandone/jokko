@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
+import { formatMoney } from '@jokko/ui';
 import { apiJson } from '@/lib/api';
 import type { SessionUser } from '@/lib/types';
 import { Shell } from '@/components/shell';
@@ -18,6 +19,19 @@ interface Summary {
   topProducts: { slug: string; name: string; views: number }[];
   topSearches: { term: string; count: number }[];
   byDay: { day: string; views: number }[];
+  funnel: {
+    productViews: number;
+    addToCart: number;
+    ordersCreated: number;
+    ordersConfirmed: number;
+  };
+  revenue: {
+    currency: string;
+    total: number;
+    byDay: { day: string; amount: number }[];
+  };
+  topProductsBySales: { productId: string; name: string; qty: number; revenue: number }[];
+  repeatPurchaseRate: number;
 }
 
 type Params = {
@@ -34,7 +48,13 @@ function Kpi({ label, value }: { label: string; value: string | number }) {
   );
 }
 
-function Bars({ data }: { data: { label: string; value: number }[] }) {
+function Bars({
+  data,
+  formatValue,
+}: {
+  data: { label: string; value: number }[];
+  formatValue?: (v: number) => string;
+}) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
     <ul className="flex flex-col gap-1.5 text-sm">
@@ -47,9 +67,37 @@ function Bars({ data }: { data: { label: string; value: number }[] }) {
               style={{ width: `${(d.value / max) * 100}%` }}
             />
           </span>
-          <span className="w-10 text-right tabular-nums text-[var(--color-muted)]">{d.value}</span>
+          <span className="w-16 shrink-0 text-right tabular-nums text-[var(--color-muted)]">
+            {formatValue ? formatValue(d.value) : d.value}
+          </span>
         </li>
       ))}
+    </ul>
+  );
+}
+
+/** Entonnoir de conversion : chaque étape affiche son taux par rapport à la première. */
+function Funnel({ steps }: { steps: { label: string; value: number }[] }) {
+  const max = Math.max(1, steps[0]?.value ?? 0);
+  return (
+    <ul className="flex flex-col gap-3">
+      {steps.map((s, i) => {
+        const pct = Math.round((s.value / max) * 100);
+        return (
+          <li key={s.label}>
+            <div className="flex items-center justify-between text-sm">
+              <span>{s.label}</span>
+              <span className="tabular-nums text-[var(--color-muted)]">
+                {s.value}
+                {i > 0 ? ` (${pct} %)` : ''}
+              </span>
+            </div>
+            <div className="mt-1 h-3 overflow-hidden rounded bg-[var(--color-surface-2)]">
+              <div className="h-full bg-[var(--color-brand)]" style={{ width: `${pct}%` }} />
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -80,7 +128,7 @@ export default async function AnalyticsPage({ params, searchParams }: Params) {
             Statistiques
           </h1>
         </div>
-        <div className="flex gap-2 text-sm">
+        <div className="flex items-center gap-2 text-sm">
           {[7, 30].map((d) => (
             <Link
               key={d}
@@ -94,6 +142,12 @@ export default async function AnalyticsPage({ params, searchParams }: Params) {
               {d} j
             </Link>
           ))}
+          <a
+            href={`/api/proxy/shops/${shopId}/analytics/export.csv?days=${Math.max(days, 30)}`}
+            className="ml-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] px-2.5 py-1 hover:bg-[var(--color-surface-2)]"
+          >
+            Exporter les commandes (CSV)
+          </a>
         </div>
       </div>
 
@@ -101,12 +155,49 @@ export default async function AnalyticsPage({ params, searchParams }: Params) {
         <Kpi label="Visites" value={s.pageViews} />
         <Kpi label="Sessions" value={s.sessions} />
         <Kpi label="Vues produit" value={s.productViews} />
-        <Kpi label="Recherches" value={s.searches} />
-        <Kpi label="Contacts" value={s.contactClicks} />
+        <Kpi label="Chiffre d'affaires" value={formatMoney(s.revenue.total, s.revenue.currency)} />
         <Kpi label="Taux de contact" value={`${Math.round(s.contactRate * 100)} %`} />
+        <Kpi label="Taux de réachat" value={`${Math.round(s.repeatPurchaseRate * 100)} %`} />
       </div>
 
       <div className="grid md:grid-cols-2 gap-6 mt-6">
+        <section>
+          <h2 className="font-medium mb-2">Entonnoir de conversion</h2>
+          <Funnel
+            steps={[
+              { label: 'Vues produit', value: s.funnel.productViews },
+              { label: 'Ajouts au panier', value: s.funnel.addToCart },
+              { label: 'Commandes créées', value: s.funnel.ordersCreated },
+              { label: 'Commandes confirmées', value: s.funnel.ordersConfirmed },
+            ]}
+          />
+          <p className="mt-2 text-xs text-[var(--color-muted)]">
+            « Confirmée » = à livrer, payée ou terminée (paiement en ligne accepté ou
+            commande à la livraison prise en charge).
+          </p>
+        </section>
+
+        <section>
+          <h2 className="font-medium mb-2">Chiffre d&apos;affaires par jour</h2>
+          {s.revenue.byDay.length === 0 ? (
+            <p className="text-sm text-[var(--color-muted)]">Pas encore de données.</p>
+          ) : (
+            <div className="flex items-end gap-1 h-24">
+              {s.revenue.byDay.map((d) => {
+                const maxRevenue = Math.max(1, ...s.revenue.byDay.map((r) => r.amount));
+                return (
+                  <div
+                    key={d.day}
+                    title={`${d.day} — ${formatMoney(d.amount, s.revenue.currency)}`}
+                    className="flex-1 bg-[var(--color-brand)] rounded-t"
+                    style={{ height: `${(d.amount / maxRevenue) * 100}%`, minHeight: 2 }}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
+
         <section>
           <h2 className="font-medium mb-2">Visites par jour</h2>
           {s.byDay.length === 0 ? (
@@ -122,6 +213,18 @@ export default async function AnalyticsPage({ params, searchParams }: Params) {
                 />
               ))}
             </div>
+          )}
+        </section>
+
+        <section>
+          <h2 className="font-medium mb-2">Produits les plus vendus</h2>
+          {s.topProductsBySales.length === 0 ? (
+            <p className="text-sm text-[var(--color-muted)]">Pas encore de données.</p>
+          ) : (
+            <Bars
+              data={s.topProductsBySales.map((p) => ({ label: p.name, value: p.revenue }))}
+              formatValue={(v) => formatMoney(v, s.revenue.currency)}
+            />
           )}
         </section>
 
