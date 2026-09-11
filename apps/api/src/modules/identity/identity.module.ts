@@ -97,6 +97,8 @@ const oauthRegistryProvider: Provider = {
     PlatformAdminGuard,
     USER_REPOSITORY,
     MEMBERSHIP_REPOSITORY,
+    OTP_CHALLENGE_REPOSITORY,
+    OTP_SMS_SENDER,
   ],
 })
 export class IdentityModule {}

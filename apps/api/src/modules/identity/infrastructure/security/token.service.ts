@@ -104,6 +104,30 @@ export class TokenService {
     };
   }
 
+  /**
+   * Session acheteur (compte léger, sans mot de passe) : longue durée (90 j),
+   * pas de rotation par refresh token — la légèreté prime sur la sécurité
+   * d'un compte vendeur. Le téléphone est l'identité ; il ne change jamais
+   * une fois vérifié, donc porté directement dans le jeton.
+   */
+  async signBuyer(input: { buyerId: string; phone: string }): Promise<string> {
+    return new SignJWT({ purpose: 'buyer', phone: input.phone })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(input.buyerId)
+      .setIssuedAt()
+      .setIssuer('jokko')
+      .setExpirationTime('90d')
+      .sign(this.secret);
+  }
+
+  async verifyBuyer(token: string): Promise<{ buyerId: string; phone: string }> {
+    const { payload } = await jwtVerify(token, this.secret, { issuer: 'jokko' });
+    if (payload.purpose !== 'buyer' || typeof payload.phone !== 'string') {
+      throw new Error('jeton acheteur invalide');
+    }
+    return { buyerId: String(payload.sub), phone: payload.phone };
+  }
+
   /** Refresh token opaque + son hash (stocké en base pour révocation). */
   newRefreshToken(): { token: string; hash: string; expiresAt: Date } {
     const token = randomBytes(32).toString('base64url');

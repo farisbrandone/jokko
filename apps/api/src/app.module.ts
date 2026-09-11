@@ -27,6 +27,7 @@ import { ModerationModule } from './modules/moderation/moderation.module';
 import { BillingModule } from './modules/billing/billing.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { DiscountsModule } from './modules/discounts/discounts.module';
+import { BuyersModule } from './modules/buyers/buyers.module';
 import { ReviewsModule } from './modules/reviews/reviews.module';
 import { PrivacyModule } from './modules/privacy/privacy.module';
 import { TeamModule } from './modules/team/team.module';
@@ -84,6 +85,7 @@ import { AdminModule } from './modules/admin/admin.module';
     BillingModule,
     OrdersModule,
     DiscountsModule,
+    BuyersModule,
     ReviewsModule,
     PrivacyModule,
     TeamModule,

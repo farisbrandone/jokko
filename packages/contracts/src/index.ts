@@ -5,6 +5,7 @@ export * from './catalog';
 export * from './import';
 export * from './orders';
 export * from './discounts';
+export * from './buyer';
 export * from './reviews';
 export * from './membership';
 export * from './team';

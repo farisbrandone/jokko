@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
+import type { Buyer } from '@jokko/contracts';
 import { cart, lineKey, rememberOrder, useCart } from '@/lib/cart';
 
 type Zone = { id?: string; label: string; fee: number };
@@ -11,8 +13,10 @@ const field =
   'rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm';
 
 export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: string }) {
+  const ta = useTranslations('account');
   const items = useCart();
   const [form, setForm] = useState({ buyerName: '', buyerPhone: '', buyerEmail: '', note: '' });
+  const [savedAddresses, setSavedAddresses] = useState<Buyer['addresses']>([]);
   const [deliveryMethod, setDeliveryMethod] = useState<'pickup' | 'delivery'>('pickup');
   const [zoneId, setZoneId] = useState(zones[0]?.id ?? '');
   const [address, setAddress] = useState('');
@@ -40,6 +44,24 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
     setDiscount(null);
     setDiscountErr(null);
   }, [subtotal]);
+
+  // Acheteur connecté (compte léger) : pré-remplit nom/téléphone et propose
+  // ses adresses enregistrées — jamais bloquant si non connecté.
+  useEffect(() => {
+    fetch('/api/buyer/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((buyer: Buyer | null) => {
+        if (!buyer) return;
+        setForm((f) => ({
+          ...f,
+          buyerName: f.buyerName || buyer.name || '',
+          buyerPhone: f.buyerPhone || buyer.phone,
+        }));
+        setSavedAddresses(buyer.addresses);
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const applyCode = async () => {
     const code = codeInput.trim();
@@ -217,6 +239,25 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
                   </option>
                 ))}
               </select>
+              {savedAddresses.length > 0 ? (
+                <select
+                  defaultValue=""
+                  onChange={(e) => {
+                    const found = savedAddresses.find((a) => a.id === e.target.value);
+                    if (found) setAddress(found.address);
+                  }}
+                  className={field}
+                >
+                  <option value="" disabled>
+                    {ta('chooseAddress')}
+                  </option>
+                  {savedAddresses.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.label} — {a.address}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
               <textarea
                 required
                 rows={2}

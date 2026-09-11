@@ -1776,3 +1776,117 @@ describe('commandes acheteur & paiement (checkout)', () => {
       .expect(400);
   });
 });
+
+describe('compte acheteur léger (téléphone + OTP, multi-boutique)', () => {
+  it("un même acheteur retrouve ses commandes de deux boutiques différentes", async () => {
+    const phone = '+221770099887';
+
+    const sellerA = await newSeller('buyer-shop-a@ex.com');
+    const shopA = await newShop(sellerA, 'Buyer Shop A');
+    const authA = { authorization: `Bearer ${sellerA}` };
+    const prodA = await http
+      .post(`/api/shops/${shopA}/products`)
+      .set(authA)
+      .send({ name: 'Sac A', category: 'mode', price: { amount: 5000 }, images: ['https://x/a.jpg'], stock: 5 })
+      .expect(201);
+    await http.post(`/api/shops/${shopA}/products/${prodA.body.id}/publish`).set(authA).expect(201);
+    const orderA = await http
+      .post(`/api/shops/${shopA}/orders`)
+      .send({
+        items: [{ productId: prodA.body.id, qty: 1 }],
+        buyerName: 'Cliente Fidèle',
+        buyerPhone: phone,
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://buyer-shop-a.lvh.me/commande/return',
+      })
+      .expect(201);
+
+    const sellerB = await newSeller('buyer-shop-b@ex.com');
+    const shopB = await newShop(sellerB, 'Buyer Shop B');
+    const authB = { authorization: `Bearer ${sellerB}` };
+    const prodB = await http
+      .post(`/api/shops/${shopB}/products`)
+      .set(authB)
+      .send({ name: 'Sac B', category: 'mode', price: { amount: 7000 }, images: ['https://x/b.jpg'], stock: 5 })
+      .expect(201);
+    await http.post(`/api/shops/${shopB}/products/${prodB.body.id}/publish`).set(authB).expect(201);
+    const orderB = await http
+      .post(`/api/shops/${shopB}/orders`)
+      .send({
+        items: [{ productId: prodB.body.id, qty: 1 }],
+        buyerName: 'Cliente Fidèle',
+        buyerPhone: phone,
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://buyer-shop-b.lvh.me/commande/return',
+      })
+      .expect(201);
+
+    // un tiers non authentifié n'accède à rien.
+    await http.get('/api/buyer/orders').expect(401);
+
+    await http.post('/api/buyer/otp/request').send({ phone }).expect(202);
+    await http.post('/api/buyer/otp/verify').send({ phone, code: '000000' }).expect(401);
+    const verify = await http
+      .post('/api/buyer/otp/verify')
+      .send({ phone, code: '123456', name: 'Cliente Fidèle' })
+      .expect(201);
+    expect(verify.body.buyer.phone).toBe(phone);
+    const buyerAuth = { authorization: `Bearer ${verify.body.token as string}` };
+
+    const me = await http.get('/api/buyer/me').set(buyerAuth).expect(200);
+    expect(me.body.name).toBe('Cliente Fidèle');
+    expect(me.body.addresses).toEqual([]);
+
+    const updated = await http
+      .patch('/api/buyer/me')
+      .set(buyerAuth)
+      .send({ addresses: [{ label: 'Maison', address: 'Rue 12, Dakar' }] })
+      .expect(200);
+    expect(updated.body.addresses).toHaveLength(1);
+
+    const orders = await http.get('/api/buyer/orders').set(buyerAuth).expect(200);
+    expect(orders.body).toHaveLength(2);
+    const shopNames = orders.body.map((o: { shopName: string }) => o.shopName).sort();
+    expect(shopNames).toEqual(['Buyer Shop A', 'Buyer Shop B']);
+
+    const one = await http
+      .get(`/api/buyer/orders/${orderA.body.orderId}`)
+      .set(buyerAuth)
+      .expect(200);
+    expect(one.body.shopSlug).toBeTruthy();
+    expect(one.body.total).toBe(5000);
+
+    const two = await http
+      .get(`/api/buyer/orders/${orderB.body.orderId}`)
+      .set(buyerAuth)
+      .expect(200);
+    expect(two.body.shopName).toBe('Buyer Shop B');
+
+    // une commande d'un autre acheteur (numéro différent) reste invisible.
+    const otherSeller = await newSeller('other-buyer@ex.com');
+    const otherShop = await newShop(otherSeller, 'Other Shop');
+    const otherProd = await http
+      .post(`/api/shops/${otherShop}/products`)
+      .set({ authorization: `Bearer ${otherSeller}` })
+      .send({ name: 'Produit X', category: 'mode', price: { amount: 1000 }, images: ['https://x/c.jpg'], stock: 1 })
+      .expect(201);
+    await http
+      .post(`/api/shops/${otherShop}/products/${otherProd.body.id}/publish`)
+      .set({ authorization: `Bearer ${otherSeller}` })
+      .expect(201);
+    const otherOrder = await http
+      .post(`/api/shops/${otherShop}/orders`)
+      .send({
+        items: [{ productId: otherProd.body.id, qty: 1 }],
+        buyerName: 'Quelqu’un d’autre',
+        buyerPhone: '+221770000111',
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://other-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    await http.get(`/api/buyer/orders/${otherOrder.body.orderId}`).set(buyerAuth).expect(404);
+  });
+});

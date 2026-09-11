@@ -10,6 +10,7 @@ import { FavoritesNavLink } from './favorites-nav-link';
 
 export async function SiteHeader({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('nav');
+  const ta = await getTranslations('account');
 
   // Domaine apex (pas de boutique) : en-tête « site Jokko », pas de recherche produit.
   if (!shop) {
@@ -27,6 +28,9 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
               className="hidden text-[var(--color-muted)] hover:text-[var(--color-ink)] sm:inline"
             >
               {c.hero.ctaSecondary}
+            </Link>
+            <Link href="/compte" className="text-[var(--color-muted)] hover:text-[var(--color-ink)]">
+              {ta('navLabel')}
             </Link>
             <a
               href={DASHBOARD_URL}
@@ -52,6 +56,12 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
         <div className="flex-1 max-w-md">
           <SearchBox />
         </div>
+        <Link
+          href="/compte"
+          className="hidden shrink-0 text-sm text-[var(--color-muted)] hover:text-[var(--color-ink)] sm:inline"
+        >
+          {ta('navLabel')}
+        </Link>
         <FavoritesNavLink />
         <CartButton />
         {shop.whatsapp ? (
