@@ -2,7 +2,8 @@
   "nav": {
     "searchPlaceholder": "Search for a product…",
     "searchLabel": "Search",
-    "whatsapp": "WhatsApp"
+    "whatsapp": "WhatsApp",
+    "favorites": "Favorites"
   },
   "home": {
     "tagline": "The whole catalogue, in one link.",
@@ -21,7 +22,17 @@
     "inStock": "In stock",
     "outOfStock": "Out of stock",
     "onOrder": "Made to order",
-    "report": "Report"
+    "report": "Report",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "related": "You may also like"
+  },
+  "favorites": {
+    "title": "Your favorites",
+    "subtitle": "Saved on this device, for this shop.",
+    "empty": "No favorites yet.",
+    "emptyCta": "Browse the shop",
+    "loading": "Loading…"
   },
   "contact": {
     "heading": "Contact the shop",

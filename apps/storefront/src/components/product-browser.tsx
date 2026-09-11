@@ -7,6 +7,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
 import type { ProductSearchResult, SearchHit } from '@jokko/contracts';
+import { FavoriteButton } from './favorite-button';
 
 type Filters = {
   q?: string;
@@ -86,6 +87,7 @@ function Card({ hit, label, preset }: { hit: SearchHit; label: string; preset: P
           −{discount(hit)}%
         </span>
       ) : null}
+      <FavoriteButton productId={hit.id} />
     </>
   );
 

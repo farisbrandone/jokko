@@ -6,6 +6,7 @@ import { DASHBOARD_URL, landingContent } from '@/lib/landing-content';
 import type { AppLocale } from '@/i18n/request';
 import { SearchBox } from './search-box';
 import { CartButton } from './cart-button';
+import { FavoritesNavLink } from './favorites-nav-link';
 
 export async function SiteHeader({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('nav');
@@ -51,6 +52,7 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
         <div className="flex-1 max-w-md">
           <SearchBox />
         </div>
+        <FavoritesNavLink />
         <CartButton />
         {shop.whatsapp ? (
           <a

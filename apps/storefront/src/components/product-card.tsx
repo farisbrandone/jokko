@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import type { SearchHit } from '@jokko/contracts';
+import { FavoriteButton } from './favorite-button';
 
 export async function ProductCard({ hit }: { hit: SearchHit }) {
   const t = await getTranslations('product');
@@ -29,6 +30,7 @@ export async function ProductCard({ hit }: { hit: SearchHit }) {
             {t('outOfStock')}
           </span>
         ) : null}
+        <FavoriteButton productId={hit.id} />
       </div>
       <div className="p-3">
         <p className="text-sm font-medium line-clamp-2">{hit.name}</p>
