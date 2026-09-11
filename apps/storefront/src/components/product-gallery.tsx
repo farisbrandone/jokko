@@ -1,11 +1,98 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 interface Props {
   images: string[];
   alt: string;
+}
+
+/** Piste défilable au doigt (mobile) ou à la souris (desktop) — glisser change l'image active. */
+function SwipeTrack({
+  images,
+  alt,
+  active,
+  setActive,
+  onTap,
+  priority,
+  sizes,
+  imageClassName,
+}: {
+  images: string[];
+  alt: string;
+  active: number;
+  setActive: (i: number) => void;
+  onTap?: () => void;
+  priority?: boolean;
+  sizes: string;
+  imageClassName: string;
+}) {
+  const count = images.length;
+  const [dragX, setDragX] = useState(0);
+  const dragging = useRef(false);
+  const startX = useRef(0);
+  const widthRef = useRef(1);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragging.current = true;
+    startX.current = e.clientX;
+    widthRef.current = e.currentTarget.clientWidth || 1;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    setDragX(e.clientX - startX.current);
+  };
+
+  const release = () => {
+    if (!dragging.current) return;
+    dragging.current = false;
+    const threshold = widthRef.current * 0.15;
+    if (dragX <= -threshold && active < count - 1) setActive(active + 1);
+    else if (dragX >= threshold && active > 0) setActive(active - 1);
+    else if (Math.abs(dragX) < 5) onTap?.();
+    setDragX(0);
+  };
+
+  const dragPercent = widthRef.current ? (dragX / widthRef.current) * 100 : 0;
+  const translate = -(active * 100) + dragPercent;
+
+  return (
+    <div
+      className="h-full w-full touch-pan-y select-none [-webkit-touch-callout:none]"
+      style={{ overflow: 'hidden' }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={release}
+      onPointerLeave={release}
+      onPointerCancel={release}
+    >
+      <div
+        className="flex h-full"
+        style={{
+          width: `${count * 100}%`,
+          transform: `translateX(${translate / count}%)`,
+          transition: dragging.current ? 'none' : 'transform 300ms ease',
+        }}
+      >
+        {images.map((src, i) => (
+          <div key={src} className="relative h-full shrink-0" style={{ width: `${100 / count}%` }}>
+            <Image
+              src={src}
+              alt={i === active ? alt : ''}
+              fill
+              priority={priority && i === active}
+              draggable={false}
+              sizes={sizes}
+              className={imageClassName}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function ProductGallery({ images, alt }: Props) {
@@ -44,22 +131,28 @@ export function ProductGallery({ images, alt }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="relative aspect-square rounded-[var(--radius-card)] overflow-hidden bg-[var(--color-surface-2)]">
-        <button
-          type="button"
-          onClick={() => setZoom(true)}
-          className="absolute inset-0 h-full w-full cursor-zoom-in"
-          aria-label="Agrandir l’image"
-        >
-          <Image
-            src={images[active]}
-            alt={alt}
-            fill
-            priority
-            sizes="(max-width:768px) 100vw, 50vw"
-            className="object-cover"
-          />
-        </button>
+      <div
+        className="relative aspect-square cursor-grab rounded-[var(--radius-card)] overflow-hidden bg-[var(--color-surface-2)] active:cursor-grabbing"
+        role="button"
+        tabIndex={0}
+        aria-label="Agrandir l’image"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setZoom(true);
+          }
+        }}
+      >
+        <SwipeTrack
+          images={images}
+          alt={alt}
+          active={active}
+          setActive={setActive}
+          onTap={() => setZoom(true)}
+          priority
+          sizes="(max-width:768px) 100vw, 50vw"
+          imageClassName="object-cover"
+        />
         {count > 1 ? (
           <>
             <button
@@ -123,15 +216,16 @@ export function ProductGallery({ images, alt }: Props) {
             ×
           </button>
           <div
-            className="relative h-full w-full max-w-4xl"
+            className="relative h-full w-full max-w-4xl cursor-grab active:cursor-grabbing"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={images[active]}
+            <SwipeTrack
+              images={images}
               alt={alt}
-              fill
+              active={active}
+              setActive={setActive}
               sizes="100vw"
-              className="object-contain"
+              imageClassName="object-contain"
             />
             {count > 1 ? (
               <>
