@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
 import { AddToCart } from './add-to-cart';
 import { QuickOrder } from './quick-order';
+import { PriceEstimate } from './price-estimate';
 
 type Variant = { id?: string; label: string; priceAmount?: number | null; stock: number };
 
@@ -54,6 +55,7 @@ export function ProductPurchase({ product, shopName, whatsapp, productUrl, siteU
             {formatMoney(product.compareAtAmount as number, product.currency)}
           </span>
         ) : null}
+        <PriceEstimate amount={unitAmount} currency={product.currency} className="text-sm text-[var(--color-faint)]" />
       </p>
 
       {hasVariants ? (

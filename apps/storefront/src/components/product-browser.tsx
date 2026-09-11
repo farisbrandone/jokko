@@ -8,6 +8,7 @@ import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
 import type { ProductSearchResult, SearchHit } from '@jokko/contracts';
 import { FavoriteButton } from './favorite-button';
+import { PriceEstimate } from './price-estimate';
 
 type Filters = {
   q?: string;
@@ -98,6 +99,13 @@ function Card({ hit, label, preset }: { hit: SearchHit; label: string; preset: P
         <span className="ml-2 text-[var(--color-faint)] line-through">
           {formatMoney(hit.compareAtPriceAmount as number, hit.currency)}
         </span>
+      ) : null}
+      {!compact ? (
+        <PriceEstimate
+          amount={hit.priceAmount}
+          currency={hit.currency}
+          className="text-xs text-[var(--color-faint)]"
+        />
       ) : null}
     </p>
   );

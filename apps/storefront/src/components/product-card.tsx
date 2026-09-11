@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { formatMoney } from '@jokko/ui';
 import type { SearchHit } from '@jokko/contracts';
 import { FavoriteButton } from './favorite-button';
+import { PriceEstimate } from './price-estimate';
 
 export async function ProductCard({ hit }: { hit: SearchHit }) {
   const t = await getTranslations('product');
@@ -41,6 +42,7 @@ export async function ProductCard({ hit }: { hit: SearchHit }) {
               {formatMoney(hit.compareAtPriceAmount as number, hit.currency)}
             </span>
           ) : null}
+          <PriceEstimate amount={hit.priceAmount} currency={hit.currency} className="text-xs text-[var(--color-faint)]" />
         </p>
       </div>
     </Link>

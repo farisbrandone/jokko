@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { formatMoney } from '@jokko/ui';
 import type { Buyer } from '@jokko/contracts';
 import { cart, lineKey, rememberOrder, useCart } from '@/lib/cart';
+import { PriceEstimate } from './price-estimate';
 
 type Zone = { id?: string; label: string; fee: number };
 
@@ -393,9 +394,12 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
             <span className="text-[var(--color-muted)]">Livraison</span>
             <span>{deliveryFee > 0 ? formatMoney(deliveryFee, cartCurrency) : 'Gratuit'}</span>
           </div>
-          <div className="mt-2 flex justify-between border-t border-[var(--color-border)] pt-2 text-base font-semibold">
+          <div className="mt-2 flex items-baseline justify-between border-t border-[var(--color-border)] pt-2 text-base font-semibold">
             <span>Total</span>
-            <span>{formatMoney(total, cartCurrency)}</span>
+            <span>
+              {formatMoney(total, cartCurrency)}
+              <PriceEstimate amount={total} currency={cartCurrency} className="text-xs font-normal text-[var(--color-faint)]" />
+            </span>
           </div>
         </div>
 

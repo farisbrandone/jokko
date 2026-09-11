@@ -192,6 +192,11 @@
     "fr": "Français",
     "en": "English"
   },
+  "currency": {
+    "label": "Display currency",
+    "none": "XOF",
+    "disclaimer": "Estimate for reference only — payment stays in CFA francs (XOF)."
+  },
   "install": {
     "text": "Add the shop to your home screen.",
     "action": "Install",

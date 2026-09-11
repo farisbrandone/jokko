@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { ShopView } from '@/lib/api';
 import { LocaleSwitcher } from './locale-switcher';
+import { CurrencySwitcher } from './currency-switcher';
 
 export async function SiteFooter({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('footer');
@@ -22,6 +23,7 @@ export async function SiteFooter({ shop }: { shop: ShopView | null }) {
         </nav>
         <div className="flex items-center gap-4">
           <span>{shop?.currency ?? 'XOF'}</span>
+          <CurrencySwitcher />
           <LocaleSwitcher />
         </div>
       </div>
