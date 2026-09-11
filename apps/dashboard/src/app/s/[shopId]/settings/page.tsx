@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { apiJson } from '@/lib/api';
-import type { NotificationSettings, SessionUser, ShopProfile } from '@/lib/types';
+import type { NotificationSettings, SessionUser, ShopProfile, ShopVerification } from '@/lib/types';
 import { Shell } from '@/components/shell';
 import { NotificationSettingsForm } from '@/components/notification-settings-form';
 import { ShopProfileForm } from '@/components/shop-profile-form';
@@ -11,6 +11,7 @@ import { DirectoryOptInForm } from '@/components/directory-optin-form';
 import { ShopCategoriesForm } from '@/components/shop-categories-form';
 import { ShopAppearanceForm } from '@/components/shop-appearance-form';
 import { DeliveryZonesForm } from '@/components/delivery-zones-form';
+import { ShopVerificationForm } from '@/components/shop-verification-form';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +29,10 @@ export default async function SettingsPage({ params }: Params) {
   const membership = me.memberships.find((m) => m.shopId === shopId);
   if (!membership) redirect('/');
 
-  const [settings, shop] = await Promise.all([
+  const [settings, shop, verification] = await Promise.all([
     apiJson<NotificationSettings>(`/shops/${shopId}/settings/notifications`),
     apiJson<ShopProfile>(`/shops/${membership.slug}`),
+    apiJson<ShopVerification>(`/shops/${shopId}/verification`),
   ]);
 
   return (
@@ -75,6 +77,16 @@ export default async function SettingsPage({ params }: Params) {
           peut aussi choisir le retrait en boutique (gratuit).
         </p>
         <DeliveryZonesForm shopId={shopId} initial={shop.deliveryZones ?? []} />
+      </section>
+
+      <section className="mb-10">
+        <h2 className="font-medium mb-1">Vérification de la boutique</h2>
+        <p className="text-sm text-[var(--color-muted)] mb-4">
+          Obtenez le badge « Boutique vérifiée », affiché sur votre vitrine et
+          dans l&apos;annuaire, après contrôle de votre registre de commerce par
+          l&apos;équipe Jokko.
+        </p>
+        <ShopVerificationForm shopId={shopId} initial={verification} />
       </section>
 
       <section className="mb-10">

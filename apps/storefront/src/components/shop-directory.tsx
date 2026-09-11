@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import type { DirectoryResult } from '@jokko/contracts';
 import { siteUrl } from '@/lib/shop';
+import { VerifiedBadge } from './verified-badge';
 
 const VERTICALS: Record<string, string> = {
   electronique: 'Électronique',
@@ -78,6 +79,7 @@ export async function ShopDirectory({
                     style={{ background: s.brandColor ?? 'var(--color-brand)' }}
                   />
                   <span className="font-medium">{s.name}</span>
+                  {s.verified ? <VerifiedBadge /> : null}
                 </div>
                 {s.tagline ? (
                   <p className="mt-1 line-clamp-2 text-sm text-[var(--color-muted)]">{s.tagline}</p>

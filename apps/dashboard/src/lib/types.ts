@@ -93,6 +93,20 @@ export interface ShopProfile {
   accentColor: string | null;
   announcement: string | null;
   deliveryZones: { id?: string; label: string; fee: number }[];
+  verified: boolean;
+}
+
+export type ShopVerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
+
+export interface ShopVerification {
+  status: ShopVerificationStatus;
+  legalName: string | null;
+  registryNumber: string | null;
+  note: string | null;
+  proofImageUrl: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
 }
 
 export const VERTICALS = [

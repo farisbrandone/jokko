@@ -21,6 +21,7 @@ export interface ShopView {
   accentColor: string | null;
   announcement: string | null;
   deliveryZones: { id?: string; label: string; fee: number }[];
+  verified: boolean;
   status: string;
 }
 

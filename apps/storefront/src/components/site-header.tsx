@@ -7,6 +7,7 @@ import type { AppLocale } from '@/i18n/request';
 import { SearchBox } from './search-box';
 import { CartButton } from './cart-button';
 import { FavoritesNavLink } from './favorites-nav-link';
+import { VerifiedBadge } from './verified-badge';
 
 export async function SiteHeader({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('nav');
@@ -49,9 +50,10 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
         <Link
           href="/"
-          className="font-[family-name:var(--font-display)] font-bold text-lg shrink-0"
+          className="flex shrink-0 items-center gap-1.5 font-[family-name:var(--font-display)] font-bold text-lg"
         >
           {shop.name}
+          {shop.verified ? <VerifiedBadge /> : null}
         </Link>
         <div className="flex-1 max-w-md">
           <SearchBox />

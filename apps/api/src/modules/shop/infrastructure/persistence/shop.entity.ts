@@ -1,6 +1,17 @@
 import { Entity, Index, PrimaryKey, Property, Unique } from '@mikro-orm/core';
 import type { Vertical } from '@jokko/contracts';
-import type { ShopStatus, ThemePreset } from '../../domain/shop.aggregate';
+import type { ShopStatus, ShopVerification, ThemePreset } from '../../domain/shop.aggregate';
+
+const EMPTY_VERIFICATION: ShopVerification = {
+  status: 'none',
+  legalName: null,
+  registryNumber: null,
+  note: null,
+  proofImageUrl: null,
+  submittedAt: null,
+  decidedAt: null,
+  decisionNote: null,
+};
 
 @Entity({ tableName: 'shops' })
 export class ShopEntity {
@@ -71,6 +82,9 @@ export class ShopEntity {
 
   @Property({ type: 'integer', fieldName: 'low_stock_threshold' })
   lowStockThreshold = 3;
+
+  @Property({ type: 'json' })
+  verification: ShopVerification = { ...EMPTY_VERIFICATION };
 
   @Property({ type: 'string', length: 20 })
   status: ShopStatus = 'active';

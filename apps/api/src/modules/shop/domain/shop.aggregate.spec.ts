@@ -142,4 +142,57 @@ describe('Shop (agrégat)', () => {
     expect(zones[1]).toMatchObject({ label: 'Bonabéri', fee: 0 });
     expect(zones[0].id).toBeTruthy();
   });
+
+  it('vérification : soumission → décision, garde-fous d’état', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    expect(shop.verification.status).toBe('none');
+    expect(shop.isVerified).toBe(false);
+
+    const submitted = shop.requestVerification({
+      legalName: '  Awa SARL ',
+      registryNumber: ' RC/DLA/2024/B/1234 ',
+      note: 'Boutique de mode en activité depuis 2019',
+    });
+    expect(submitted.isOk).toBe(true);
+    expect(shop.verification).toMatchObject({
+      status: 'pending',
+      legalName: 'Awa SARL',
+      registryNumber: 'RC/DLA/2024/B/1234',
+    });
+    expect(shop.verification.submittedAt).toBeTruthy();
+
+    // une demande déjà en attente ne peut pas être resoumise
+    expect(shop.requestVerification({ legalName: 'X', registryNumber: 'Y' }).isErr).toBe(true);
+
+    const approved = shop.decideVerification('approve');
+    expect(approved.isOk).toBe(true);
+    expect(shop.isVerified).toBe(true);
+    expect(shop.verification.decidedAt).toBeTruthy();
+
+    // plus rien en attente → décision refusée
+    expect(shop.decideVerification('reject').isErr).toBe(true);
+    // boutique déjà vérifiée → nouvelle demande refusée
+    expect(shop.requestVerification({ legalName: 'X', registryNumber: 'Y' }).isErr).toBe(true);
+  });
+
+  it('vérification : refus avec motif, puis nouvelle demande possible', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    shop.requestVerification({ legalName: 'AA', registryNumber: 'BB' });
+    shop.decideVerification('reject', 'Justificatif illisible');
+    expect(shop.verification.status).toBe('rejected');
+    expect(shop.verification.decisionNote).toBe('Justificatif illisible');
+
+    const retry = shop.requestVerification({ legalName: 'AA', registryNumber: 'B2' });
+    expect(retry.isOk).toBe(true);
+    expect(shop.verification.status).toBe('pending');
+    expect(shop.verification.decisionNote).toBeNull();
+  });
 });

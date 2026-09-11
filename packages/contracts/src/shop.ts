@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { IdSchema } from './common';
+import { IdSchema, paginated } from './common';
 
 /** Verticales du lancement (biens de consommation). Immobilier & auto : Phase 3. */
 export const VerticalSchema = z.enum([
@@ -61,9 +61,52 @@ export const ShopSchema = z.object({
   deliveryZones: DeliveryZonesSchema.default([]),
   /** Seuil d'alerte « stock bas » dans le tableau de bord. */
   lowStockThreshold: z.number().int().min(0).max(999).default(3),
+  /** Badge public « boutique vérifiée » — détails de la demande sur un point d'accès séparé (privé). */
+  verified: z.boolean().default(false),
   createdAt: z.string().datetime(),
 });
 export type Shop = z.infer<typeof ShopSchema>;
+
+export const ShopVerificationStatusSchema = z.enum(['none', 'pending', 'verified', 'rejected']);
+export type ShopVerificationStatus = z.infer<typeof ShopVerificationStatusSchema>;
+
+/** Demande de vérification — vue vendeur (privée, jamais exposée publiquement). */
+export const ShopVerificationSchema = z.object({
+  status: ShopVerificationStatusSchema,
+  legalName: z.string().nullable(),
+  registryNumber: z.string().nullable(),
+  note: z.string().nullable(),
+  proofImageUrl: z.string().nullable(),
+  submittedAt: z.string().nullable(),
+  decidedAt: z.string().nullable(),
+  decisionNote: z.string().nullable(),
+});
+export type ShopVerification = z.infer<typeof ShopVerificationSchema>;
+
+export const SubmitShopVerificationSchema = z.object({
+  legalName: z.string().trim().min(2).max(140),
+  registryNumber: z.string().trim().min(2).max(60),
+  note: z.string().trim().max(500).nullable().optional(),
+  proofImageUrl: z.string().url().max(600).nullable().optional(),
+});
+export type SubmitShopVerificationInput = z.infer<typeof SubmitShopVerificationSchema>;
+
+/** Vue console plateforme : la demande + l'identité de la boutique concernée. */
+export const AdminShopVerificationSchema = ShopVerificationSchema.extend({
+  shopId: IdSchema,
+  shopName: z.string(),
+  shopSlug: z.string(),
+});
+export type AdminShopVerification = z.infer<typeof AdminShopVerificationSchema>;
+
+export const AdminShopVerificationListSchema = paginated(AdminShopVerificationSchema);
+export type AdminShopVerificationList = z.infer<typeof AdminShopVerificationListSchema>;
+
+export const DecideShopVerificationSchema = z.object({
+  action: z.enum(['approve', 'reject']),
+  note: z.string().trim().max(300).nullable().optional(),
+});
+export type DecideShopVerificationInput = z.infer<typeof DecideShopVerificationSchema>;
 
 export const CreateShopSchema = ShopSchema.pick({
   name: true,
@@ -113,6 +156,7 @@ export const DirectoryShopSchema = z.object({
   verticals: z.array(VerticalSchema),
   brandColor: z.string().nullable(),
   products: z.number(),
+  verified: z.boolean(),
 });
 export type DirectoryShop = z.infer<typeof DirectoryShopSchema>;
 

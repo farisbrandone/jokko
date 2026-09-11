@@ -37,6 +37,7 @@ export class DirectoryService {
     const rows = (
       await this.db.query(
         `select s.slug, s.name, s.tagline, s.verticals, s.brand_color as "brandColor",
+                (s.verification->>'status' = 'verified') as verified,
                 (select count(*) from catalog_products p
                    where p.shop_id = s.id and p.status = 'published')::int as products
            from shops s
@@ -55,6 +56,7 @@ export class DirectoryService {
         verticals: ((r.verticals as Vertical[]) ?? []),
         brandColor: (r.brandColor as string | null) ?? null,
         products: r.products as number,
+        verified: Boolean(r.verified),
       })),
       total,
       page: q.page,

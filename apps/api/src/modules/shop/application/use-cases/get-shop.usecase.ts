@@ -5,15 +5,18 @@ import {
   type ShopRepository,
 } from '../../domain/ports/shop.repository';
 
+/** Fiche boutique publique : `verification` (privée) réduite au seul badge `verified`. */
+export type PublicShopView = Omit<ShopSnapshot, 'verification'> & { verified: boolean };
+
 @Injectable()
 export class GetShopUseCase {
   constructor(@Inject(SHOP_REPOSITORY) private readonly shops: ShopRepository) {}
 
-  async bySlug(slug: string): Promise<ShopSnapshot | null> {
+  async bySlug(slug: string): Promise<PublicShopView | null> {
     const shop = await this.shops.findBySlug(slug);
     if (!shop) return null;
-    const snap = shop.toSnapshot();
+    const { verification, ...snap } = shop.toSnapshot();
     // Une boutique suspendue n'est plus servie publiquement.
-    return snap.status === 'active' ? snap : null;
+    return snap.status === 'active' ? { ...snap, verified: verification.status === 'verified' } : null;
   }
 }

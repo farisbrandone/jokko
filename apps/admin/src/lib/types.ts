@@ -74,3 +74,26 @@ export interface AdminShopList {
   page: number;
   pageSize: number;
 }
+
+export type ShopVerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
+
+export interface AdminShopVerificationRow {
+  shopId: string;
+  shopName: string;
+  shopSlug: string;
+  status: ShopVerificationStatus;
+  legalName: string | null;
+  registryNumber: string | null;
+  note: string | null;
+  proofImageUrl: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+}
+
+export interface AdminShopVerificationList {
+  items: AdminShopVerificationRow[];
+  total: number;
+  page: number;
+  pageSize: number;
+}

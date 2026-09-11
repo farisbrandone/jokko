@@ -34,6 +34,7 @@ export interface ShopSnapshot {
   announcement: string | null;
   deliveryZones: DeliveryZone[];
   lowStockThreshold: number;
+  verification: ShopVerification;
   status: ShopStatus;
   createdAt: string;
   updatedAt: string;
@@ -53,6 +54,35 @@ const EMPTY_APPEARANCE: ShopAppearance = {
   heroImageUrl: null,
   accentColor: null,
   announcement: null,
+};
+
+export type ShopVerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
+
+/**
+ * Demande de vérification (badge « boutique vérifiée »). Contient des
+ * informations privées (registre, justificatif) : jamais renvoyées telles
+ * quelles par la fiche boutique publique — voir `toSnapshot()` / `GetShopUseCase`.
+ */
+export interface ShopVerification {
+  status: ShopVerificationStatus;
+  legalName: string | null;
+  registryNumber: string | null;
+  note: string | null;
+  proofImageUrl: string | null;
+  submittedAt: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+}
+
+const EMPTY_VERIFICATION: ShopVerification = {
+  status: 'none',
+  legalName: null,
+  registryNumber: null,
+  note: null,
+  proofImageUrl: null,
+  submittedAt: null,
+  decidedAt: null,
+  decisionNote: null,
 };
 
 interface CreateShopProps {
@@ -138,6 +168,7 @@ export class Shop extends AggregateRoot {
     private _appearance: ShopAppearance,
     private _deliveryZones: DeliveryZone[],
     private _lowStockThreshold: number,
+    private _verification: ShopVerification,
     private _status: ShopStatus,
     private readonly _createdAt: Date,
     private _updatedAt: Date,
@@ -179,6 +210,7 @@ export class Shop extends AggregateRoot {
       { ...EMPTY_APPEARANCE },
       [],
       3,
+      { ...EMPTY_VERIFICATION },
       'active',
       now,
       now,
@@ -213,6 +245,7 @@ export class Shop extends AggregateRoot {
       },
       (snap.deliveryZones ?? []).map((z) => ({ ...z })),
       snap.lowStockThreshold ?? 3,
+      snap.verification ? { ...snap.verification } : { ...EMPTY_VERIFICATION },
       snap.status,
       new Date(snap.createdAt),
       new Date(snap.updatedAt),
@@ -229,6 +262,60 @@ export class Shop extends AggregateRoot {
 
   get currency(): string {
     return this._currency;
+  }
+
+  get verification(): ShopVerification {
+    return { ...this._verification };
+  }
+
+  get isVerified(): boolean {
+    return this._verification.status === 'verified';
+  }
+
+  /** Soumission (ou nouvelle tentative après refus) d'une demande de vérification. */
+  requestVerification(input: {
+    legalName: string;
+    registryNumber: string;
+    note?: string | null;
+    proofImageUrl?: string | null;
+  }): Result<void> {
+    if (this._verification.status === 'pending') {
+      return Result.err('Une demande est déjà en cours d’examen');
+    }
+    if (this._verification.status === 'verified') {
+      return Result.err('Cette boutique est déjà vérifiée');
+    }
+    const legalName = input.legalName.trim();
+    const registryNumber = input.registryNumber.trim();
+    if (legalName.length < 2) return Result.err('Raison sociale trop courte');
+    if (registryNumber.length < 2) return Result.err('Numéro de registre trop court');
+    this._verification = {
+      status: 'pending',
+      legalName,
+      registryNumber,
+      note: input.note?.trim() || null,
+      proofImageUrl: input.proofImageUrl?.trim() || null,
+      submittedAt: new Date().toISOString(),
+      decidedAt: null,
+      decisionNote: null,
+    };
+    this._updatedAt = new Date();
+    return Result.ok(undefined);
+  }
+
+  /** Décision plateforme sur une demande en attente. */
+  decideVerification(action: 'approve' | 'reject', note?: string | null): Result<void> {
+    if (this._verification.status !== 'pending') {
+      return Result.err('Aucune demande en attente pour cette boutique');
+    }
+    this._verification = {
+      ...this._verification,
+      status: action === 'approve' ? 'verified' : 'rejected',
+      decidedAt: new Date().toISOString(),
+      decisionNote: note?.trim() || null,
+    };
+    this._updatedAt = new Date();
+    return Result.ok(undefined);
   }
 
   /** Édition du profil par un membre autorisé (nom, WhatsApp, thème, couleur). */
@@ -368,6 +455,7 @@ export class Shop extends AggregateRoot {
       announcement: this._appearance.announcement,
       deliveryZones: this._deliveryZones.map((z) => ({ ...z })),
       lowStockThreshold: this._lowStockThreshold,
+      verification: { ...this._verification },
       status: this._status,
       createdAt: this._createdAt.toISOString(),
       updatedAt: this._updatedAt.toISOString(),

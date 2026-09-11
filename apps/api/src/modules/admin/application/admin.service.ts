@@ -3,9 +3,12 @@ import type {
   AdminReportList,
   AdminShopDetail,
   AdminShopList,
+  AdminShopVerificationList,
+  DecideShopVerificationInput,
   ImpersonationGrant,
   PlatformOverview,
   ResolveReportInput,
+  ShopVerification,
 } from '@jokko/contracts';
 import { ProductIndex } from '../../search/infrastructure/product-index';
 import { TokenService } from '../../identity/infrastructure/security/token.service';
@@ -281,5 +284,64 @@ export class AdminService {
       [rep.shop_id, rep.target_type, rep.target_id, id],
     );
     return { status: 'actioned' };
+  }
+
+  async listShopVerifications(
+    status: string | undefined,
+    page: number,
+    pageSize: number,
+  ): Promise<AdminShopVerificationList> {
+    const where = status ? `where s.verification->>'status' = $1` : `where s.verification->>'status' <> 'none'`;
+    const params: unknown[] = status ? [status] : [];
+    const off = (page - 1) * pageSize;
+
+    const total = await this.db.query<{ c: string }>(
+      `select count(*)::int c from shops s ${where}`,
+      params,
+    );
+    const { rows } = await this.db.query(
+      `select s.id shop_id, s.name shop_name, s.slug shop_slug, s.verification
+         from shops s
+         ${where}
+         order by (s.verification->>'status' = 'pending') desc, s.verification->>'submittedAt' desc
+         limit ${pageSize} offset ${off}`,
+      params,
+    );
+
+    return {
+      items: rows.map((r) => {
+        const v = r.verification as ShopVerification;
+        return { shopId: r.shop_id, shopName: r.shop_name, shopSlug: r.shop_slug, ...v };
+      }),
+      total: Number(total.rows[0].c),
+      page,
+      pageSize,
+    };
+  }
+
+  async decideShopVerification(
+    shopId: string,
+    input: DecideShopVerificationInput,
+  ): Promise<ShopVerification> {
+    const found = await this.db.query<{ verification: ShopVerification }>(
+      `select verification from shops where id = $1`,
+      [shopId],
+    );
+    const row = found.rows[0];
+    if (!row) throw new NotFoundException('Boutique introuvable');
+    if (row.verification.status !== 'pending') {
+      throw new ConflictException('Aucune demande en attente pour cette boutique');
+    }
+    const next: ShopVerification = {
+      ...row.verification,
+      status: input.action === 'approve' ? 'verified' : 'rejected',
+      decidedAt: new Date().toISOString(),
+      decisionNote: input.note?.trim() || null,
+    };
+    await this.db.query(
+      `update shops set verification = $2::jsonb, updated_at = now() where id = $1`,
+      [shopId, JSON.stringify(next)],
+    );
+    return next;
   }
 }

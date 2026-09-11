@@ -32,6 +32,7 @@ export const ShopMapper = {
         fee: z.fee,
       })),
       lowStockThreshold: entity.lowStockThreshold ?? 3,
+      verification: entity.verification,
       status: entity.status,
       createdAt: entity.createdAt.toISOString(),
       updatedAt: entity.updatedAt.toISOString(),
@@ -64,6 +65,7 @@ export const ShopMapper = {
     entity.announcement = s.announcement;
     entity.deliveryZones = s.deliveryZones.map((z) => ({ id: z.id, label: z.label, fee: z.fee }));
     entity.lowStockThreshold = s.lowStockThreshold;
+    entity.verification = s.verification;
     entity.status = s.status;
     entity.createdAt = new Date(s.createdAt);
     entity.updatedAt = new Date(s.updatedAt);

@@ -13,6 +13,8 @@ import { z } from 'zod';
 import {
   impersonateSchema,
   resolveReportSchema,
+  DecideShopVerificationSchema,
+  type DecideShopVerificationInput,
   type ImpersonateInput,
   type ResolveReportInput,
 } from '@jokko/contracts';
@@ -37,6 +39,13 @@ const ReportsQuerySchema = z.object({
 type ReportsQuery = z.infer<typeof ReportsQuerySchema>;
 
 const StatusSchema = z.object({ status: z.enum(['active', 'suspended']) });
+
+const VerificationsQuerySchema = z.object({
+  status: z.enum(['pending', 'verified', 'rejected']).optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(30),
+});
+type VerificationsQuery = z.infer<typeof VerificationsQuerySchema>;
 
 @ApiTags('admin')
 @Controller('admin')
@@ -87,5 +96,18 @@ export class AdminController {
     @Body(new ZodValidationPipe(resolveReportSchema)) body: ResolveReportInput,
   ) {
     return this.admin.resolveReport(id, body.action);
+  }
+
+  @Get('shop-verifications')
+  shopVerifications(@Query(new ZodValidationPipe(VerificationsQuerySchema)) q: VerificationsQuery) {
+    return this.admin.listShopVerifications(q.status, q.page, q.pageSize);
+  }
+
+  @Post('shop-verifications/:shopId/decide')
+  decideShopVerification(
+    @Param('shopId', ParseUUIDPipe) shopId: string,
+    @Body(new ZodValidationPipe(DecideShopVerificationSchema)) body: DecideShopVerificationInput,
+  ) {
+    return this.admin.decideShopVerification(shopId, body);
   }
 }

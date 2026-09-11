@@ -481,6 +481,84 @@ describe('profil boutique (couleur de marque)', () => {
   });
 });
 
+describe('badge « boutique vérifiée »', () => {
+  it("soumission → décision admin → badge public, sans fuite des détails privés", async () => {
+    const owner = await newSeller('verif-owner@ex.com');
+    const auth = { authorization: `Bearer ${owner}` };
+    const created = await http
+      .post('/api/shops')
+      .set(auth)
+      .send({ name: 'Verif Shop', verticals: ['electronique'] })
+      .expect(201);
+    const { id: shopId, slug } = created.body.shop;
+    await http.patch(`/api/shops/${shopId}`).set(auth).send({ listed: true }).expect(200);
+
+    // la fiche publique ne doit jamais exposer l'objet `verification`.
+    const before = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(before.body.verified).toBe(false);
+    expect(before.body.verification).toBeUndefined();
+
+    // vue privée : aucune demande.
+    const priv0 = await http.get(`/api/shops/${shopId}/verification`).set(auth).expect(200);
+    expect(priv0.body.status).toBe('none');
+
+    // registre trop court → 400
+    await http
+      .post(`/api/shops/${shopId}/verification`)
+      .set(auth)
+      .send({ legalName: 'Verif SARL', registryNumber: 'X' })
+      .expect(400);
+
+    const submitted = await http
+      .post(`/api/shops/${shopId}/verification`)
+      .set(auth)
+      .send({ legalName: 'Verif SARL', registryNumber: 'RC/2024/001', note: 'Boutique existante' })
+      .expect(201);
+    expect(submitted.body.status).toBe('pending');
+
+    // un tiers non admin n'accède pas à la file d'attente.
+    const stranger = await newSeller('verif-stranger@ex.com');
+    await http
+      .get('/api/admin/shop-verifications?status=pending')
+      .set('authorization', `Bearer ${stranger}`)
+      .expect(403);
+
+    const adminToken = await makeAdmin('verif-admin@ex.com');
+    const adminAuth = { authorization: `Bearer ${adminToken}` };
+    const pending = await http
+      .get('/api/admin/shop-verifications?status=pending')
+      .set(adminAuth)
+      .expect(200);
+    const row = pending.body.items.find((v: { shopId: string }) => v.shopId === shopId);
+    expect(row).toMatchObject({ shopName: 'Verif Shop', legalName: 'Verif SARL' });
+
+    const decided = await http
+      .post(`/api/admin/shop-verifications/${shopId}/decide`)
+      .set(adminAuth)
+      .send({ action: 'approve' })
+      .expect(201);
+    expect(decided.body.status).toBe('verified');
+
+    // rejouer une décision → 409 (plus rien en attente)
+    await http
+      .post(`/api/admin/shop-verifications/${shopId}/decide`)
+      .set(adminAuth)
+      .send({ action: 'reject' })
+      .expect(409);
+
+    const after = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(after.body.verified).toBe(true);
+
+    const dir = await http.get('/api/directory?q=Verif Shop').expect(200);
+    const dirRow = dir.body.items.find((s: { slug: string }) => s.slug === slug);
+    expect(dirRow.verified).toBe(true);
+
+    // Ménage : la base est partagée avec d'autres tests qui font une assertion
+    // exacte sur le contenu non filtré de l'annuaire.
+    await http.patch(`/api/shops/${shopId}`).set(auth).send({ listed: false }).expect(200);
+  });
+});
+
 describe('modération : signalements & retrait', () => {
   it('signalement → file admin → retrait du produit → hors recherche', async () => {
     const seller = await newSeller('mod-seller@ex.com');

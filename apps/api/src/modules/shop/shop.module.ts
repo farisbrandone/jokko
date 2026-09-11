@@ -5,11 +5,13 @@ import { ShopController } from './presentation/shop.controller';
 import { InternalTlsController } from './presentation/internal-tls.controller';
 import { CustomDomainController } from './presentation/custom-domain.controller';
 import { DirectoryController } from './presentation/directory.controller';
+import { ShopVerificationController } from './presentation/shop-verification.controller';
 import { CreateShopUseCase } from './application/use-cases/create-shop.usecase';
 import { GetShopUseCase } from './application/use-cases/get-shop.usecase';
 import { UpdateShopUseCase } from './application/use-cases/update-shop.usecase';
 import { CustomDomainService } from './application/custom-domain.service';
 import { DirectoryService } from './application/directory.service';
+import { ShopVerificationService } from './application/shop-verification.service';
 import { SHOP_REPOSITORY } from './domain/ports/shop.repository';
 import { DNS_VERIFIER } from './domain/ports/dns-verifier';
 import { MikroOrmShopRepository } from './infrastructure/persistence/mikro-orm-shop.repository';
@@ -31,6 +33,7 @@ const dnsVerifierProvider: Provider = {
     InternalTlsController,
     CustomDomainController,
     DirectoryController,
+    ShopVerificationController,
   ],
   providers: [
     CreateShopUseCase,
@@ -38,6 +41,7 @@ const dnsVerifierProvider: Provider = {
     UpdateShopUseCase,
     CustomDomainService,
     DirectoryService,
+    ShopVerificationService,
     TenantResolver,
     TenantMiddleware,
     TenantGuard,
