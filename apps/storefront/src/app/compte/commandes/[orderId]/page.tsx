@@ -4,6 +4,9 @@ import { notFound } from 'next/navigation';
 import { formatMoney } from '@jokko/ui';
 import type { BuyerOrder } from '@jokko/contracts';
 import { buyerJson } from '@/lib/buyer-api';
+import { DisputeSection } from '@/components/dispute-section';
+
+const CONFIRMED_STATUSES = new Set(['to_deliver', 'paid', 'fulfilled']);
 
 export const dynamic = 'force-dynamic';
 
@@ -75,6 +78,8 @@ export default async function BuyerOrderPage({ params }: Props) {
       {order.deliveryAddress ? (
         <p className="mt-3 text-sm text-[var(--color-muted)]">Adresse : {order.deliveryAddress}</p>
       ) : null}
+
+      <DisputeSection orderId={orderId} canOpen={CONFIRMED_STATUSES.has(order.status)} />
     </div>
   );
 }

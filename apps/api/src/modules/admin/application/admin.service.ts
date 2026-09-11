@@ -1,11 +1,14 @@
 import { ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type {
+  AdminDisputeList,
   AdminReportList,
   AdminShopDetail,
   AdminShopList,
   AdminShopVerificationList,
   DecideShopVerificationInput,
+  Dispute,
   ImpersonationGrant,
+  MediateDisputeInput,
   PlatformOverview,
   ResolveReportInput,
   ShopVerification,
@@ -343,5 +346,98 @@ export class AdminService {
       [shopId, JSON.stringify(next)],
     );
     return next;
+  }
+
+  /** File de médiation (par défaut : litiges transmis par l'acheteur). */
+  async listDisputes(
+    status: string | undefined,
+    page: number,
+    pageSize: number,
+  ): Promise<AdminDisputeList> {
+    const effectiveStatus = status ?? 'escalated';
+    const off = (page - 1) * pageSize;
+
+    const total = await this.db.query<{ c: string }>(
+      `select count(*)::int c from disputes d where d.status = $1`,
+      [effectiveStatus],
+    );
+    const { rows } = await this.db.query(
+      `select d.id, d.shop_id, d.order_id, d.buyer_phone, d.reason, d.description, d.status,
+              d.seller_response, d.resolution, d.resolution_note, d.escalation_note, d.admin_note,
+              d.created_at, d.updated_at, d.escalated_at, d.closed_at,
+              s.name shop_name, s.slug shop_slug
+         from disputes d
+         join shops s on s.id = d.shop_id
+        where d.status = $1
+        order by d.escalated_at asc nulls last, d.created_at desc
+        limit ${pageSize} offset ${off}`,
+      [effectiveStatus],
+    );
+
+    return {
+      items: rows.map((r) => ({
+        id: r.id,
+        shopId: r.shop_id,
+        orderId: r.order_id,
+        buyerPhone: r.buyer_phone,
+        reason: r.reason,
+        description: r.description,
+        status: r.status,
+        sellerResponse: r.seller_response ?? null,
+        resolution: r.resolution ?? null,
+        resolutionNote: r.resolution_note ?? null,
+        escalationNote: r.escalation_note ?? null,
+        adminNote: r.admin_note ?? null,
+        createdAt: new Date(r.created_at).toISOString(),
+        updatedAt: new Date(r.updated_at).toISOString(),
+        escalatedAt: r.escalated_at ? new Date(r.escalated_at).toISOString() : null,
+        closedAt: r.closed_at ? new Date(r.closed_at).toISOString() : null,
+        shopName: r.shop_name,
+        shopSlug: r.shop_slug,
+      })),
+      total: Number(total.rows[0].c),
+      page,
+      pageSize,
+    };
+  }
+
+  /** Décision finale de la plateforme sur un litige transmis par l'acheteur. */
+  async mediateDispute(id: string, input: MediateDisputeInput): Promise<Dispute> {
+    const found = await this.db.query<{ status: string }>(
+      `select status from disputes where id = $1`,
+      [id],
+    );
+    if (!found.rows[0]) throw new NotFoundException('Litige introuvable');
+    if (found.rows[0].status !== 'escalated') {
+      throw new ConflictException('Ce litige n’a pas été transmis à la plateforme');
+    }
+    const { rows } = await this.db.query(
+      `update disputes
+          set status = 'closed', resolution = $2, admin_note = $3, closed_at = now(), updated_at = now()
+        where id = $1
+        returning id, shop_id, order_id, buyer_phone, reason, description, status,
+                  seller_response, resolution, resolution_note, escalation_note, admin_note,
+                  created_at, updated_at, escalated_at, closed_at`,
+      [id, input.resolution, input.note?.trim() || null],
+    );
+    const r = rows[0];
+    return {
+      id: r.id,
+      shopId: r.shop_id,
+      orderId: r.order_id,
+      buyerPhone: r.buyer_phone,
+      reason: r.reason,
+      description: r.description,
+      status: r.status,
+      sellerResponse: r.seller_response ?? null,
+      resolution: r.resolution ?? null,
+      resolutionNote: r.resolution_note ?? null,
+      escalationNote: r.escalation_note ?? null,
+      adminNote: r.admin_note ?? null,
+      createdAt: new Date(r.created_at).toISOString(),
+      updatedAt: new Date(r.updated_at).toISOString(),
+      escalatedAt: r.escalated_at ? new Date(r.escalated_at).toISOString() : null,
+      closedAt: r.closed_at ? new Date(r.closed_at).toISOString() : null,
+    };
   }
 }

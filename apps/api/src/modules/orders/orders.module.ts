@@ -34,5 +34,6 @@ import { OrdersWebhookController } from './presentation/orders-webhook.controlle
     OrderWhatsappNotifier,
     { provide: ORDER_REPOSITORY, useClass: MikroOrmOrderRepository },
   ],
+  exports: [ORDER_REPOSITORY],
 })
 export class OrdersModule {}

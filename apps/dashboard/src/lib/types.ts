@@ -109,6 +109,29 @@ export interface ShopVerification {
   decisionNote: string | null;
 }
 
+export type DisputeReason = 'not_received' | 'not_as_described' | 'damaged' | 'wrong_item' | 'other';
+export type DisputeStatus = 'open' | 'seller_responded' | 'resolved' | 'escalated' | 'closed';
+export type DisputeResolution = 'refund' | 'replacement' | 'rejected';
+
+export interface Dispute {
+  id: string;
+  shopId: string;
+  orderId: string;
+  buyerPhone: string;
+  reason: DisputeReason;
+  description: string;
+  status: DisputeStatus;
+  sellerResponse: string | null;
+  resolution: DisputeResolution | null;
+  resolutionNote: string | null;
+  escalationNote: string | null;
+  adminNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+  escalatedAt: string | null;
+  closedAt: string | null;
+}
+
 export const VERTICALS = [
   'electronique',
   'mode-accessoires',

@@ -14,8 +14,11 @@ import {
   impersonateSchema,
   resolveReportSchema,
   DecideShopVerificationSchema,
+  DisputeStatusSchema,
+  MediateDisputeSchema,
   type DecideShopVerificationInput,
   type ImpersonateInput,
+  type MediateDisputeInput,
   type ResolveReportInput,
 } from '@jokko/contracts';
 import { ZodValidationPipe } from '../../../shared/zod-validation.pipe';
@@ -46,6 +49,13 @@ const VerificationsQuerySchema = z.object({
   pageSize: z.coerce.number().int().positive().max(100).default(30),
 });
 type VerificationsQuery = z.infer<typeof VerificationsQuerySchema>;
+
+const DisputesQuerySchema = z.object({
+  status: DisputeStatusSchema.optional(),
+  page: z.coerce.number().int().positive().default(1),
+  pageSize: z.coerce.number().int().positive().max(100).default(30),
+});
+type DisputesQuery = z.infer<typeof DisputesQuerySchema>;
 
 @ApiTags('admin')
 @Controller('admin')
@@ -109,5 +119,18 @@ export class AdminController {
     @Body(new ZodValidationPipe(DecideShopVerificationSchema)) body: DecideShopVerificationInput,
   ) {
     return this.admin.decideShopVerification(shopId, body);
+  }
+
+  @Get('disputes')
+  disputes(@Query(new ZodValidationPipe(DisputesQuerySchema)) q: DisputesQuery) {
+    return this.admin.listDisputes(q.status, q.page, q.pageSize);
+  }
+
+  @Post('disputes/:id/mediate')
+  mediateDispute(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(MediateDisputeSchema)) body: MediateDisputeInput,
+  ) {
+    return this.admin.mediateDispute(id, body);
   }
 }

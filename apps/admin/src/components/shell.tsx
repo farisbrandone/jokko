@@ -10,6 +10,7 @@ const nav = [
   { href: '/shops', label: 'Boutiques' },
   { href: '/reports', label: 'Signalements' },
   { href: '/verifications', label: 'Vérifications' },
+  { href: '/disputes', label: 'Litiges' },
 ];
 
 export function Shell({ email, children }: { email?: string; children: React.ReactNode }) {

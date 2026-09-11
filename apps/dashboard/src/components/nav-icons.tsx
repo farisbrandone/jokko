@@ -91,3 +91,9 @@ export const IconTag = ({ className }: P) => (
     <circle cx="7.5" cy="7.5" r="1.5" />
   </svg>
 );
+export const IconFlag = ({ className }: P) => (
+  <svg {...p(className)}>
+    <path d="M5 21V4" />
+    <path d="M5 4h13l-2.5 4L18 12H5" />
+  </svg>
+);

@@ -21,5 +21,6 @@ import { BuyerController } from './presentation/buyer.controller';
     BuyerGuard,
     { provide: BUYER_REPOSITORY, useClass: MikroOrmBuyerRepository },
   ],
+  exports: [BuyerGuard],
 })
 export class BuyersModule {}

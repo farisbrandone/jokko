@@ -9,6 +9,7 @@ import {
   IconCard,
   IconChart,
   IconChat,
+  IconFlag,
   IconLogout,
   IconOrders,
   IconSettings,
@@ -34,6 +35,7 @@ function shopNav(id: string): NavItem[] {
   return [
     { href: b, label: 'Produits', short: 'Produits', Icon: IconBox, exact: true, matchPrefix: `${b}/products` },
     { href: `${b}/orders`, label: 'Commandes', short: 'Cmdes', Icon: IconOrders },
+    { href: `${b}/disputes`, label: 'Litiges', short: 'Litiges', Icon: IconFlag },
     { href: `${b}/inbox`, label: 'Messages', short: 'Messages', Icon: IconChat },
     { href: `${b}/analytics`, label: 'Statistiques', short: 'Stats', Icon: IconChart },
     { href: `${b}/settings`, label: 'Réglages', short: 'Réglages', Icon: IconSettings },

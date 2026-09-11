@@ -1968,3 +1968,141 @@ describe('compte acheteur léger (téléphone + OTP, multi-boutique)', () => {
     await http.get(`/api/buyer/orders/${otherOrder.body.orderId}`).set(buyerAuth).expect(404);
   });
 });
+
+describe('litiges & médiation plateforme', () => {
+  it('acheteur ouvre un litige → réponse vendeur → escalade → médiation admin', async () => {
+    const phone = '+221770055443';
+    const seller = await newSeller('dispute-seller@ex.com');
+    const shop = await newShop(seller, 'Dispute Shop');
+    const sellerAuth = { authorization: `Bearer ${seller}` };
+
+    const prod = await http
+      .post(`/api/shops/${shop}/products`)
+      .set(sellerAuth)
+      .send({ name: 'Sac Litige', category: 'mode', price: { amount: 8000 }, images: ['https://x/d.jpg'], stock: 5 })
+      .expect(201);
+    await http.post(`/api/shops/${shop}/products/${prod.body.id}/publish`).set(sellerAuth).expect(201);
+
+    // commande en attente de paiement (en ligne, non confirmée) → litige refusé
+    const unpaid = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: prod.body.id, qty: 1 }],
+        buyerName: 'Acheteuse Litige',
+        buyerPhone: phone,
+        paymentMethod: 'online',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://dispute-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+
+    const co = await http
+      .post(`/api/shops/${shop}/orders`)
+      .send({
+        items: [{ productId: prod.body.id, qty: 1 }],
+        buyerName: 'Acheteuse Litige',
+        buyerPhone: phone,
+        paymentMethod: 'cash_on_delivery',
+        deliveryMethod: 'pickup',
+        returnUrl: 'http://dispute-shop.lvh.me/commande/return',
+      })
+      .expect(201);
+    const orderId = co.body.orderId as string;
+    await http.post(`/api/shops/${shop}/orders/${orderId}/fulfill`).set(sellerAuth).expect(201);
+
+    await http.post('/api/buyer/otp/request').send({ phone }).expect(202);
+    const verify = await http
+      .post('/api/buyer/otp/verify')
+      .send({ phone, code: '123456' })
+      .expect(201);
+    const buyerAuth = { authorization: `Bearer ${verify.body.token as string}` };
+
+    // commande non confirmée → 400
+    await http
+      .post(`/api/buyer/orders/${unpaid.body.orderId}/dispute`)
+      .set(buyerAuth)
+      .send({ reason: 'not_received', description: 'Toujours en attente de paiement' })
+      .expect(400);
+
+    // aucun litige pour l'instant
+    await http.get(`/api/buyer/orders/${orderId}/dispute`).set(buyerAuth).expect(404);
+
+    const opened = await http
+      .post(`/api/buyer/orders/${orderId}/dispute`)
+      .set(buyerAuth)
+      .send({ reason: 'damaged', description: 'Le sac est arrivé abîmé sur le côté' })
+      .expect(201);
+    expect(opened.body.status).toBe('open');
+    const disputeId = opened.body.id as string;
+
+    // doublon → 409
+    await http
+      .post(`/api/buyer/orders/${orderId}/dispute`)
+      .set(buyerAuth)
+      .send({ reason: 'damaged', description: 'Encore une fois le même problème signalé' })
+      .expect(409);
+
+    // le vendeur voit le litige et répond sans résolution
+    const sellerList = await http.get(`/api/shops/${shop}/disputes`).set(sellerAuth).expect(200);
+    expect(sellerList.body.find((d: { id: string }) => d.id === disputeId)).toBeTruthy();
+
+    await http
+      .post(`/api/shops/${shop}/disputes/${disputeId}/respond`)
+      .set(sellerAuth)
+      .send({ response: 'Pouvez-vous nous envoyer une photo ?' })
+      .expect(201);
+
+    const afterResponse = await http
+      .get(`/api/buyer/orders/${orderId}/dispute`)
+      .set(buyerAuth)
+      .expect(200);
+    expect(afterResponse.body.status).toBe('seller_responded');
+    expect(afterResponse.body.sellerResponse).toContain('photo');
+
+    // l'acheteuse n'est pas satisfaite → escalade
+    const escalated = await http
+      .post(`/api/buyer/disputes/${disputeId}/escalate`)
+      .set(buyerAuth)
+      .send({ note: 'Le vendeur ne propose rien de concret' })
+      .expect(201);
+    expect(escalated.body.status).toBe('escalated');
+
+    // le vendeur ne peut plus répondre une fois transmis à la plateforme
+    await http
+      .post(`/api/shops/${shop}/disputes/${disputeId}/respond`)
+      .set(sellerAuth)
+      .send({ response: 'trop tard' })
+      .expect(409);
+
+    // non-admin refusé
+    const stranger = await newSeller('dispute-stranger@ex.com');
+    await http
+      .get('/api/admin/disputes?status=escalated')
+      .set('authorization', `Bearer ${stranger}`)
+      .expect(403);
+
+    const adminToken = await makeAdmin('dispute-admin@ex.com');
+    const adminAuth = { authorization: `Bearer ${adminToken}` };
+    const queue = await http.get('/api/admin/disputes?status=escalated').set(adminAuth).expect(200);
+    const row = queue.body.items.find((d: { id: string }) => d.id === disputeId);
+    expect(row).toMatchObject({ shopName: 'Dispute Shop', buyerPhone: phone });
+
+    const mediated = await http
+      .post(`/api/admin/disputes/${disputeId}/mediate`)
+      .set(adminAuth)
+      .send({ resolution: 'refund', note: 'Remboursement accordé après examen des photos' })
+      .expect(201);
+    expect(mediated.body.status).toBe('closed');
+    expect(mediated.body.resolution).toBe('refund');
+
+    // rejouer la médiation → 409
+    await http
+      .post(`/api/admin/disputes/${disputeId}/mediate`)
+      .set(adminAuth)
+      .send({ resolution: 'rejected' })
+      .expect(409);
+
+    const closedQueue = await http.get('/api/admin/disputes?status=closed').set(adminAuth).expect(200);
+    expect(closedQueue.body.items.some((d: { id: string }) => d.id === disputeId)).toBe(true);
+  });
+});
