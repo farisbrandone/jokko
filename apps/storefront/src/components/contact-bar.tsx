@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { smsLink, telLink, whatsappLink } from '@jokko/ui';
 import { track } from '@/lib/track';
+import { Modal } from './modal';
 
 interface Props {
   shopName: string;
@@ -74,7 +75,7 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
             {t('whatsapp')}
           </a>
         ) : null}
-        <button type="button" onClick={() => setOpen((v) => !v)} className={whatsapp ? btn : btnPrimary}>
+        <button type="button" onClick={() => setOpen(true)} className={whatsapp ? btn : btnPrimary}>
           {t('message')}
         </button>
         {whatsapp ? (
@@ -100,50 +101,47 @@ export function ContactBar({ shopName, whatsapp, productId, productName, product
         </button>
       </div>
 
-      {open && state.kind !== 'sent' ? (
-        <form
-          onSubmit={submit}
-          className="rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-2 max-w-md"
-        >
-          <input
-            required
-            placeholder={t('name')}
-            value={form.buyerName}
-            onChange={(e) => setForm({ ...form, buyerName: e.target.value })}
-            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
-          />
-          <input
-            required
-            placeholder={t('phone')}
-            value={form.buyerPhone}
-            onChange={(e) => setForm({ ...form, buyerPhone: e.target.value })}
-            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
-          />
-          <textarea
-            required
-            rows={3}
-            placeholder={t('yourMessage')}
-            value={form.message}
-            onChange={(e) => setForm({ ...form, message: e.target.value })}
-            className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
-          />
-          {state.kind === 'error' ? (
-            <p className="text-sm text-[var(--color-danger)]">{state.msg}</p>
-          ) : null}
-          <button disabled={state.kind === 'sending'} className={btnPrimary}>
-            {state.kind === 'sending' ? t('sending') : t('send')}
-          </button>
-        </form>
-      ) : null}
-
-      {state.kind === 'sent' ? (
-        <p className="text-sm text-[var(--color-good)]">
-          {t('sent')}{' '}
-          <Link href={`/m/${state.id}?token=${state.token}`} className="underline">
-            {t('seeConversation')}
-          </Link>
-        </p>
-      ) : null}
+      <Modal open={open} onClose={() => setOpen(false)} title={t('formTitle')}>
+        {state.kind === 'sent' ? (
+          <p className="text-sm text-[var(--color-good)]">
+            {t('sent')}{' '}
+            <Link href={`/m/${state.id}?token=${state.token}`} className="underline">
+              {t('seeConversation')}
+            </Link>
+          </p>
+        ) : (
+          <form onSubmit={submit} className="flex flex-col gap-2">
+            <input
+              required
+              placeholder={t('name')}
+              value={form.buyerName}
+              onChange={(e) => setForm({ ...form, buyerName: e.target.value })}
+              className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
+            />
+            <input
+              required
+              placeholder={t('phone')}
+              value={form.buyerPhone}
+              onChange={(e) => setForm({ ...form, buyerPhone: e.target.value })}
+              className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
+            />
+            <textarea
+              required
+              rows={3}
+              placeholder={t('yourMessage')}
+              value={form.message}
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
+              className="rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm"
+            />
+            {state.kind === 'error' ? (
+              <p className="text-sm text-[var(--color-danger)]">{state.msg}</p>
+            ) : null}
+            <button disabled={state.kind === 'sending'} className={btnPrimary}>
+              {state.kind === 'sending' ? t('sending') : t('send')}
+            </button>
+          </form>
+        )}
+      </Modal>
     </div>
   );
 }

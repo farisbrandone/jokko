@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { formatMoney, smsLink, whatsappLink } from '@jokko/ui';
 import { track } from '@/lib/track';
+import { Modal } from './modal';
 
 type Channel = 'whatsapp' | 'sms' | 'email';
 
@@ -88,10 +89,12 @@ export function QuickOrder(props: Props) {
 
     if (channel === 'whatsapp' && props.whatsapp) {
       window.open(whatsappLink(props.whatsapp, message), '_blank', 'noopener');
+      setChannel(null);
       return;
     }
     if (channel === 'sms' && props.whatsapp) {
       window.location.href = smsLink(props.whatsapp, message);
+      setChannel(null);
       return;
     }
 
@@ -160,8 +163,24 @@ export function QuickOrder(props: Props) {
         {chBtn('email', t('viaEmail'))}
       </div>
 
-      {channel && !sent ? (
-        <form onSubmit={submit} className="mt-4 flex flex-col gap-2.5">
+      <Modal
+        open={channel !== null}
+        onClose={() => {
+          setChannel(null);
+          setSent(null);
+          setErr(null);
+        }}
+        title={t('orderVia')}
+      >
+      {sent ? (
+        <p className="text-sm text-[var(--color-good)]">
+          {t('sentEmail')}{' '}
+          <Link href={`/m/${sent.id}?token=${sent.token}`} className="underline">
+            {t('seeConversation')}
+          </Link>
+        </p>
+      ) : channel ? (
+        <form onSubmit={submit} className="flex flex-col gap-2.5">
           <p className="text-xs text-[var(--color-muted)]">{t('formHint')}</p>
 
           <div className="flex items-center gap-2">
@@ -270,15 +289,7 @@ export function QuickOrder(props: Props) {
           </button>
         </form>
       ) : null}
-
-      {sent ? (
-        <p className="mt-3 text-sm text-[var(--color-good)]">
-          {t('sentEmail')}{' '}
-          <Link href={`/m/${sent.id}?token=${sent.token}`} className="underline">
-            {t('seeConversation')}
-          </Link>
-        </p>
-      ) : null}
+      </Modal>
     </section>
   );
 }
