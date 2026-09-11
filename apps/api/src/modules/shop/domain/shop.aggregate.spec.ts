@@ -120,6 +120,26 @@ describe('Shop (agrégat)', () => {
     expect(shop.updateProfile({ accentColor: 'bleu' }).isErr).toBe(true);
   });
 
+  it('updateProfile : palette combinée valide acceptée, « custom » ramène à null, id inconnu refusé', () => {
+    const shop = Shop.create({
+      name: 'Boutique',
+      verticals: ['sport'],
+      ownerUserId: 'u',
+    }).unwrap();
+    expect(shop.toSnapshot().themePalette).toBeNull();
+
+    expect(shop.updateProfile({ themePalette: 'forest' }).isOk).toBe(true);
+    expect(shop.toSnapshot().themePalette).toBe('forest');
+
+    expect(shop.updateProfile({ themePalette: 'custom' }).isOk).toBe(true);
+    expect(shop.toSnapshot().themePalette).toBeNull();
+
+    shop.updateProfile({ themePalette: 'ocean' });
+    expect(shop.updateProfile({ themePalette: 'inexistante' }).isErr).toBe(true);
+    // rejetée : la valeur précédente (valide) est conservée, pas de retour silencieux à null.
+    expect(shop.toSnapshot().themePalette).toBe('ocean');
+  });
+
   it('updateProfile : zones de livraison normalisées (libellé trimé, dédup, frais ≥ 0, id assigné)', () => {
     const shop = Shop.create({
       name: 'Boutique',

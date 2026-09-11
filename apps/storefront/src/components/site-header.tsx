@@ -50,7 +50,7 @@ export async function SiteHeader({ shop }: { shop: ShopView | null }) {
       <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-1.5 font-[family-name:var(--font-display)] font-bold text-lg"
+          className="flex shrink-0 items-center gap-1.5 font-[family-name:var(--font-display)] text-[var(--color-heading)] font-bold text-lg"
         >
           {shop.name}
           {shop.verified ? <VerifiedBadge /> : null}

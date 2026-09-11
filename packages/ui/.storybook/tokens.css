@@ -9,6 +9,7 @@
   --color-ink: hsl(30 10% 12%);
   --color-muted: hsl(30 6% 40%);
   --color-faint: hsl(30 6% 55%);
+  --color-heading: var(--color-ink);
 
   --color-brand: hsl(24 84% 45%);
   --color-brand-ink: hsl(0 0% 100%);
@@ -32,6 +33,7 @@
     --color-ink: hsl(40 20% 92%);
     --color-muted: hsl(35 8% 62%);
     --color-faint: hsl(35 6% 48%);
+    --color-heading: hsl(40 20% 92%);
     --color-brand: hsl(28 82% 58%);
     --color-brand-ink: hsl(30 30% 8%);
     --color-brand-soft: hsl(28 30% 18%);

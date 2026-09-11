@@ -479,6 +479,47 @@ describe('profil boutique (couleur de marque)', () => {
       'Bonabéri',
     ]);
   });
+
+  it('palette combinée : choix, retour à « custom », rejet des ids inconnus', async () => {
+    const owner = await newSeller('palette-owner@ex.com');
+    const auth = { authorization: `Bearer ${owner}` };
+    const created = await http
+      .post('/api/shops')
+      .set(auth)
+      .send({ name: 'Palette Shop', verticals: ['electronique'] })
+      .expect(201);
+    const { id: shopId, slug } = created.body.shop;
+
+    const before = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(before.body.themePalette).toBeNull();
+
+    const withPalette = await http
+      .patch(`/api/shops/${shopId}`)
+      .set(auth)
+      .send({ themePalette: 'forest' })
+      .expect(200);
+    expect(withPalette.body.themePalette).toBe('forest');
+    const publicWithPalette = await http.get(`/api/shops/${slug}`).expect(200);
+    expect(publicWithPalette.body.themePalette).toBe('forest');
+    // la fiche publique n'expose jamais le détail de vérification.
+    expect(publicWithPalette.body.verification).toBeUndefined();
+
+    // id inconnu → 400 (validation Zod à la frontière + garde-fou domaine derrière)
+    await http
+      .patch(`/api/shops/${shopId}`)
+      .set(auth)
+      .send({ themePalette: 'neon-inexistant' })
+      .expect(400);
+
+    // repasse par une vraie palette puis « custom » → doit revenir à null
+    await http.patch(`/api/shops/${shopId}`).set(auth).send({ themePalette: 'sunset' }).expect(200);
+    const backToCustom = await http
+      .patch(`/api/shops/${shopId}`)
+      .set(auth)
+      .send({ themePalette: 'custom' })
+      .expect(200);
+    expect(backToCustom.body.themePalette).toBeNull();
+  });
 });
 
 describe('badge « boutique vérifiée »', () => {

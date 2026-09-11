@@ -39,7 +39,7 @@ export async function ShopHero({
 
   return (
     <section className="rounded-[var(--radius-card)] bg-[var(--color-brand-soft)] px-5 py-9 sm:px-8 sm:py-12">
-      <h1 className="font-[family-name:var(--font-display)] text-3xl font-bold sm:text-4xl">
+      <h1 className="font-[family-name:var(--font-display)] text-[var(--color-heading)] text-3xl font-bold sm:text-4xl">
         {title}
       </h1>
       <p className="mt-2 max-w-2xl text-[var(--color-muted)]">{subtitle}</p>

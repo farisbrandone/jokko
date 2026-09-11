@@ -38,6 +38,104 @@ export const BrandColorSchema = z
   .string()
   .regex(/^#[0-9a-fA-F]{6}$/, 'couleur hexadécimale #rrggbb attendue');
 
+/** Paire de polices (titre + texte), préchargées côté vitrine/tableau de bord. */
+export const ShopFontPairingSchema = z.enum(['modern', 'editorial', 'friendly', 'bold']);
+export type ShopFontPairing = z.infer<typeof ShopFontPairingSchema>;
+
+/**
+ * Palette combinée : fond, surface (cartes), texte, titres, accent et police,
+ * pensés ensemble pour rester lisibles et cohérents — alternative « clé en
+ * main » à la personnalisation fine (couleur de marque / accent séparées).
+ */
+export const ShopPaletteIdSchema = z.enum([
+  'custom',
+  'classic',
+  'graphite',
+  'pastel',
+  'forest',
+  'ocean',
+  'sunset',
+  'plum',
+]);
+export type ShopPaletteId = z.infer<typeof ShopPaletteIdSchema>;
+
+export interface ShopPaletteDef {
+  label: string;
+  bg: string;
+  surface: string;
+  ink: string;
+  heading: string;
+  accent: string;
+  font: ShopFontPairing;
+}
+
+/** Catalogue des palettes proposées (hors `custom`, qui garde brandColor/accentColor). */
+export const SHOP_PALETTES: Record<Exclude<ShopPaletteId, 'custom'>, ShopPaletteDef> = {
+  classic: {
+    label: 'Classique chaleureux',
+    bg: '#faf7f2',
+    surface: '#ffffff',
+    ink: '#1c1917',
+    heading: '#1c1917',
+    accent: '#c2410c',
+    font: 'modern',
+  },
+  graphite: {
+    label: 'Graphite minimal',
+    bg: '#f4f4f5',
+    surface: '#ffffff',
+    ink: '#18181b',
+    heading: '#18181b',
+    accent: '#3f3f46',
+    font: 'bold',
+  },
+  pastel: {
+    label: 'Douceur pastel',
+    bg: '#fdf2f8',
+    surface: '#ffffff',
+    ink: '#4a1d3d',
+    heading: '#9d174d',
+    accent: '#db2777',
+    font: 'friendly',
+  },
+  forest: {
+    label: 'Forêt profonde',
+    bg: '#f1f5ee',
+    surface: '#ffffff',
+    ink: '#1c2a1e',
+    heading: '#14532d',
+    accent: '#166534',
+    font: 'editorial',
+  },
+  ocean: {
+    label: 'Bleu océan',
+    bg: '#f0f7fb',
+    surface: '#ffffff',
+    ink: '#0f2733',
+    heading: '#0c4a6e',
+    accent: '#0369a1',
+    font: 'modern',
+  },
+  sunset: {
+    label: 'Coucher de soleil',
+    bg: '#fff7ed',
+    surface: '#ffffff',
+    ink: '#431407',
+    heading: '#c2410c',
+    accent: '#ea580c',
+    font: 'friendly',
+  },
+  plum: {
+    label: 'Prune élégante',
+    bg: '#f7f4fb',
+    surface: '#ffffff',
+    ink: '#2e1a47',
+    heading: '#581c87',
+    accent: '#7c3aed',
+    font: 'editorial',
+  },
+};
+
 export const ShopSchema = z.object({
   id: IdSchema,
   slug: SlugSchema,
@@ -58,6 +156,8 @@ export const ShopSchema = z.object({
   heroImageUrl: z.string().url().max(600).nullable().optional(),
   accentColor: BrandColorSchema.nullable().optional(),
   announcement: z.string().trim().max(160).nullable().optional(),
+  /** Palette combinée (fond/surface/texte/titre/accent/police) — `null`/`custom` = brandColor/accentColor. */
+  themePalette: ShopPaletteIdSchema.nullable().optional(),
   deliveryZones: DeliveryZonesSchema.default([]),
   /** Seuil d'alerte « stock bas » dans le tableau de bord. */
   lowStockThreshold: z.number().int().min(0).max(999).default(3),
@@ -134,6 +234,7 @@ export const UpdateShopSchema = z
     heroImageUrl: z.string().url().max(600).nullable(),
     accentColor: BrandColorSchema.nullable(),
     announcement: z.string().trim().max(160).nullable(),
+    themePalette: ShopPaletteIdSchema.nullable(),
     deliveryZones: DeliveryZonesSchema,
     lowStockThreshold: z.number().int().min(0).max(999),
   })

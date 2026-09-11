@@ -101,7 +101,7 @@ export default async function ProductPage({ params }: Params) {
 
       <div className="flex flex-col gap-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="font-[family-name:var(--font-display)] text-2xl font-bold">
+          <h1 className="font-[family-name:var(--font-display)] text-[var(--color-heading)] text-2xl font-bold">
             {product.name}
           </h1>
           <FavoriteButton productId={product.id} variant="inline" />

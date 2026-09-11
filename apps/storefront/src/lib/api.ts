@@ -20,6 +20,7 @@ export interface ShopView {
   heroImageUrl: string | null;
   accentColor: string | null;
   announcement: string | null;
+  themePalette: string | null;
   deliveryZones: { id?: string; label: string; fee: number }[];
   verified: boolean;
   status: string;

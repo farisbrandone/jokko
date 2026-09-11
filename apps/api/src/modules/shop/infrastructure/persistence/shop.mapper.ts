@@ -26,6 +26,7 @@ export const ShopMapper = {
       heroImageUrl: entity.heroImageUrl,
       accentColor: entity.accentColor,
       announcement: entity.announcement,
+      themePalette: entity.themePalette,
       deliveryZones: (entity.deliveryZones ?? []).map((z) => ({
         id: z.id,
         label: z.label,
@@ -63,6 +64,7 @@ export const ShopMapper = {
     entity.heroImageUrl = s.heroImageUrl;
     entity.accentColor = s.accentColor;
     entity.announcement = s.announcement;
+    entity.themePalette = s.themePalette;
     entity.deliveryZones = s.deliveryZones.map((z) => ({ id: z.id, label: z.label, fee: z.fee }));
     entity.lowStockThreshold = s.lowStockThreshold;
     entity.verification = s.verification;

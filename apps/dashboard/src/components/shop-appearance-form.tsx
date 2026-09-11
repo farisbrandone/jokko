@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { SHOP_PALETTES, type ShopPaletteId } from '@jokko/contracts';
 import { patch, post } from '@/lib/client';
 import type { ShopProfile } from '@/lib/types';
 
@@ -28,6 +29,15 @@ function ink(hex: string): string {
 const field =
   'rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-sm';
 
+// Rendu du « custom » : reprend l'apparence par défaut de la vitrine (mêmes
+// valeurs que la palette « classique »), pour un aperçu fidèle sans palette.
+const CUSTOM_PREVIEW = { bg: '#faf7f2', surface: '#ffffff', ink: '#1c1917', heading: '#1c1917' };
+
+const PALETTE_OPTIONS: { id: ShopPaletteId; label: string }[] = [
+  { id: 'custom', label: 'Personnalisé' },
+  ...Object.entries(SHOP_PALETTES).map(([id, def]) => ({ id: id as ShopPaletteId, label: def.label })),
+];
+
 export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
   const router = useRouter();
   const [f, setF] = useState({
@@ -37,6 +47,7 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
     heroImageUrl: initial.heroImageUrl,
     accentColor: initial.accentColor ?? '#0ea5e9',
     useAccent: initial.accentColor != null,
+    themePalette: (initial.themePalette ?? 'custom') as ShopPaletteId,
   });
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -48,8 +59,17 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
     setSaved(false);
   };
 
-  const brand = initial.brandColor && HEX_RE.test(initial.brandColor) ? initial.brandColor : '#c2410c';
-  const accent = f.useAccent && HEX_RE.test(f.accentColor) ? f.accentColor : brand;
+  const palette = f.themePalette !== 'custom' ? SHOP_PALETTES[f.themePalette] : null;
+  const customBrand =
+    initial.brandColor && HEX_RE.test(initial.brandColor) ? initial.brandColor : '#c2410c';
+  const brand = palette?.accent ?? customBrand;
+  const accent = palette?.accent ?? (f.useAccent && HEX_RE.test(f.accentColor) ? f.accentColor : brand);
+  const previewBg = palette?.bg ?? CUSTOM_PREVIEW.bg;
+  const previewSurface = palette?.surface ?? CUSTOM_PREVIEW.surface;
+  const previewInk = palette?.ink ?? CUSTOM_PREVIEW.ink;
+  const previewHeading = palette?.heading ?? CUSTOM_PREVIEW.heading;
+  const displayFont = palette && palette.font !== 'modern' ? `var(--font-${palette.font}-display)` : undefined;
+  const sansFont = palette && palette.font !== 'modern' ? `var(--font-${palette.font}-sans)` : undefined;
 
   const onFile = async (file: File | null) => {
     if (!file) return;
@@ -75,7 +95,7 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
   };
 
   const save = async () => {
-    if (f.useAccent && !HEX_RE.test(f.accentColor)) {
+    if (f.themePalette === 'custom' && f.useAccent && !HEX_RE.test(f.accentColor)) {
       setErr('Couleur d’accent : hexadécimal #rrggbb attendu');
       return;
     }
@@ -87,7 +107,8 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
         heroSubtitle: f.heroSubtitle.trim() || null,
         announcement: f.announcement.trim() || null,
         heroImageUrl: f.heroImageUrl || null,
-        accentColor: f.useAccent ? f.accentColor.toLowerCase() : null,
+        accentColor: f.themePalette === 'custom' && f.useAccent ? f.accentColor.toLowerCase() : null,
+        themePalette: f.themePalette,
       });
       setSaved(true);
       router.refresh();
@@ -112,6 +133,49 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
         }}
         className="flex flex-col gap-4"
       >
+        <fieldset className="flex flex-col gap-2">
+          <span className="text-sm font-medium">Palette de couleurs & police</span>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {PALETTE_OPTIONS.map((opt) => {
+              const def = opt.id !== 'custom' ? SHOP_PALETTES[opt.id] : null;
+              const active = f.themePalette === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => set('themePalette', opt.id)}
+                  aria-pressed={active}
+                  className={`flex flex-col items-start gap-1.5 rounded-[var(--radius-btn)] border p-2 text-left transition-colors ${
+                    active ? 'border-[var(--color-brand)] ring-1 ring-[var(--color-brand)]' : 'border-[var(--color-border)]'
+                  }`}
+                  style={{ background: def ? def.bg : 'var(--color-bg)' }}
+                >
+                  <span className="flex gap-1">
+                    <span
+                      className="h-4 w-4 rounded-full border border-black/10"
+                      style={{ background: def ? def.surface : '#ffffff' }}
+                    />
+                    <span
+                      className="h-4 w-4 rounded-full border border-black/10"
+                      style={{ background: def ? def.accent : customBrand }}
+                    />
+                  </span>
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: def ? def.heading : 'var(--color-ink)' }}
+                  >
+                    {opt.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="text-xs text-[var(--color-muted)]">
+            Chaque palette combine fond, surface, texte, titres, accent et police —
+            choisissez « Personnalisé » pour garder votre propre couleur d’accent.
+          </p>
+        </fieldset>
+
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Grand titre</span>
           <input
@@ -179,36 +243,38 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
           ) : null}
         </fieldset>
 
-        <fieldset className="flex flex-col gap-2 text-sm">
-          <label className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={f.useAccent}
-              onChange={(e) => set('useAccent', e.target.checked)}
-            />
-            <span className="font-medium">Couleur d’accent</span>
-          </label>
-          {f.useAccent ? (
-            <div className="flex items-center gap-3">
+        {f.themePalette === 'custom' ? (
+          <fieldset className="flex flex-col gap-2 text-sm">
+            <label className="flex items-center gap-2">
               <input
-                type="color"
-                value={f.accentColor}
-                onChange={(e) => set('accentColor', e.target.value)}
-                className="h-9 w-14 rounded border border-[var(--color-border)] bg-transparent"
+                type="checkbox"
+                checked={f.useAccent}
+                onChange={(e) => set('useAccent', e.target.checked)}
               />
-              <input
-                value={f.accentColor}
-                onChange={(e) => set('accentColor', e.target.value)}
-                className="w-32 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 font-mono text-sm"
-              />
-            </div>
-          ) : (
-            <p className="text-xs text-[var(--color-muted)]">
-              Utilisée pour les badges de promo et les mises en avant. Sinon, la
-              couleur de marque est reprise.
-            </p>
-          )}
-        </fieldset>
+              <span className="font-medium">Couleur d’accent</span>
+            </label>
+            {f.useAccent ? (
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={f.accentColor}
+                  onChange={(e) => set('accentColor', e.target.value)}
+                  className="h-9 w-14 rounded border border-[var(--color-border)] bg-transparent"
+                />
+                <input
+                  value={f.accentColor}
+                  onChange={(e) => set('accentColor', e.target.value)}
+                  className="w-32 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 font-mono text-sm"
+                />
+              </div>
+            ) : (
+              <p className="text-xs text-[var(--color-muted)]">
+                Utilisée pour les badges de promo et les mises en avant. Sinon, la
+                couleur de marque est reprise.
+              </p>
+            )}
+          </fieldset>
+        ) : null}
 
         {err ? <p className="text-sm text-[var(--color-danger)]">{err}</p> : null}
 
@@ -228,7 +294,10 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--color-faint)]">
           Aperçu
         </p>
-        <div className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)] bg-[var(--color-bg)]">
+        <div
+          className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--color-border)]"
+          style={{ background: previewBg, color: previewInk, fontFamily: sansFont }}
+        >
           {f.announcement.trim() ? (
             <div
               className="px-3 py-1 text-center text-[11px] font-medium"
@@ -238,8 +307,13 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
             </div>
           ) : null}
 
-          <div className="flex items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
-            <span className="text-sm font-bold">{initial.name}</span>
+          <div
+            className="flex items-center justify-between border-b px-3 py-2"
+            style={{ background: previewSurface, borderColor: 'rgba(0,0,0,0.08)' }}
+          >
+            <span className="text-sm font-bold" style={{ color: previewHeading, fontFamily: displayFont }}>
+              {initial.name}
+            </span>
             <span
               className="rounded-full px-2 py-0.5 text-[11px] font-medium"
               style={{ background: brand, color: ink(brand) }}
@@ -255,17 +329,24 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
                 <img src={f.heroImageUrl} alt="" className="h-32 w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/10" />
                 <div className="absolute inset-x-0 bottom-0 p-3 text-white">
-                  <p className="text-base font-bold leading-tight">{previewTitle}</p>
+                  <p className="text-base font-bold leading-tight" style={{ fontFamily: displayFont }}>
+                    {previewTitle}
+                  </p>
                   <p className="line-clamp-2 text-[11px] text-white/90">{previewSub}</p>
                 </div>
               </div>
             ) : (
               <div
                 className="rounded-lg p-4"
-                style={{ background: `color-mix(in srgb, ${brand} 14%, white)` }}
+                style={{ background: `color-mix(in srgb, ${brand} 14%, ${previewSurface})` }}
               >
-                <p className="text-lg font-bold leading-tight">{previewTitle}</p>
-                <p className="mt-1 line-clamp-2 text-xs text-[var(--color-muted)]">{previewSub}</p>
+                <p
+                  className="text-lg font-bold leading-tight"
+                  style={{ color: previewHeading, fontFamily: displayFont }}
+                >
+                  {previewTitle}
+                </p>
+                <p className="mt-1 line-clamp-2 text-xs opacity-70">{previewSub}</p>
               </div>
             )}
 
@@ -273,9 +354,10 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
               {[0, 1].map((i) => (
                 <div
                   key={i}
-                  className="overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]"
+                  className="overflow-hidden rounded-md border"
+                  style={{ background: previewSurface, borderColor: 'rgba(0,0,0,0.08)' }}
                 >
-                  <div className="relative h-16 bg-[var(--color-surface-2)]">
+                  <div className="relative h-16" style={{ background: `color-mix(in srgb, ${previewInk} 6%, ${previewSurface})` }}>
                     {i === 0 ? (
                       <span
                         className="absolute right-1 top-1 rounded px-1 text-[10px] font-medium"
@@ -286,7 +368,10 @@ export function ShopAppearanceForm({ initial }: { initial: ShopProfile }) {
                     ) : null}
                   </div>
                   <div className="p-2">
-                    <div className="h-1.5 w-3/4 rounded bg-[var(--color-border)]" />
+                    <div
+                      className="h-1.5 w-3/4 rounded"
+                      style={{ background: `color-mix(in srgb, ${previewInk} 15%, ${previewSurface})` }}
+                    />
                     <p className="mt-1.5 text-xs font-semibold" style={{ color: accent }}>
                       24 900 F
                     </p>

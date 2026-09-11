@@ -1,3 +1,5 @@
+import { SHOP_PALETTES, type ShopPaletteId } from '@jokko/contracts';
+
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
 function channels(hex: string): [number, number, number] {
@@ -59,6 +61,47 @@ export function brandThemeCss(
     '}',
     `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){`,
     dark.join(''),
+    '}}',
+  ].join('');
+}
+
+/**
+ * Palette combinée (fond/surface/texte/titre/accent/police) choisie par la
+ * boutique — remplace entièrement `brandThemeCss` quand elle est active.
+ * Fond/surface/texte/titre restent en clair uniquement : le média dark de
+ * base (tokens.css) a une spécificité plus forte et reprend la main la
+ * nuit ; seuls l'accent et la police persistent dans les deux thèmes.
+ */
+export function paletteThemeCss(
+  paletteId: string | null | undefined,
+  brandColor?: string | null,
+  accentColor?: string | null,
+): string | null {
+  const def =
+    paletteId && paletteId !== 'custom' && paletteId in SHOP_PALETTES
+      ? SHOP_PALETTES[paletteId as Exclude<ShopPaletteId, 'custom'>]
+      : null;
+  if (!def) return brandThemeCss(brandColor, accentColor);
+
+  const accent = def.accent.toLowerCase();
+  const fontVars =
+    def.font === 'modern'
+      ? ''
+      : `--font-display:var(--font-${def.font}-display);--font-sans:var(--font-${def.font}-sans);`;
+
+  return [
+    ':root{',
+    `--color-bg:${def.bg};`,
+    `--color-surface:${def.surface};`,
+    `--color-ink:${def.ink};`,
+    `--color-heading:${def.heading};`,
+    `--color-brand:${accent};`,
+    `--color-brand-ink:${brandInk(accent)};`,
+    `--color-brand-soft:color-mix(in srgb, ${accent} 14%, white);`,
+    fontVars,
+    '}',
+    `@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){`,
+    `--color-brand-soft:color-mix(in srgb, ${accent} 26%, black);`,
     '}}',
   ].join('');
 }

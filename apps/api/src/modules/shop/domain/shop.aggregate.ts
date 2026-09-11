@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { AggregateRoot, Guard, Result, UniqueId } from '@jokko/domain-kernel';
-import type { DeliveryZone, Vertical } from '@jokko/contracts';
+import { ShopPaletteIdSchema, type DeliveryZone, type Vertical } from '@jokko/contracts';
 import { Slug } from '../../catalog/domain/value-objects/slug';
 import { ShopCreated } from './shop.events';
+
+const PALETTE_IDS = new Set<string>(ShopPaletteIdSchema.options);
 
 export type ThemePreset = 'grid' | 'editorial' | 'single' | 'dense';
 export type ShopStatus = 'active' | 'suspended';
@@ -32,6 +34,7 @@ export interface ShopSnapshot {
   heroImageUrl: string | null;
   accentColor: string | null;
   announcement: string | null;
+  themePalette: string | null;
   deliveryZones: DeliveryZone[];
   lowStockThreshold: number;
   verification: ShopVerification;
@@ -46,6 +49,7 @@ export interface ShopAppearance {
   heroImageUrl: string | null;
   accentColor: string | null;
   announcement: string | null;
+  themePalette: string | null;
 }
 
 const EMPTY_APPEARANCE: ShopAppearance = {
@@ -54,6 +58,7 @@ const EMPTY_APPEARANCE: ShopAppearance = {
   heroImageUrl: null,
   accentColor: null,
   announcement: null,
+  themePalette: null,
 };
 
 export type ShopVerificationStatus = 'none' | 'pending' | 'verified' | 'rejected';
@@ -108,6 +113,7 @@ export interface UpdateShopProfileProps {
   heroImageUrl?: string | null;
   accentColor?: string | null;
   announcement?: string | null;
+  themePalette?: string | null;
   deliveryZones?: DeliveryZone[];
   lowStockThreshold?: number;
 }
@@ -242,6 +248,7 @@ export class Shop extends AggregateRoot {
         heroImageUrl: snap.heroImageUrl ?? null,
         accentColor: snap.accentColor ?? null,
         announcement: snap.announcement ?? null,
+        themePalette: snap.themePalette ?? null,
       },
       (snap.deliveryZones ?? []).map((z) => ({ ...z })),
       snap.lowStockThreshold ?? 3,
@@ -362,6 +369,16 @@ export class Shop extends AggregateRoot {
       if (color.isErr) return Result.err(color.getError());
       this._appearance.accentColor = color.unwrap();
     }
+    if (patch.themePalette !== undefined) {
+      const palette = patch.themePalette;
+      if (!palette || palette === 'custom') {
+        this._appearance.themePalette = null;
+      } else if (PALETTE_IDS.has(palette)) {
+        this._appearance.themePalette = palette;
+      } else {
+        return Result.err('Palette de couleurs inconnue');
+      }
+    }
     if (patch.deliveryZones !== undefined) {
       this._deliveryZones = normalizeDeliveryZones(patch.deliveryZones);
     }
@@ -453,6 +470,7 @@ export class Shop extends AggregateRoot {
       heroImageUrl: this._appearance.heroImageUrl,
       accentColor: this._appearance.accentColor,
       announcement: this._appearance.announcement,
+      themePalette: this._appearance.themePalette,
       deliveryZones: this._deliveryZones.map((z) => ({ ...z })),
       lowStockThreshold: this._lowStockThreshold,
       verification: { ...this._verification },
