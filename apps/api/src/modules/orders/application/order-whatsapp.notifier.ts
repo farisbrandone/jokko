@@ -9,10 +9,22 @@ import { WHATSAPP_SENDER, type WhatsAppSender } from '../../notifications/domain
 import type { OrderSnapshot } from '../domain/order.aggregate';
 
 const ZERO_DECIMAL = new Set(['XOF', 'XAF', 'JPY', 'KRW', 'CLP', 'VND']);
+// XOF/XAF sont vulgairement appelés « FCFA » en Afrique de l'Ouest et
+// Centrale — libellé affiché au client plutôt que le code ISO.
+const CFA_CODES = new Set(['XOF', 'XAF']);
 const money = (amount: number, currency: string): string => {
   const div = ZERO_DECIMAL.has(currency) ? 1 : 100;
-  return `${(amount / div).toLocaleString('fr')} ${currency}`;
+  const label = CFA_CODES.has(currency) ? 'FCFA' : currency;
+  return `${(amount / div).toLocaleString('fr')} ${label}`;
 };
+
+// Échappes Unicode plutôt que les émojis en clair : certains transports/
+// pipelines corrompent les caractères multi-octets littéraux et les
+// affichent en « ? » côté WhatsApp.
+const CART = '\u{1F6D2}'; // 🛒
+const BELL = '\u{1F514}'; // 🔔
+const CHECK = '\u{2705}'; // ✅
+const PACKAGE = '\u{1F4E6}'; // 📦
 
 /**
  * Notifications WhatsApp du cycle de vie d'une commande — acheteur + vendeur.
@@ -66,13 +78,13 @@ export class OrderWhatsappNotifier {
     const c = await this.context(o);
     await this.send(
       o.buyerPhone,
-      `🛒 Commande n°${c.ref} enregistrée chez ${c.shopName}.\n` +
+      `${CART} Commande n°${c.ref} enregistrée chez ${c.shopName}.\n` +
         `À régler à la livraison : ${money(c.total, o.currency)}.` +
         (c.url ? `\nSuivi : ${c.url}` : ''),
     );
     await this.send(
       c.shopWhatsapp,
-      `🔔 Nouvelle commande n°${c.ref} — ${money(c.total, o.currency)} (paiement à la livraison), ` +
+      `${BELL} Nouvelle commande n°${c.ref} — ${money(c.total, o.currency)} (paiement à la livraison), ` +
         `${c.count} article(s). Client : ${o.buyerName} ${o.buyerPhone}.`,
     );
   }
@@ -82,13 +94,13 @@ export class OrderWhatsappNotifier {
     const c = await this.context(o);
     await this.send(
       o.buyerPhone,
-      `✅ Commande n°${c.ref} confirmée chez ${c.shopName}.\n` +
+      `${CHECK} Commande n°${c.ref} confirmée chez ${c.shopName}.\n` +
         `Total payé : ${money(c.total, o.currency)}.` +
         (c.url ? `\nSuivi : ${c.url}` : ''),
     );
     await this.send(
       c.shopWhatsapp,
-      `🔔 Nouvelle commande n°${c.ref} payée — ${money(c.total, o.currency)}, ` +
+      `${BELL} Nouvelle commande n°${c.ref} payée — ${money(c.total, o.currency)}, ` +
         `${c.count} article(s). Client : ${o.buyerName} ${o.buyerPhone}.`,
     );
   }
@@ -99,7 +111,7 @@ export class OrderWhatsappNotifier {
     const verb = o.deliveryZoneLabel ? 'est en cours de livraison' : 'est prête pour le retrait';
     await this.send(
       o.buyerPhone,
-      `📦 Votre commande n°${c.ref} chez ${c.shopName} ${verb}.` +
+      `${PACKAGE} Votre commande n°${c.ref} chez ${c.shopName} ${verb}.` +
         (c.url ? `\nSuivi : ${c.url}` : ''),
     );
   }
