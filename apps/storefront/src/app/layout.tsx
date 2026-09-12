@@ -19,6 +19,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { PageViewTracker } from '@/components/track-event';
 import { ServiceWorkerRegistrar } from '@/components/sw-register';
 import { InstallPrompt } from '@/components/install-prompt';
+import { RouteProgress } from '@/components/route-progress';
 
 const HEX_RE = /^#[0-9a-f]{6}$/i;
 
@@ -119,6 +120,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       ) : null}
       <body className="min-h-dvh flex flex-col">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          <RouteProgress />
           <ServiceWorkerRegistrar />
           {shop ? <PageViewTracker /> : null}
           {shop?.announcement ? (

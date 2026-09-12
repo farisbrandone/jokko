@@ -20,3 +20,65 @@ a {
   background: var(--color-brand);
   color: var(--color-brand-ink);
 }
+
+/* ---------- indicateur de navigation ---------- */
+.route-progress {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--color-bg) 55%, transparent);
+  backdrop-filter: blur(6px) saturate(1.15);
+  -webkit-backdrop-filter: blur(6px) saturate(1.15);
+  opacity: 0;
+  transform: scale(1.01);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+.route-progress[data-visible='true'] {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+.route-progress__spinner svg {
+  width: 48px;
+  height: 48px;
+  animation: route-progress-spin 0.85s linear infinite;
+  filter: drop-shadow(0 2px 10px color-mix(in srgb, var(--color-brand) 35%, transparent));
+}
+.route-progress__spinner circle {
+  fill: none;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.route-progress__spinner circle.track {
+  stroke: var(--color-border);
+  opacity: 0.6;
+}
+.route-progress__spinner circle.arc {
+  stroke: var(--color-brand);
+  stroke-dasharray: 78 35;
+}
+@keyframes route-progress-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-progress__spinner svg {
+    animation: none;
+  }
+  .route-progress__spinner {
+    animation: route-progress-pulse 1.1s ease-in-out infinite;
+  }
+}
+@keyframes route-progress-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
