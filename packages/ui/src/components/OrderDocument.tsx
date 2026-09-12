@@ -1,16 +1,24 @@
 import type { CSSProperties } from 'react';
 
 const ZERO_DECIMAL = new Set(['XOF', 'XAF', 'JPY', 'KRW', 'CLP', 'VND']);
+// Voir la même remarque dans packages/ui/src/index.ts : on force « FCFA »
+// plutôt que de dépendre du nom d'affichage ICU, absent selon la version de
+// Node déployée (retombe alors sur le code ISO brut « XOF »).
+const CFA_CODES = new Set(['XOF', 'XAF']);
 function formatMoney(amount: number, currency = 'XOF', locale = 'fr'): string {
   const factor = ZERO_DECIMAL.has(currency) ? 1 : 100;
+  const value = amount / factor;
+  if (CFA_CODES.has(currency)) {
+    return `${value.toLocaleString(locale, { maximumFractionDigits: 0 })} FCFA`;
+  }
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       maximumFractionDigits: factor === 1 ? 0 : 2,
-    }).format(amount / factor);
+    }).format(value);
   } catch {
-    return `${(amount / factor).toLocaleString(locale)} ${currency}`;
+    return `${value.toLocaleString(locale)} ${currency}`;
   }
 }
 

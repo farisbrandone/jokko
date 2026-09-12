@@ -12,18 +12,28 @@ export function cn(...values: ClassValue[]): string {
 }
 
 const ZERO_DECIMAL = new Set(['XOF', 'XAF', 'JPY', 'KRW', 'CLP', 'VND']);
+// XOF/XAF sont vulgairement appelés « FCFA » en Afrique de l'Ouest et
+// Centrale. On l'affiche nous-mêmes plutôt que de laisser Intl choisir un
+// symbole : selon la version d'ICU embarquée dans Node, le nom d'affichage
+// « F CFA » n'est pas toujours disponible et Intl retombe alors sur le code
+// ISO brut (« XOF ») — ce littéral est donc garanti stable partout.
+const CFA_CODES = new Set(['XOF', 'XAF']);
 
 /** Formate un montant exprimé dans la plus petite unité de la devise. */
 export function formatMoney(amount: number, currency = 'XOF', locale = 'fr'): string {
   const factor = ZERO_DECIMAL.has(currency) ? 1 : 100;
+  const value = amount / factor;
+  if (CFA_CODES.has(currency)) {
+    return `${value.toLocaleString(locale, { maximumFractionDigits: 0 })} FCFA`;
+  }
   try {
     return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency,
       maximumFractionDigits: factor === 1 ? 0 : 2,
-    }).format(amount / factor);
+    }).format(value);
   } catch {
-    return `${(amount / factor).toLocaleString(locale)} ${currency}`;
+    return `${value.toLocaleString(locale)} ${currency}`;
   }
 }
 
