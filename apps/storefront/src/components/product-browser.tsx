@@ -38,7 +38,7 @@ const asPreset = (v: string | undefined): Preset =>
   PRESETS.includes(v as Preset) ? (v as Preset) : 'grid';
 
 const GRID_CLASS: Record<Preset, string> = {
-  grid: 'grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4',
+  grid: 'grid-cols-1 gap-4 sm:grid-cols-3 lg:grid-cols-4',
   dense: 'grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-6',
   editorial: 'grid-cols-1 gap-5 sm:grid-cols-2',
   single: 'grid-cols-1 gap-3',

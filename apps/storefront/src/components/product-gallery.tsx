@@ -210,7 +210,7 @@ export function ProductGallery({ images, alt }: Props) {
           <button
             type="button"
             onClick={() => setZoom(false)}
-            className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-2xl text-white hover:bg-white/25"
+            className="absolute right-3 top-3 z-10 grid h-10 w-10 place-items-center rounded-full bg-white/15 text-2xl text-white hover:bg-white/25"
             aria-label="Fermer"
           >
             ×
