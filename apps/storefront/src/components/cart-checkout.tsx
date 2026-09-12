@@ -3,17 +3,30 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { formatMoney } from '@jokko/ui';
+import { formatMoney, smsLink, whatsappLink } from '@jokko/ui';
 import type { Buyer } from '@jokko/contracts';
 import { cart, lineKey, rememberOrder, useCart } from '@/lib/cart';
 import { PriceEstimate } from './price-estimate';
 
 type Zone = { id?: string; label: string; fee: number };
+type MessageChannel = 'whatsapp' | 'sms' | 'email';
 
 const field =
   'rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm';
 
-export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: string }) {
+export function CartCheckout({
+  zones,
+  currency,
+  shopName,
+  whatsapp,
+  siteUrl,
+}: {
+  zones: Zone[];
+  currency: string;
+  shopName: string;
+  whatsapp: string | null;
+  siteUrl: string;
+}) {
   const ta = useTranslations('account');
   const items = useCart();
   const [form, setForm] = useState({ buyerName: '', buyerPhone: '', buyerEmail: '', note: '' });
@@ -31,6 +44,10 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
   );
   const [discountBusy, setDiscountBusy] = useState(false);
   const [discountErr, setDiscountErr] = useState<string | null>(null);
+
+  const [msgErr, setMsgErr] = useState<string | null>(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [msgSent, setMsgSent] = useState<{ id: string; token: string } | null>(null);
 
   const cartCurrency = items[0]?.currency ?? currency;
   const subtotal = items.reduce((s, i) => s + i.unitAmount * i.qty, 0);
@@ -90,9 +107,116 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
     }
   };
 
+  /** Nom + téléphone requis ; zone + adresse en plus si livraison — mêmes règles que la commande directe. */
+  const validateForMessage = (): string | null => {
+    if (!form.buyerName.trim() || !form.buyerPhone.trim()) {
+      return 'Indiquez votre nom et votre téléphone.';
+    }
+    if (deliveryMethod === 'delivery' && (!selectedZone || !address.trim())) {
+      return 'Choisissez une zone de livraison et indiquez votre adresse.';
+    }
+    return null;
+  };
+
+  const buildCartMessage = (): string => {
+    // Échappes Unicode plutôt que les émojis en clair : certains éditeurs/
+    // pipelines de déploiement corrompent les caractères multi-octets
+    // littéraux et les affichent en « ? » côté WhatsApp.
+    const CART = '\u{1F6D2}'; // 🛒
+    const PERSON = '\u{1F464}'; // 👤
+    const TRUCK = '\u{1F69A}'; // 🚚
+    const CARD = '\u{1F4B3}'; // 💳
+    const MEMO = '\u{1F4DD}'; // 📝
+
+    const lines = items.map(
+      (i) =>
+        `• ${i.qty} × ${i.name}${i.variantLabel ? ` — ${i.variantLabel}` : ''} — ${formatMoney(i.unitAmount * i.qty, i.currency)}`,
+    );
+    const deliveryLine =
+      deliveryMethod === 'delivery'
+        ? `Livraison (${selectedZone?.label ?? ''}) : ${formatMoney(deliveryFee, cartCurrency)}`
+        : 'Retrait en boutique';
+    return [
+      `${CART} Nouvelle commande — ${shopName}`,
+      '',
+      ...lines,
+      '',
+      `Sous-total : ${formatMoney(subtotal, cartCurrency)}`,
+      discountAmount > 0
+        ? `Remise${discount ? ` (${discount.code})` : ''} : − ${formatMoney(discountAmount, cartCurrency)}`
+        : null,
+      deliveryLine,
+      `Total : ${formatMoney(total, cartCurrency)}`,
+      '',
+      `${PERSON} Client`,
+      `Nom : ${form.buyerName.trim()}`,
+      `Téléphone : ${form.buyerPhone.trim()}`,
+      `E-mail : ${form.buyerEmail.trim() || '—'}`,
+      deliveryMethod === 'delivery' ? '' : null,
+      deliveryMethod === 'delivery' ? `${TRUCK} Adresse : ${address.trim()}` : null,
+      `${CARD} Paiement souhaité : ${paymentMethod === 'online' ? 'En ligne' : 'À la livraison'}`,
+      form.note.trim() ? `${MEMO} Note : ${form.note.trim()}` : null,
+      '',
+      `— Envoyé depuis ${siteUrl}`,
+    ]
+      .filter((l): l is string => l !== null)
+      .join('\n');
+  };
+
+  const sendViaMessage = async (channel: MessageChannel) => {
+    const validationError = validateForMessage();
+    if (validationError) {
+      setMsgErr(validationError);
+      return;
+    }
+    setMsgErr(null);
+    const message = buildCartMessage();
+
+    if (channel === 'whatsapp' && whatsapp) {
+      window.open(whatsappLink(whatsapp, message), '_blank', 'noopener');
+      cart.clear();
+      return;
+    }
+    if (channel === 'sms' && whatsapp) {
+      window.location.href = smsLink(whatsapp, message);
+      cart.clear();
+      return;
+    }
+
+    setSendingEmail(true);
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          buyerName: form.buyerName.trim(),
+          buyerPhone: form.buyerPhone.trim(),
+          buyerEmail: form.buyerEmail.trim() || undefined,
+          message,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message ?? 'Envoi impossible');
+      setMsgSent({ id: data.conversationId, token: data.buyerToken });
+      cart.clear();
+    } catch (e) {
+      setMsgErr((e as Error).message);
+    } finally {
+      setSendingEmail(false);
+    }
+  };
+
   if (items.length === 0) {
     return (
       <div className="py-16 text-center">
+        {msgSent ? (
+          <p className="mb-4 text-sm text-[var(--color-good)]">
+            Commande transmise. Le vendeur vous répondra ici.{' '}
+            <Link href={`/m/${msgSent.id}?token=${msgSent.token}`} className="underline">
+              Voir la conversation
+            </Link>
+          </p>
+        ) : null}
         <p className="text-[var(--color-muted)]">Votre panier est vide.</p>
         <Link href="/" className="mt-2 inline-block text-[var(--color-brand)] underline">
           Retour à la boutique
@@ -415,6 +539,43 @@ export function CartCheckout({ zones, currency }: { zones: Zone[]; currency: str
               ? `Payer ${formatMoney(total, cartCurrency)}`
               : `Commander — ${formatMoney(total, cartCurrency)} à la livraison`}
         </button>
+
+        <div className="mt-2 flex items-center gap-3 text-xs text-[var(--color-muted)]">
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+          Ou commander en un message
+          <span className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+
+        {msgErr ? <p className="text-sm text-[var(--color-danger)]">{msgErr}</p> : null}
+
+        <div className="flex flex-wrap gap-2">
+          {whatsapp ? (
+            <button
+              type="button"
+              onClick={() => void sendViaMessage('whatsapp')}
+              className="flex-1 rounded-[var(--radius-btn)] bg-[var(--color-good)] px-4 py-2.5 text-sm font-medium text-white"
+            >
+              WhatsApp
+            </button>
+          ) : null}
+          {whatsapp ? (
+            <button
+              type="button"
+              onClick={() => void sendViaMessage('sms')}
+              className="flex-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-medium"
+            >
+              SMS
+            </button>
+          ) : null}
+          <button
+            type="button"
+            disabled={sendingEmail}
+            onClick={() => void sendViaMessage('email')}
+            className="flex-1 rounded-[var(--radius-btn)] border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-medium disabled:opacity-60"
+          >
+            {sendingEmail ? '…' : 'Par e-mail'}
+          </button>
+        </div>
       </form>
     </div>
   );

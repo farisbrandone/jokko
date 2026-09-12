@@ -51,8 +51,16 @@ export function QuickOrder(props: Props) {
   function buildMessage(): string {
     const m = (k: string) => t(`msg.${k}`);
     const none = m('none');
+    // Échappes Unicode plutôt que les émojis en clair : certains éditeurs/
+    // pipelines de déploiement corrompent les caractères multi-octets
+    // littéraux et les affichent en « ? » côté WhatsApp.
+    const CART = '\u{1F6D2}'; // 🛒
+    const PERSON = '\u{1F464}'; // 👤
+    const TRUCK = '\u{1F69A}'; // 🚚
+    const CARD = '\u{1F4B3}'; // 💳
+    const MEMO = '\u{1F4DD}'; // 📝
     return [
-      `🛒 ${m('heading')} — ${props.shopName}`,
+      `${CART} ${m('heading')} — ${props.shopName}`,
       '',
       `${m('product')} : ${props.productName}`,
       `${m('ref')} : ${props.productUrl}`,
@@ -60,19 +68,19 @@ export function QuickOrder(props: Props) {
       `${m('quantity')} : ${qty}`,
       `${m('estimatedTotal')} : ${formatMoney(props.unitAmount * qty, props.currency)}`,
       '',
-      `👤 ${m('customer')}`,
+      `${PERSON} ${m('customer')}`,
       `${m('name')} : ${f.name.trim()}`,
       `${m('phone')} : ${f.phone.trim()}`,
       `${m('email')} : ${f.email.trim() || none}`,
       '',
-      `🚚 ${m('deliveryTitle')}`,
+      `${TRUCK} ${m('deliveryTitle')}`,
       `${m('address')} : ${f.address.trim()}`,
       `${m('city')} : ${f.city.trim()}`,
       `${m('method')} : ${t(`delivery.${f.delivery}`)}`,
       '',
-      `💳 ${m('paymentTitle')} : ${t(`payment.${f.payment}`)}`,
+      `${CARD} ${m('paymentTitle')} : ${t(`payment.${f.payment}`)}`,
       '',
-      `📝 ${m('note')} : ${f.note.trim() || none}`,
+      `${MEMO} ${m('note')} : ${f.note.trim() || none}`,
       '',
       `— ${m('sentFrom')} ${props.siteUrl}`,
     ].join('\n');
