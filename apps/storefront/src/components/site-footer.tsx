@@ -6,6 +6,10 @@ import { CurrencySwitcher } from './currency-switcher';
 
 export async function SiteFooter({ shop }: { shop: ShopView | null }) {
   const t = await getTranslations('footer');
+  // XOF/XAF sont tous deux vulgairement appelés « FCFA » en Afrique de
+  // l'Ouest et Centrale — on affiche ce libellé plutôt que le code ISO.
+  const cur = shop?.currency ?? 'XOF';
+  const currencyLabel = cur === 'XOF' || cur === 'XAF' ? 'FCFA' : cur;
   return (
     <footer className="border-t border-[var(--color-border)] bg-[var(--color-surface)] mt-8">
       <div className="mx-auto max-w-6xl px-4 py-6 text-sm text-[var(--color-muted)] flex flex-wrap items-center gap-x-6 gap-y-2 justify-between">
@@ -22,7 +26,7 @@ export async function SiteFooter({ shop }: { shop: ShopView | null }) {
           </Link>
         </nav>
         <div className="flex items-center gap-4">
-          <span>{shop?.currency ?? 'XOF'}</span>
+          <span>{currencyLabel}</span>
           <CurrencySwitcher />
           <LocaleSwitcher />
         </div>

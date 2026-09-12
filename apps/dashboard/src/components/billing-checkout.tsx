@@ -46,7 +46,7 @@ export function BillingCheckout({ shopId, priceXof }: { shopId: string; priceXof
   return (
     <div className="flex flex-col gap-2">
       <Button onClick={pay} disabled={busy} style={{ alignSelf: 'flex-start' }}>
-        Payer {priceXof.toLocaleString('fr')} XOF / mois
+        Payer {priceXof.toLocaleString('fr')} FCFA / mois
       </Button>
       {msg ? <p className="text-xs text-[var(--color-muted)]">{msg}</p> : null}
     </div>

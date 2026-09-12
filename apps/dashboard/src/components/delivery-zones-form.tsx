@@ -139,7 +139,7 @@ export function DeliveryZonesForm({
       )}
 
       <p className="text-xs text-[var(--color-muted)]">
-        Frais exprimés dans la devise de la boutique (F CFA sans décimales pour XOF).
+        Frais exprimés dans la devise de la boutique (FCFA, sans décimales).
       </p>
       {err ? <p className="text-sm text-[var(--color-danger)]">{err}</p> : null}
 

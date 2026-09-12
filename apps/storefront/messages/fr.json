@@ -194,8 +194,8 @@
   },
   "currency": {
     "label": "Devise d’affichage",
-    "none": "XOF",
-    "disclaimer": "Estimation à titre indicatif — le paiement reste en F CFA (XOF)."
+    "none": "FCFA",
+    "disclaimer": "Estimation à titre indicatif — le paiement reste en FCFA."
   },
   "install": {
     "text": "Installez la boutique sur votre écran d’accueil.",
